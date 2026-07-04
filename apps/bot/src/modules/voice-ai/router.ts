@@ -3,6 +3,7 @@ import { getActiveMatch, getGuildConfig } from '@gamebot/db';
 import { splitTeams } from '@gamebot/shared';
 import { S } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
+import { isGuildAdmin } from '../../lib/permissions.js';
 import { getAIProvider } from './providers.js';
 import { buildSystemPrompt } from './prompts.js';
 import { leaveGuildVoice, type VoiceSession } from './sessions.js';
@@ -19,7 +20,9 @@ async function quickShuffle(guild: Guild, session: VoiceSession): Promise<string
   return `فريق أ: ${teamA.map(name).join('، ')}. فريق ب: ${teamB.map(name).join('، ')}.`;
 }
 
-export async function routeVoiceCommand(guild: Guild, session: VoiceSession, query: string): Promise<string> {
+export async function routeVoiceCommand(
+  guild: Guild, session: VoiceSession, query: string, speakerId: string,
+): Promise<string> {
   const q = query.trim();
 
   if (/^(اطلع|خروج|اخرج|طش|leave)$/i.test(q)) {
@@ -37,8 +40,16 @@ export async function routeVoiceCommand(guild: Guild, session: VoiceSession, que
   if (/^(وزع|قسم|فرق|shuffle)/i.test(q)) {
     const lobby = await getActiveMatch(guild.id);
     if (lobby && lobby.status === 'lobby' && lobby.players.length >= 2) {
+      const config = await getGuildConfig(guild.id);
+      const member = guild.members.cache.get(speakerId);
+      const allowed =
+        speakerId === lobby.creator_id ||
+        (member !== undefined && isGuildAdmin(member, config.customs.admin_role_id));
+      if (!allowed) return S.onlyCreatorOrAdmin;
       const { startMatchCore } = await import('../customs/start.js');
+      const { disableLobbyMessage } = await import('../customs/result.js');
       const { started } = await startMatchCore(guild, lobby);
+      await disableLobbyMessage(guild, started);
       return `بدأت المباراة! فريق أ ${started.team_a.length} لاعبين وفريق ب ${started.team_b.length}. انتقلوا لروماتكم.`;
     }
     return quickShuffle(guild, session);

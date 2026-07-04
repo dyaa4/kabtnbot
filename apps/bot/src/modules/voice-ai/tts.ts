@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 import { createRequire } from 'module';
 import { config } from '../../config.js';
 
@@ -6,10 +6,29 @@ const _require = createRequire(import.meta.url);
 
 function getFfmpeg(): string {
   try {
-    return _require.resolve('ffmpeg-static').replace(/[\\/]index\.js$/, '') + '/ffmpeg';
+    return _require('ffmpeg-static') as string;
   } catch {
     return 'ffmpeg';
   }
+}
+
+function runFfmpeg(input: Buffer): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn(getFfmpeg(), ['-i', 'pipe:0', '-af', 'volume=3.0', '-f', 'mp3', 'pipe:1', '-y'], {
+      stdio: ['pipe', 'pipe', 'ignore'],
+    });
+    const chunks: Buffer[] = [];
+    const timer = setTimeout(() => { proc.kill('SIGKILL'); reject(new Error('FFMPEG_TIMEOUT')); }, 10_000);
+    proc.stdout.on('data', (c: Buffer) => chunks.push(c));
+    proc.on('error', (err) => { clearTimeout(timer); reject(err); });
+    proc.on('close', (code) => {
+      clearTimeout(timer);
+      if (code === 0) resolve(Buffer.concat(chunks));
+      else reject(new Error(`FFMPEG_EXIT_${code}`));
+    });
+    proc.stdin.on('error', () => {}); // EPIPE if ffmpeg exits early
+    proc.stdin.end(input);
+  });
 }
 
 export async function synthesizeSpeech(text: string): Promise<Buffer> {
@@ -25,7 +44,5 @@ export async function synthesizeSpeech(text: string): Promise<Buffer> {
   });
   if (!resp.ok) throw new Error(`ElevenLabs ${resp.status}: ${await resp.text()}`);
   const raw = Buffer.from(await resp.arrayBuffer());
-  return execSync(`"${getFfmpeg()}" -i pipe:0 -af "volume=3.0" -f mp3 pipe:1 -y`, {
-    input: raw, timeout: 10_000, stdio: ['pipe', 'pipe', 'pipe'], encoding: 'buffer',
-  });
+  return runFfmpeg(raw);
 }

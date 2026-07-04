@@ -34,8 +34,10 @@ export const joinCommand: Command = {
     await interaction.deferReply();
     const session = await joinGuildVoice(channel);
     const { startListening } = await import('../modules/voice-ai/listen.js');
-    await startListening(session, interaction.guild!);
-    await interaction.editReply(fmt(S.joinedVoice, { wake: config.voice.wake_word }));
+    const listening = await startListening(session, interaction.guild!);
+    await interaction.editReply(
+      listening ? fmt(S.joinedVoice, { wake: config.voice.wake_word }) : S.listenQuotaExhausted,
+    );
   },
 };
 

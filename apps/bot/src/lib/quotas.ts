@@ -15,7 +15,7 @@ export async function tryConsumeAiQuestion(guildId: string): Promise<boolean> {
 }
 
 export async function addListenSeconds(guildId: string, seconds: number): Promise<void> {
-  if (seconds > 0) await incrementListenSeconds(guildId, Math.round(seconds), todayKey());
+  if (seconds > 0) await incrementListenSeconds(guildId, Math.ceil(seconds), todayKey());
 }
 
 export async function isListenQuotaExceeded(guildId: string): Promise<boolean> {

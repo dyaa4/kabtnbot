@@ -14,17 +14,22 @@ vi.mock('@gamebot/db', () => ({
   incrementListenSeconds: vi.fn(async () => {}),
 }));
 
+import { getActiveMatch } from '@gamebot/db';
+import { S } from '../../lib/strings.js';
 import { routeVoiceCommand } from './router.js';
 
-function fakeGuild(memberIds: string[]) {
+function fakeGuild(memberIds: string[], extraMembers: Record<string, unknown> = {}) {
   return {
     id: 'g1',
     name: 'سيرفر',
     client: { ws: { ping: 42 } },
     members: {
-      cache: new Map(
-        memberIds.map((id) => [id, { id, user: { bot: false }, displayName: id, voice: { channelId: 'vc1' } }]),
-      ),
+      cache: new Map([
+        ...memberIds.map(
+          (id) => [id, { id, user: { bot: false }, displayName: id, voice: { channelId: 'vc1' } }] as const,
+        ),
+        ...Object.entries(extraMembers),
+      ]),
     },
     channels: {
       cache: new Map([
@@ -44,17 +49,37 @@ function fakeSession() {
 
 describe('routeVoiceCommand', () => {
   it('answers ping-style commands', async () => {
-    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة');
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
     expect(reply).toContain('42');
   });
 
   it('quick-shuffles current channel members when no lobby exists', async () => {
-    const reply = await routeVoiceCommand(fakeGuild(['a', 'b', 'c', 'd']), fakeSession(), 'وزع الفرق');
+    const reply = await routeVoiceCommand(fakeGuild(['a', 'b', 'c', 'd']), fakeSession(), 'وزع الفرق', 'u-speaker');
     expect(reply).toContain('فريق');
   });
 
   it('returns help text', async () => {
-    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد');
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد', 'u-speaker');
     expect(reply.length).toBeGreaterThan(0);
+  });
+
+  it('rejects starting the lobby match via voice when speaker is neither creator nor admin', async () => {
+    vi.mocked(getActiveMatch).mockResolvedValueOnce({
+      status: 'lobby',
+      players: ['a', 'b'],
+      creator_id: 'someone-else',
+      _id: { toString: () => 'm1' },
+    } as never);
+    const guild = fakeGuild(['a', 'b'], {
+      'u-speaker': {
+        id: 'u-speaker',
+        user: { bot: false },
+        displayName: 'u-speaker',
+        permissions: { has: () => false },
+        roles: { cache: { has: () => false } },
+      },
+    });
+    const reply = await routeVoiceCommand(guild, fakeSession(), 'وزع الفرق', 'u-speaker');
+    expect(reply).toBe(S.onlyCreatorOrAdmin);
   });
 });

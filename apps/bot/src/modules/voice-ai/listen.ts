@@ -13,11 +13,11 @@ const SAMPLE_RATE = 48000;
 const OPUS_CHANNELS = 2;
 const FRAME_SECONDS = 0.02; // one Opus frame ≈ 20 ms
 
-export async function startListening(session: VoiceSession, guild: Guild): Promise<void> {
-  if (session.listening) return;
+export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
+  if (session.listening) return true;
   if (await isListenQuotaExceeded(guild.id)) {
     await playSpeech(guild.id, S.listenQuotaExhausted).catch(() => {});
-    return;
+    return false;
   }
   session.listening = true;
 
@@ -33,6 +33,7 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
   };
   guild.client.on('voiceStateUpdate', onVoiceState);
   session.removeVoiceHandler = () => guild.client.removeListener('voiceStateUpdate', onVoiceState);
+  return true;
 }
 
 export function stopListening(session: VoiceSession): void {
@@ -118,7 +119,7 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       const query = parseWakeWord(text, config.voice.wake_word);
       if (query !== null) {
         const { routeVoiceCommand } = await import('./router.js');
-        const answer = await routeVoiceCommand(guild, session, query);
+        const answer = await routeVoiceCommand(guild, session, query, userId);
         if (answer) await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
       }
     } catch (err) {

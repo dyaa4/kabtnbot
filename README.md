@@ -24,7 +24,7 @@
 |---|---|---|
 | Node.js | **22.12+** | حزمة `@discordjs/voice@0.19.2` تفرض `engines.node >= 22.12.0`. ملف `package.json` الجذري يذكر `>=20` وهو الحد التاريخي للمشروع، لكن **تشغيل البوت فعليًا يتطلب 22.12 أو أحدث** — استخدم هذا الإصدار محليًا وفي أي بيئة تشغيل. |
 | pnpm | 9.x | حسب `packageManager` في `package.json` (`pnpm@9.15.0`). |
-| MongoDB | — | رابط اتصال (URI) من MongoDB Atlas أو أي MongoDB متوافق. |
+| MongoDB | **6.0+** | رابط اتصال (URI) من MongoDB Atlas أو أي MongoDB متوافق — الإصدار 6.0 أو أحدث مطلوب لأن الفهرس الفريد لمنع تعدد المباريات النشطة يستخدم partial filter مع `$in`. |
 | تطبيق Discord (Developer Portal) | — | راجع القسم التالي لإعداد الصلاحيات والـ Intents. |
 | مفاتيح API | GROQ إلزامي، ELEVENLABS إلزامي للصوت، GEMINI اختياري | راجع "المفاتيح" أدناه. |
 
