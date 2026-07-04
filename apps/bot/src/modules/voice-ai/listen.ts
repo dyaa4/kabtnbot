@@ -66,7 +66,9 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     } catch { /* skip broken frame */ }
   });
 
-  stream.on('end', () => void onUtteranceEnd());
+  stream.on('end', () => {
+    onUtteranceEnd().catch((err) => console.error(`[Listen ${guild.id}]`, err));
+  });
   stream.on('error', () => {
     session.subscriptions.delete(userId);
     decoder.delete();
