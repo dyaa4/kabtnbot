@@ -1,6 +1,13 @@
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import { z } from 'zod';
-dotenv.config();
+
+// pnpm --filter runs package scripts with CWD=apps/bot, so the repo-root .env
+// must be resolved relative to this file (same depth from src/ and dist/),
+// not the working directory.
+export const ENV_FILE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.env');
+dotenv.config({ path: ENV_FILE });
 
 const Env = z.object({
   DISCORD_TOKEN: z.string().min(1),
