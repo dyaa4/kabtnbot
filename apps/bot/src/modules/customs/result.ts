@@ -67,7 +67,11 @@ export async function handleCustomCancel(interaction: ChatInputCommandInteractio
   const match = await requireManageableMatch(interaction);
   if (!match) return;
   const cancelled = await cancelMatch(interaction.guildId!, match._id.toString());
-  if (cancelled) await cleanupMatchChannels(interaction.guild!, cancelled);
+  if (!cancelled) {
+    await interaction.reply({ content: S.noActiveMatch, flags: MessageFlags.Ephemeral });
+    return;
+  }
+  await cleanupMatchChannels(interaction.guild!, cancelled);
   await interaction.reply({ content: S.matchCancelled });
 }
 
