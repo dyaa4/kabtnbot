@@ -6,6 +6,8 @@ import type {
 } from 'discord.js';
 import { pingCommand } from './ping.js';
 import { customCommand } from './custom.js';
+import { leaderboardCommand } from './leaderboard.js';
+import { profileCommand } from './profile.js';
 
 export interface Command {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandsOnlyBuilder;
@@ -16,7 +18,7 @@ const commandMap = new Map<string, Command>();
 
 export function registerCommands(): Map<string, Command> {
   if (commandMap.size > 0) return commandMap;
-  const all: Command[] = [pingCommand, customCommand];
+  const all: Command[] = [pingCommand, customCommand, leaderboardCommand, profileCommand];
   for (const cmd of all) commandMap.set(cmd.data.name, cmd);
   return commandMap;
 }

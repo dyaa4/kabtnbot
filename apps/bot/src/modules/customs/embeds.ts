@@ -1,5 +1,5 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
-import type { MatchDoc } from '@gamebot/db';
+import type { MatchDoc, PlayerDoc } from '@gamebot/db';
 import { S, fmt } from '../../lib/strings.js';
 
 export function renderLobbyEmbed(match: MatchDoc): EmbedBuilder {
@@ -37,4 +37,29 @@ export function renderTeamsEmbed(match: MatchDoc): EmbedBuilder {
       { name: S.teamB, value: match.team_b.map((id) => `<@${id}>`).join('\n') || '—', inline: true },
     )
     .setColor(0x22c55e);
+}
+
+const MEDALS = ['🥇', '🥈', '🥉'];
+
+export function renderLeaderboardEmbed(players: PlayerDoc[]): EmbedBuilder {
+  const description =
+    players.length === 0
+      ? S.leaderboardEmpty
+      : players
+          .map((p, i) => `${MEDALS[i] ?? `**${i + 1}.**`} <@${p.user_id}> — **${p.points}** نقطة (${p.wins}ف/${p.losses}خ)`)
+          .join('\n');
+  return new EmbedBuilder().setTitle(S.leaderboardTitle).setDescription(description).setColor(0xf59e0b);
+}
+
+export function renderProfileEmbed(displayName: string, player: PlayerDoc): EmbedBuilder {
+  const total = player.wins + player.losses;
+  const winRate = total === 0 ? 0 : Math.round((player.wins / total) * 100);
+  return new EmbedBuilder()
+    .setTitle(fmt(S.profileTitle, { name: displayName }))
+    .addFields(
+      { name: 'النقاط', value: String(player.points), inline: true },
+      { name: 'فوز/خسارة', value: `${player.wins}/${player.losses}`, inline: true },
+      { name: 'نسبة الفوز', value: `${winRate}%`, inline: true },
+    )
+    .setColor(0x8b5cf6);
 }
