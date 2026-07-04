@@ -1,3 +1,50 @@
 export const S = {
   genericError: '❌ صار خطأ غير متوقع، حاول مرة ثانية.',
-};
+  notAdmin: '❌ هذا الأمر يحتاج صلاحية إدارة السيرفر أو الرول الإداري.',
+  guildOnly: '❌ هذا الأمر يشتغل داخل سيرفر فقط.',
+  // customs
+  activeMatchExists: '⚠️ في مباراة نشطة حالياً. أنهها أو ألغها أول (/custom result أو /custom cancel).',
+  noActiveMatch: '⚠️ ما في مباراة نشطة.',
+  lobbyTitle: '🎮 كستم {game}',
+  lobbyDesc: 'حجم الفريق: {size}v{size} • التوزيع: {mode}\nاللاعبون ({count}/{max}):\n{players}',
+  lobbyEmpty: 'ما انضم أحد بعد — اضغط انضمام!',
+  btnJoin: 'انضمام ✋',
+  btnLeave: 'انسحاب 🚪',
+  btnStart: 'بدء المباراة ▶️',
+  joined: '✅ انضممت للمباراة.',
+  alreadyJoinedOrFull: '⚠️ إما أنك منضم أصلاً أو اللوبي ممتلئ.',
+  left: '👋 انسحبت من المباراة.',
+  notInLobby: '⚠️ أنت مو منضم أصلاً.',
+  onlyCreatorOrAdmin: '❌ البدء/الإنهاء لمنشئ المباراة أو الإدارة فقط.',
+  needTwoPlayers: '⚠️ نحتاج لاعبَين على الأقل للبدء.',
+  matchStarted: '🚀 بدأت المباراة! انتقلوا لرومات الفرق.',
+  teamA: '🅰️ فريق أ',
+  teamB: '🅱️ فريق ب',
+  balanceRandom: 'عشوائي',
+  balanceBalanced: 'متوازن',
+  resultRecorded: '🏆 انتسجلت النتيجة! فاز {team}. النقاط توزعت.',
+  matchCancelled: '🗑️ انلغت المباراة ونُظفت الرومات.',
+  leaderboardTitle: '🏆 لوحة الصدارة',
+  leaderboardEmpty: 'ما في نقاط بعد — العبوا كستم أول!',
+  profileTitle: 'ملف {name}',
+  profileNoData: 'ما لعبت أي مباراة بعد.',
+  // voice
+  voiceDisabled: '⚠️ الميزات الصوتية معطلة في هذا السيرفر (/settings).',
+  notInVoiceChannel: '❌ ادخل روم صوتي أول.',
+  channelNotAllowed: '❌ هذا الروم مو مسموح للبوت (راجع /settings).',
+  joinedVoice: '✅ دخلت الفويس وبدأت الاستماع 🎙️ (قل "{wake}" وبعدها أمرك)',
+  leftVoice: '👋 طلعت من الفويس.',
+  notConnected: '❌ البوت مو موجود في الفويس. استخدم /join',
+  listenQuotaExhausted: '⏳ خلصت دقائق الاستماع اليومية لهذا السيرفر. نرجع بكرة!',
+  aiQuotaExhausted: '⏳ خلصت أسئلة الذكاء الاصطناعي اليومية لهذا السيرفر.',
+  ttsFailed: '❌ فشل تحويل النص إلى صوت.',
+  aiFailed: '😅 ما قدرت أجاوب حالياً، جرب بعد شوي.',
+  voiceHelp: 'الأوامر: اطلع، اسكت، السرعة، وزع الفرق، قل + نص، أو اسألني أي شيء.',
+  // settings
+  settingsSaved: '✅ انحفظ الإعداد.',
+  settingsTitle: '⚙️ إعدادات السيرفر',
+} as const;
+
+export function fmt(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
+}
