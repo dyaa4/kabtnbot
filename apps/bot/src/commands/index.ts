@@ -10,6 +10,7 @@ import { leaderboardCommand } from './leaderboard.js';
 import { profileCommand } from './profile.js';
 import { joinCommand, leaveCommand, speakCommand } from './voice.js';
 import { askCommand, chatCommand } from './ask.js';
+import { settingsCommand } from './settings.js';
 
 export interface Command {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandsOnlyBuilder;
@@ -20,7 +21,7 @@ const commandMap = new Map<string, Command>();
 
 export function registerCommands(): Map<string, Command> {
   if (commandMap.size > 0) return commandMap;
-  const all: Command[] = [pingCommand, customCommand, leaderboardCommand, profileCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand];
+  const all: Command[] = [pingCommand, customCommand, leaderboardCommand, profileCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand, settingsCommand];
   for (const cmd of all) commandMap.set(cmd.data.name, cmd);
   return commandMap;
 }
