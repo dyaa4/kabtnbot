@@ -31,6 +31,12 @@ describe('guild-config-repo', () => {
   it('rejects invalid patches', async () => {
     await expect(updateGuildConfig('g1', { voice: { dialect: 'xx' } })).rejects.toThrow();
   });
+
+  it('first access creates exactly one config document', async () => {
+    await Promise.all([getGuildConfig('gRace'), getGuildConfig('gRace'), getGuildConfig('gRace')]);
+    const { GuildConfigModel } = await import('../models.js');
+    expect(await GuildConfigModel.countDocuments({ guild_id: 'gRace' })).toBe(1);
+  });
 });
 
 describe('player-repo', () => {
@@ -96,6 +102,16 @@ describe('match-repo', () => {
     expect(expired.some((m) => m.guild_id === 'gOld')).toBe(true);
     const past = new Date(Date.now() - 60_000);
     expect((await findExpiredMatches(past)).some((m) => m.guild_id === 'gOld')).toBe(false);
+  });
+
+  it('rejects joins beyond team_size * 2 capacity', async () => {
+    const m = await createMatch({
+      guildId: 'gCap', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch',
+    });
+    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p1')).not.toBeNull();
+    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p2')).not.toBeNull();
+    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p3')).toBeNull();
+    await cancelMatch('gCap', m._id.toString());
   });
 });
 

@@ -9,6 +9,7 @@ interface GuildConfigDoc {
 function deepMerge(base: Record<string, unknown>, patch: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...base };
   for (const [k, v] of Object.entries(patch)) {
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
     if (v && typeof v === 'object' && !Array.isArray(v) && typeof out[k] === 'object' && out[k] !== null && !Array.isArray(out[k])) {
       out[k] = deepMerge(out[k] as Record<string, unknown>, v as Record<string, unknown>);
     } else {
@@ -19,15 +20,22 @@ function deepMerge(base: Record<string, unknown>, patch: Record<string, unknown>
 }
 
 export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
-  const doc = await GuildConfigModel.findOne({ guild_id: guildId }).lean() as GuildConfigDoc | null;
-  if (doc) return GuildConfigSchema.parse(doc.config);
-  const config = GuildConfigSchema.parse({});
-  await GuildConfigModel.updateOne(
-    { guild_id: guildId },
-    { $setOnInsert: { config } },
-    { upsert: true },
-  );
-  return config;
+  const defaults = GuildConfigSchema.parse({});
+  try {
+    const doc = await GuildConfigModel.findOneAndUpdate(
+      { guild_id: guildId },
+      { $setOnInsert: { config: defaults } },
+      { upsert: true, new: true },
+    ).lean() as GuildConfigDoc | null;
+    return GuildConfigSchema.parse(doc?.config);
+  } catch (err) {
+    // Rare duplicate-key race on concurrent first access: the other writer won; read theirs.
+    if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+      const doc = await GuildConfigModel.findOne({ guild_id: guildId }).lean() as GuildConfigDoc | null;
+      if (doc) return GuildConfigSchema.parse(doc.config);
+    }
+    throw err;
+  }
 }
 
 export async function updateGuildConfig(guildId: string, patch: Record<string, unknown>): Promise<GuildConfig> {

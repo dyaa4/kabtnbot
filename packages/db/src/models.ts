@@ -77,6 +77,11 @@ const matchSchema = new Schema<MatchDoc>(
   { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
 );
 matchSchema.index({ guild_id: 1, status: 1 });
+// One active (lobby/in_progress) match per guild, enforced at the DB level.
+matchSchema.index(
+  { guild_id: 1 },
+  { unique: true, partialFilterExpression: { status: { $in: ['lobby', 'in_progress'] } } },
+);
 
 export interface UsageDoc {
   guild_id: string;

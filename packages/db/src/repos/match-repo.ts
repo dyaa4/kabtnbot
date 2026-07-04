@@ -13,15 +13,22 @@ export async function createMatch(input: {
 }): Promise<MatchDoc> {
   const existing = await MatchModel.findOne({ guild_id: input.guildId, status: { $in: ACTIVE } }).lean();
   if (existing) throw new Error('ACTIVE_MATCH_EXISTS');
-  const doc = await MatchModel.create({
-    guild_id: input.guildId,
-    creator_id: input.creatorId,
-    game: input.game,
-    team_size: input.teamSize,
-    balance_mode: input.balanceMode,
-    lobby_channel_id: input.lobbyChannelId,
-  });
-  return doc.toObject();
+  try {
+    const doc = await MatchModel.create({
+      guild_id: input.guildId,
+      creator_id: input.creatorId,
+      game: input.game,
+      team_size: input.teamSize,
+      balance_mode: input.balanceMode,
+      lobby_channel_id: input.lobbyChannelId,
+    });
+    return doc.toObject();
+  } catch (err) {
+    if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
+      throw new Error('ACTIVE_MATCH_EXISTS');
+    }
+    throw err;
+  }
 }
 
 export async function getActiveMatch(guildId: string): Promise<MatchDoc | null> {
@@ -29,7 +36,7 @@ export async function getActiveMatch(guildId: string): Promise<MatchDoc | null> 
 }
 
 export async function setLobbyMessage(guildId: string, matchId: string, messageId: string): Promise<void> {
-  await MatchModel.updateOne({ _id: matchId, guild_id: guildId }, { $set: { lobby_message_id: messageId } });
+  await MatchModel.updateOne({ _id: matchId, guild_id: guildId, status: 'lobby' }, { $set: { lobby_message_id: messageId } });
 }
 
 export async function addPlayerToMatch(guildId: string, matchId: string, userId: string): Promise<MatchDoc | null> {
