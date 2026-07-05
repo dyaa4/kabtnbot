@@ -17,30 +17,22 @@ const statsResponse = {
     { date: '2026-07-01', member_count: 200 },
   ],
   memberSeriesSource: 'snapshots',
-  matchesPerDay: [
+  messagesDaily: [
     { date: '2026-06-27', count: 0 },
     { date: '2026-06-28', count: 0 },
     { date: '2026-06-29', count: 0 },
     { date: '2026-06-30', count: 0 },
-    { date: '2026-07-01', count: 3 },
+    { date: '2026-07-01', count: 12 },
   ],
-  usageDaily: [
-    { date: '2026-06-27', ai_questions: 0, listen_seconds: 0 },
-    { date: '2026-06-28', ai_questions: 0, listen_seconds: 0 },
-    { date: '2026-06-29', ai_questions: 0, listen_seconds: 0 },
-    { date: '2026-06-30', ai_questions: 0, listen_seconds: 0 },
-    { date: '2026-07-01', ai_questions: 5, listen_seconds: 120 },
-  ],
-  newPlayersPerDay: [
+  voiceMinutesDaily: [
     { date: '2026-06-27', count: 0 },
     { date: '2026-06-28', count: 0 },
     { date: '2026-06-29', count: 0 },
     { date: '2026-06-30', count: 0 },
-    { date: '2026-07-01', count: 1 },
+    { date: '2026-07-01', count: 2 },
   ],
-  topPlayers: [{ user_id: 'a', name: 'Alice', points: 25, wins: 1, losses: 0 }],
-  mostActive: [{ user_id: 'a', name: 'Alice', matches: 3 }],
-  totals: { newMembers: 7, matches: 3, aiQuestions: 5 },
+  topActive: [{ user_id: 'a', name: 'Alice', messages: 12, voice_seconds: 120, reactions: 3, score: 15 }],
+  totals: { newMembers: 7, messages: 12, voiceMinutes: 2 },
 };
 
 beforeEach(() => {
@@ -75,8 +67,8 @@ describe('StatsTab', () => {
     renderTab();
     expect(await screen.findByText('250')).toBeTruthy();
     expect(screen.getByText('7')).toBeTruthy();
-    expect(screen.getAllByText('3').length).toBeGreaterThan(0);
-    expect(screen.getByText('5')).toBeTruthy();
+    expect(screen.getAllByText('12').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('2').length).toBeGreaterThan(0);
   });
 
   it('clicking the 7-days pill triggers a refetch with days=7', async () => {

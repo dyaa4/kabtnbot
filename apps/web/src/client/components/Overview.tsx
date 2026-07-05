@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 
@@ -7,10 +7,6 @@ interface Usage {
   ai_questions: number;
   limits: { listen_minutes_per_day: number; ai_questions_per_day: number };
   premium_active: boolean;
-}
-interface MatchesResp {
-  active: { _id: string; game: string; players: string[]; status: string } | null;
-  recent: unknown[];
 }
 
 function Bar({ label, used, max }: { label: string; used: number; max: number }) {
@@ -35,16 +31,7 @@ function Bar({ label, used, max }: { label: string; used: number; max: number })
 
 export function Overview({ guildId }: { guildId: string }) {
   const { t } = useI18n();
-  const qc = useQueryClient();
   const usage = useQuery({ queryKey: ['usage', guildId], queryFn: () => api<Usage>(`/api/guilds/${guildId}/usage`) });
-  const matches = useQuery({ queryKey: ['matches', guildId], queryFn: () => api<MatchesResp>(`/api/guilds/${guildId}/matches`) });
-  const cancel = useMutation({
-    mutationFn: (matchId: string) => api(`/api/guilds/${guildId}/matches/${matchId}/cancel`, { method: 'POST' }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['matches', guildId] });
-      void qc.invalidateQueries({ queryKey: ['usage', guildId] });
-    },
-  });
 
   return (
     <div>
@@ -54,25 +41,6 @@ export function Overview({ guildId }: { guildId: string }) {
           <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_day} />
         </div>
       )}
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-        <h3 className="mb-3 font-semibold">{t('overview.activeMatch')}</h3>
-        {matches.data?.active ? (
-          <div className="flex items-center justify-between">
-            <span>
-              {matches.data.active.game} — {matches.data.active.players.length} 👤
-            </span>
-            <button
-              className="rounded-xl bg-red-600 px-3 py-1 text-sm font-semibold shadow-[0_0_16px_-4px_rgba(220,38,38,0.8)] transition hover:bg-red-500 hover:shadow-[0_0_22px_-2px_rgba(220,38,38,0.9)] disabled:opacity-50"
-              disabled={cancel.isPending}
-              onClick={() => cancel.mutate(matches.data!.active!._id)}
-            >
-              {t('overview.cancelMatch')}
-            </button>
-          </div>
-        ) : (
-          <p className="text-slate-400">{t('overview.noActiveMatch')}</p>
-        )}
-      </div>
     </div>
   );
 }

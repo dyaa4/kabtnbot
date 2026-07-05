@@ -3,8 +3,6 @@ import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
 import { SettingsTab } from '../components/SettingsTab.js';
-import { LeaderboardTab } from '../components/LeaderboardTab.js';
-import { MatchesTab } from '../components/MatchesTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 
 export function GuildView() {
@@ -15,8 +13,6 @@ export function GuildView() {
   const tabs = [
     { to: '', key: 'tabs.overview' },
     { to: 'settings', key: 'tabs.settings' },
-    { to: 'leaderboard', key: 'tabs.leaderboard' },
-    { to: 'matches', key: 'tabs.matches' },
     { to: 'stats', key: 'tabs.stats' },
   ];
 
@@ -43,8 +39,6 @@ export function GuildView() {
       <Routes>
         <Route index element={<Overview guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
-        <Route path="leaderboard" element={<LeaderboardTab guildId={guildId} />} />
-        <Route path="matches" element={<MatchesTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
       </Routes>
     </Layout>

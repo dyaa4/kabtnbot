@@ -7,8 +7,8 @@ import { I18nProvider } from '../i18n.js';
 import { SettingsTab } from './SettingsTab.js';
 
 const config = {
-  voice: { enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [] },
-  customs: { win_points: 25, loss_points: -10, admin_role_id: null },
+  admin_role_id: null,
+  voice: { enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [], personality_enabled: false },
   quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
   premium: { active: false, listen_minutes_override: null, ai_questions_override: null },
   language: 'ar',
@@ -19,7 +19,11 @@ beforeEach(() => {
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       if (init?.method === 'PATCH') {
-        return new Response(JSON.stringify({ ...config, voice: { ...config.voice, wake_word: 'يا زعيم' } }), { status: 200 });
+        const body = JSON.parse((init.body as string) ?? '{}');
+        return new Response(
+          JSON.stringify({ ...config, ...body, voice: { ...config.voice, ...(body.voice ?? {}) } }),
+          { status: 200 },
+        );
       }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
@@ -62,6 +66,34 @@ describe('SettingsTab', () => {
       const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
       expect(patchCalls).toHaveLength(1);
       expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).voice.wake_word).toBe('يا زعيم');
+    });
+  });
+
+  it('toggling the personality checkbox PATCHes voice.personality_enabled', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+    const checkbox = screen.getByLabelText(/الشخصية الكوميدية|Comedic personality/);
+    await user.click(checkbox);
+    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[0]);
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).voice.personality_enabled).toBe(true);
+    });
+  });
+
+  it('sends a top-level PATCH for the admin role field', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+    const roleInputs = screen.getAllByDisplayValue('');
+    await user.type(roleInputs[0], '123456');
+    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[1]);
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).admin_role_id).toBe('123456');
     });
   });
 });
