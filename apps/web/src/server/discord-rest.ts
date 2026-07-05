@@ -1,11 +1,20 @@
 import { config } from './config.js';
 
+export interface DiscordMember {
+  id: string;
+  username: string;
+  avatar: string | null;
+  joined_at: string;
+}
+
 export interface DiscordRest {
   exchangeCode(code: string): Promise<{ access_token: string }>;
   getMe(accessToken: string): Promise<{ id: string; username: string; avatar: string | null }>;
   getMyGuilds(accessToken: string): Promise<{ id: string; name: string; icon: string | null; permissions: string }[]>;
   getGuild(guildId: string): Promise<{ id: string; name: string; icon: string | null } | null>;
   getMember(guildId: string, userId: string): Promise<{ roles: string[] } | null>;
+  listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
+  getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
 }
@@ -69,6 +78,19 @@ export function createDiscordRest(): DiscordRest {
     },
     async getMember(guildId, userId) {
       return discordJson(`${API}/guilds/${guildId}/members/${userId}`, { headers: bot }, true);
+    },
+    async listMembers(guildId, limit = 1000) {
+      const capped = Math.min(limit, 1000);
+      const members = await discordJson<{ user: { id: string; username: string; avatar: string | null }; joined_at: string }[]>(
+        `${API}/guilds/${guildId}/members?limit=${capped}`,
+        { headers: bot },
+        true,
+      );
+      if (!members) return [];
+      return members.map((m) => ({ id: m.user.id, username: m.user.username, avatar: m.user.avatar, joined_at: m.joined_at }));
+    },
+    async getGuildCounts(guildId) {
+      return discordJson(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);
     },
     async deleteChannel(channelId) {
       await fetch(`${API}/channels/${channelId}`, { method: 'DELETE', headers: bot }).catch(() => {});

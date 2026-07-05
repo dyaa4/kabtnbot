@@ -1,5 +1,5 @@
 import { DiscordAuthError } from '../discord-rest.js';
-import type { DiscordRest } from '../discord-rest.js';
+import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 
 export class FakeDiscordRest implements DiscordRest {
   users = new Map<string, { id: string; username: string; avatar: string | null }>();
@@ -7,6 +7,8 @@ export class FakeDiscordRest implements DiscordRest {
   botGuilds = new Set<string>();
   guildNames = new Map<string, string>();
   members = new Map<string, { roles: string[] }>();
+  membersList = new Map<string, DiscordMember[]>();
+  guildCounts = new Map<string, number>();
   deletedChannels: string[] = [];
   clearedMessages: string[] = [];
   revokedTokens = new Set<string>();
@@ -31,6 +33,13 @@ export class FakeDiscordRest implements DiscordRest {
   }
   async getMember(guildId: string, userId: string) {
     return this.members.get(`${guildId}:${userId}`) ?? null;
+  }
+  async listMembers(guildId: string, limit = 1000) {
+    return (this.membersList.get(guildId) ?? []).slice(0, limit);
+  }
+  async getGuildCounts(guildId: string) {
+    const count = this.guildCounts.get(guildId);
+    return count === undefined ? null : { approximate_member_count: count };
   }
   async deleteChannel(channelId: string) {
     this.deletedChannels.push(channelId);

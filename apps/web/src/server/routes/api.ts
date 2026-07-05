@@ -4,10 +4,11 @@ import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig,
   topPlayers, getActiveMatch, recentMatches, cancelMatch, adjustPlayerPoints, getUsage,
+  memberSnapshots, matchesPerDay, aiUsageDaily, newPlayersPerDay,
 } from '@gamebot/db';
 import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
-import type { DiscordRest } from '../discord-rest.js';
+import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
 import { requireSession } from '../session.js';
 import { listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
@@ -92,8 +93,116 @@ const AdjustBody = z.object({
   delta: z.number().int().min(-1000).max(1000).refine((d) => d !== 0, 'delta must not be zero'),
 });
 
+const DaysParam = z.enum(['7', '30', '90']).default('30');
+
+// Discord REST results (member list + guild counts) are cached in-memory per guild, mirroring
+// the TTL-cache pattern in guild-access.ts, so the stats route doesn't hammer Discord on every load.
+const STATS_TTL_MS = 5 * 60_000;
+const statsCache = new Map<string, { at: number; value: unknown }>();
+
+export function clearStatsCache(): void {
+  statsCache.clear();
+}
+
+function statsCached<T>(key: string, compute: () => Promise<T>): Promise<T> {
+  const hit = statsCache.get(key);
+  if (hit && Date.now() - hit.at < STATS_TTL_MS) return Promise.resolve(hit.value as T);
+  return compute().then((value) => {
+    statsCache.set(key, { at: Date.now(), value });
+    return value;
+  });
+}
+
+function dateKeyOf(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function cutoffKeyFor(days: number): string {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - days);
+  return dateKeyOf(d);
+}
+
+// Limitation (documented per spec): this fallback curve only reflects members still present
+// today (survivors) — members who joined and later left are invisible retroactively.
+function joinedFallbackSeries(members: DiscordMember[], days: number): { date: string; member_count: number }[] {
+  const cutoffKey = cutoffKeyFor(days);
+  const sorted = [...members].sort((a, b) => a.joined_at.localeCompare(b.joined_at));
+  const perDayCounts = new Map<string, number>();
+  let baseline = 0;
+  for (const m of sorted) {
+    const key = m.joined_at.slice(0, 10);
+    if (key < cutoffKey) {
+      baseline += 1;
+      continue;
+    }
+    perDayCounts.set(key, (perDayCounts.get(key) ?? 0) + 1);
+  }
+  let cumulative = baseline;
+  return [...perDayCounts.keys()].sort().map((date) => {
+    cumulative += perDayCounts.get(date)!;
+    return { date, member_count: cumulative };
+  });
+}
+
 function registerStatsRoutes(router: Router, rest: DiscordRest): void {
   const guard = requireGuildAccess(rest);
+
+  router.get('/guilds/:guildId/stats', guard, async (req, res, next) => {
+    try {
+      const parsedDays = DaysParam.safeParse(req.query.days);
+      if (!parsedDays.success) {
+        apiError(res, 400, 'VALIDATION', 'days must be 7, 30, or 90');
+        return;
+      }
+      const days = Number(parsedDays.data);
+      const guildId = req.params.guildId;
+      const cutoffKey = cutoffKeyFor(days);
+
+      const [members, counts, snapshots, matches, usage, players, top] = await Promise.all([
+        statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
+        statsCached(`counts:${guildId}`, () => rest.getGuildCounts(guildId)),
+        memberSnapshots(guildId, days),
+        matchesPerDay(guildId, days),
+        aiUsageDaily(guildId, days),
+        newPlayersPerDay(guildId, days),
+        topPlayers(guildId, 5),
+      ]);
+
+      const joinedRecent = [...members]
+        .sort((a, b) => b.joined_at.localeCompare(a.joined_at))
+        .slice(0, 12)
+        .map(({ id, username, avatar, joined_at }) => ({ id, username, avatar, joined_at }));
+
+      const newMembers = members.filter((m) => m.joined_at.slice(0, 10) >= cutoffKey).length;
+
+      let memberSeriesSource: 'snapshots' | 'joined_fallback' = 'snapshots';
+      let memberSeries = snapshots;
+      if (memberSeries.length === 0) {
+        memberSeriesSource = 'joined_fallback';
+        memberSeries = joinedFallbackSeries(members, days);
+      }
+
+      const memberCount = counts?.approximate_member_count ?? (members.length > 0 ? members.length : null);
+
+      const totalMatches = matches.reduce((sum, d) => sum + d.count, 0);
+      const totalAiQuestions = usage.reduce((sum, d) => sum + d.ai_questions, 0);
+
+      res.json({
+        memberCount,
+        joinedRecent,
+        memberSeries,
+        memberSeriesSource,
+        matchesPerDay: matches,
+        usageDaily: usage,
+        newPlayersPerDay: players,
+        topPlayers: top,
+        totals: { newMembers, matches: totalMatches, aiQuestions: totalAiQuestions },
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
 
   router.get('/guilds/:guildId/leaderboard', guard, async (req, res, next) => {
     try {
