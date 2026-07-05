@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import type { DiscordRest } from './discord-rest.js';
 import { authRouter } from './routes/auth.js';
+import { apiRouter } from './routes/api.js';
 
 export interface AppDeps {
   rest: DiscordRest;
@@ -46,4 +47,5 @@ export function buildApp(deps: AppDeps): Express {
 // Route registration point; Tasks 5–8 append registrations here.
 function registerRoutes(app: Express, deps: AppDeps): void {
   app.use('/auth', authRouter(deps.rest));
+  app.use('/api', apiRouter(deps.rest));
 }
