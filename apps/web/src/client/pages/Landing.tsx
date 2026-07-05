@@ -32,8 +32,9 @@ export function Landing() {
   return (
     <div className="min-h-screen">
       <header className="flex items-center justify-between px-6 py-4">
-        <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent">
-          Kabtn
+        <span className="text-xl font-black">
+          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">Kabtn</span>
+          <span className="ms-1 text-slate-400">bot</span>
         </span>
         <button
           className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10"

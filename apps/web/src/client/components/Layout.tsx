@@ -18,9 +18,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-md">
         <Link
           to="/app"
-          className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent"
+          className="text-xl font-black"
         >
-          Kabtn
+          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">Kabtn</span>
+          <span className="ms-1 text-slate-400">bot</span>
         </Link>
         <div className="flex items-center gap-4">
           <button
