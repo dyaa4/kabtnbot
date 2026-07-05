@@ -18,4 +18,13 @@ describe('GuildConfigSchema', () => {
   it('rejects invalid dialect', () => {
     expect(() => GuildConfigSchema.parse({ voice: { dialect: 'french' } })).toThrow();
   });
+
+  it('defaults premium to inactive with null overrides', () => {
+    const c = GuildConfigSchema.parse({});
+    expect(c.premium).toEqual({
+      active: false,
+      listen_minutes_override: null,
+      ai_questions_override: null,
+    });
+  });
 });

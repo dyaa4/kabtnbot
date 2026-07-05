@@ -29,6 +29,13 @@ export const GuildConfigSchema = z.object({
       ai_questions_per_day: z.number().int().positive().default(50),
     })
     .default({}),
+  premium: z
+    .object({
+      active: z.boolean().default(false),
+      listen_minutes_override: z.number().int().positive().nullable().default(null),
+      ai_questions_override: z.number().int().positive().nullable().default(null),
+    })
+    .default({}),
 });
 
 export type GuildConfig = z.infer<typeof GuildConfigSchema>;
