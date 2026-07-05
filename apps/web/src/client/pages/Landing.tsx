@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
-import { KabtnBot } from '../components/KabtnBot.js';
+import { HomeImage } from '../components/HomeImage.js';
 
 interface Meta {
   clientId: string;
@@ -70,8 +70,8 @@ export function Landing() {
             </div>
           </div>
 
-          <div className="mx-auto flex w-[280px] justify-center md:w-[340px]">
-            <KabtnBot className="w-full max-w-[320px]" />
+          <div className="mx-auto flex w-[260px] justify-center sm:w-[320px] md:w-[380px]">
+            <HomeImage className="w-full" />
           </div>
         </div>
       </section>
