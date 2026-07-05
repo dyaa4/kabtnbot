@@ -4,3 +4,4 @@ export * from './repos/guild-config-repo.js';
 export * from './repos/player-repo.js';
 export * from './repos/match-repo.js';
 export * from './repos/usage-repo.js';
+export * from './repos/analytics-repo.js';
