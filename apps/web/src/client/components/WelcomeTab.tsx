@@ -129,7 +129,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
     return () => el.removeEventListener('wheel', onWheel);
   }, [hasBanner]);
 
-  if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (cfg.isLoading || banner.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
 
   const updateFromPointer = (clientX: number, clientY: number) => {
     const rect = boxRef.current?.getBoundingClientRect();
