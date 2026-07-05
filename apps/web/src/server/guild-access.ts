@@ -41,9 +41,9 @@ async function isEligible(
   if (!(await rest.getGuild(guild.id))) return false; // bot not a member
   if (hasManagePermission(guild.permissions)) return true;
   const config = await getGuildConfig(guild.id);
-  if (!config.customs.admin_role_id) return false;
+  if (!config.admin_role_id) return false;
   const member = await rest.getMember(guild.id, session.uid);
-  return member?.roles.includes(config.customs.admin_role_id) ?? false;
+  return member?.roles.includes(config.admin_role_id) ?? false;
 }
 
 export function listEligibleGuilds(rest: DiscordRest, session: Session): Promise<EligibleGuild[]> {

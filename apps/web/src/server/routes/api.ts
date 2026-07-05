@@ -14,20 +14,38 @@ import { apiError } from '../app.js';
 
 const ConfigPatch = z
   .object({
+    admin_role_id: z.string().nullable().optional(),
     voice: z
       .object({
         enabled: z.boolean().optional(),
         wake_word: z.string().min(2).max(30).optional(),
         dialect: z.enum(DIALECTS).optional(),
         allowed_channel_ids: z.array(z.string()).max(50).optional(),
+        personality_enabled: z.boolean().optional(),
       })
       .strict()
       .optional(),
-    customs: z
+    protection: z
       .object({
-        win_points: z.number().int().min(-1000).max(1000).optional(),
-        loss_points: z.number().int().min(-1000).max(1000).optional(),
-        admin_role_id: z.string().nullable().optional(),
+        enabled: z.boolean().optional(),
+        voice_moderation: z.boolean().optional(),
+        text_protection: z.boolean().optional(),
+        custom_words: z.array(z.string().min(1).max(60)).max(200).optional(),
+        allowed_domains: z.array(z.string().min(3).max(120)).max(200).optional(),
+        log_channel_id: z.string().nullable().optional(),
+      })
+      .strict()
+      .optional(),
+    welcome: z
+      .object({
+        enabled: z.boolean().optional(),
+        channel_id: z.string().nullable().optional(),
+        message: z.string().max(500).optional(),
+        banner_url: z.string().url().nullable().optional(),
+        avatar_x: z.number().min(0).max(1).optional(),
+        avatar_y: z.number().min(0).max(1).optional(),
+        avatar_size: z.number().min(0.05).max(0.6).optional(),
+        show_name: z.boolean().optional(),
       })
       .strict()
       .optional(),

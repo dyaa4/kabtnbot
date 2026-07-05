@@ -47,7 +47,7 @@ describe('guild access', () => {
   });
 
   it('includes guilds via configured admin role', async () => {
-    await updateGuildConfig('g-role', { customs: { admin_role_id: 'r9' } });
+    await updateGuildConfig('g-role', { admin_role_id: 'r9' });
     rest.members.set('g-role:u1', { roles: ['r9'] });
     const list = await listEligibleGuilds(rest, makeSession());
     expect(list.map((g) => g.id)).toContain('g-role');

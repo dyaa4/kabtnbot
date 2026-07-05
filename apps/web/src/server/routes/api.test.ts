@@ -60,7 +60,7 @@ describe('api routes', () => {
   it('reads and patches config; invalid patch → 400; premium not patchable', async () => {
     const { app, cookie } = setup();
     const before = await request(app).get('/api/guilds/g1/config').set('Cookie', cookie);
-    expect(before.body.voice.wake_word).toBe('يا بوت');
+    expect(before.body.voice.wake_word).toBe('يا كابتن');
 
     const patch = await request(app)
       .patch('/api/guilds/g1/config')
@@ -81,6 +81,46 @@ describe('api routes', () => {
       .set('Cookie', cookie)
       .send({ premium: { active: true } });
     expect(premium.status).toBe(400);
+  });
+
+  it('patches protection.enabled and persists it', async () => {
+    const { app, cookie } = setup();
+    const patch = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ protection: { enabled: true } });
+    expect(patch.status).toBe(200);
+    expect(patch.body.protection.enabled).toBe(true);
+    expect((await getGuildConfig('g1')).protection.enabled).toBe(true);
+  });
+
+  it('rejects welcome.avatar_x out of range with 400', async () => {
+    const { app, cookie } = setup();
+    const res = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ welcome: { avatar_x: 1.5 } });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects unknown top-level customs key with 400', async () => {
+    const { app, cookie } = setup();
+    const res = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ customs: { admin_role_id: 'r1' } });
+    expect(res.status).toBe(400);
+  });
+
+  it('patches voice.personality_enabled and persists it', async () => {
+    const { app, cookie } = setup();
+    const patch = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ voice: { personality_enabled: true } });
+    expect(patch.status).toBe(200);
+    expect(patch.body.voice.personality_enabled).toBe(true);
+    expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
   });
 
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {
