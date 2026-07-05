@@ -40,6 +40,12 @@ function domainOf(token: string): string | null {
   return m ? m[1].toLowerCase().replace(/^www\./, '') : null;
 }
 
+// Arabic possessive/object clitics that attach to the end of a word with no space
+// (كسك، طيزها، زبه …). Allowing one optional trailing clitic catches the inflected
+// forms without loosening to substring matching — the word still has to start at a
+// token boundary, so roots inside innocent words (مكسور، كسر، كسل) stay unmatched.
+const AR_SUFFIXES = 'ها|هم|هن|كم|كن|نا|ني|ه|ك|ي';
+
 export function matchesProfanity(text: string, customWords: string[]): boolean {
   const n = normalizeText(text);
   const words = [...BUILTIN_PROFANITY, ...customWords.map((w) => w.toLowerCase())];
@@ -49,7 +55,7 @@ export function matchesProfanity(text: string, customWords: string[]): boolean {
     // Whisper renders a word-final ta-marbuta (ة, normalized to ه) as ه or ا
     // inconsistently, so let a trailing ه/ا in the entry match either ending.
     const body = /[ها]$/.test(nw) ? `${escapeRe(nw.slice(0, -1))}[ها]` : escapeRe(nw);
-    return new RegExp(`(^|[^\\p{L}])${body}([^\\p{L}]|$)`, 'u').test(` ${n} `);
+    return new RegExp(`(^|[^\\p{L}])${body}(?:${AR_SUFFIXES})?([^\\p{L}]|$)`, 'u').test(` ${n} `);
   });
 }
 

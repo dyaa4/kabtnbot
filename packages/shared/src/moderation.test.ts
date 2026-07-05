@@ -45,6 +45,20 @@ describe('matchesProfanity', () => {
     // but it must not turn an unrelated clean word into a match
     expect(matchesProfanity('مرحبا يا شباب', ['زنبورة'])).toBe(false);
   });
+  it('matches an entry with an attached Arabic possessive/object suffix (كسك، طيزها، زبه)', () => {
+    expect(matchesProfanity('يا كسك', ['كس'])).toBe(true);
+    expect(matchesProfanity('شفت طيزها', ['طيز'])).toBe(true);
+    expect(matchesProfanity('قطع زبه', ['زب'])).toBe(true);
+    expect(matchesProfanity('روح يا كلبهم', [])).toBe(true); // built-in كلب + هم
+  });
+  it('suffix matching does not turn innocent same-root words into matches', () => {
+    // a leading letter before the root fails the boundary (no prefix matching)
+    expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(false); // مكسور (broken)
+    // trailing letters that are not clitics keep the word clean
+    expect(matchesProfanity('كسر الكوب', ['كس'])).toBe(false); // كسر (to break)
+    expect(matchesProfanity('عندي كسل اليوم', ['كس'])).toBe(false); // كسل (laziness)
+    expect(matchesProfanity('جاء الزبون', ['زب'])).toBe(false); // زبون (customer)
+  });
   it('ships a bilingual built-in blocklist (no custom words needed)', () => {
     // representative English
     for (const s of ['you fucking noob', 'what a bitch', 'go to hell asshole']) {

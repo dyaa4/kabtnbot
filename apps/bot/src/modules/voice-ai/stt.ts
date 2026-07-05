@@ -12,7 +12,10 @@ export async function transcribe(audioBuffer: Buffer, wakeWordHint: string): Pro
     const result = await groq.audio.transcriptions.create({
       ...base,
       file: makeFile(),
-      prompt: `${wakeWordHint} مرحبا السلام عليكم وزع الفرق قسم الفرق اسأل قل`,
+      // Prompt only with the wake word so commands still transcribe well. Do NOT seed
+      // polite/greeting phrases here: Whisper biases decoding toward the prompt, and
+      // greetings steer it away from emitting the profane words moderation must catch.
+      prompt: wakeWordHint,
     });
     return result.text;
   } catch {
