@@ -38,6 +38,8 @@
   "settings.customs.adminRole": "معرف الرول الإداري",
   "settings.save": "حفظ",
   "settings.saved": "تم الحفظ",
+  "leaderboard.rank": "#",
+  "leaderboard.player": "اللاعب",
   "leaderboard.points": "النقاط",
   "leaderboard.wl": "فوز/خسارة",
   "leaderboard.adjust": "تعديل النقاط",

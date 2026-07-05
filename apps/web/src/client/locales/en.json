@@ -38,6 +38,8 @@
   "settings.customs.adminRole": "Admin role ID",
   "settings.save": "Save",
   "settings.saved": "Saved",
+  "leaderboard.rank": "#",
+  "leaderboard.player": "Player",
   "leaderboard.points": "Points",
   "leaderboard.wl": "W/L",
   "leaderboard.adjust": "Adjust points",

@@ -30,8 +30,8 @@ export function LeaderboardTab({ guildId }: { guildId: string }) {
     <table className="w-full rounded-xl border border-slate-800 bg-slate-900 text-sm">
       <thead>
         <tr className="border-b border-slate-800 text-start text-slate-400">
-          <th className="p-3 text-start">#</th>
-          <th className="p-3 text-start">ID</th>
+          <th className="p-3 text-start">{t('leaderboard.rank')}</th>
+          <th className="p-3 text-start">{t('leaderboard.player')}</th>
           <th className="p-3 text-start">{t('leaderboard.points')}</th>
           <th className="p-3 text-start">{t('leaderboard.wl')}</th>
           <th className="p-3 text-start">{t('leaderboard.adjust')}</th>
