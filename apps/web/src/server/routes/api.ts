@@ -117,10 +117,10 @@ function dateKeyOf(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Single source of truth for the window's boundary: must always equal fillDays(days)[0], i.e.
+// the earliest day rendered (today - days + 1), so "cutoff" and "first visited day" never drift.
 function cutoffKeyFor(days: number): string {
-  const d = new Date();
-  d.setUTCDate(d.getUTCDate() - days);
-  return dateKeyOf(d);
+  return fillDays(days)[0];
 }
 
 // Every UTC calendar day from (today - days + 1) to today, inclusive — `days` entries total.

@@ -97,6 +97,39 @@ describe('analytics-repo: matchesPerDay', () => {
     await completeMatch('gMatchIso', m._id.toString(), 'a');
     expect(await matchesPerDay('gOtherMatch', 30)).toEqual([]);
   });
+
+  it('includes the boundary day today-days+1 and excludes today-days (the rendered window is inclusive)', async () => {
+    const days = 7;
+
+    // Completed exactly on today-days+1 -> the earliest day the caller renders. Must be included.
+    const included = await createMatch({
+      guildId: 'gMatchBoundary', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'chb1',
+    });
+    await setMatchStarted('gMatchBoundary', included._id.toString(), ['a'], ['b'], []);
+    await completeMatch('gMatchBoundary', included._id.toString(), 'a');
+    // End-of-day timestamp so it's deterministically >= cutoffDate() regardless of how many
+    // milliseconds elapse between this setup and the query's own `new Date()` call below.
+    const includedDate = new Date();
+    includedDate.setUTCDate(includedDate.getUTCDate() - (days - 1));
+    includedDate.setUTCHours(23, 59, 59, 999);
+    await MatchModel.updateOne({ _id: included._id }, { $set: { completed_at: includedDate } });
+
+    // Completed exactly on today-days -> one day before the rendered window. Must be excluded.
+    const excluded = await createMatch({
+      guildId: 'gMatchBoundary', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'chb2',
+    });
+    await setMatchStarted('gMatchBoundary', excluded._id.toString(), ['a'], ['b'], []);
+    await completeMatch('gMatchBoundary', excluded._id.toString(), 'a');
+    const excludedDate = new Date();
+    excludedDate.setUTCDate(excludedDate.getUTCDate() - days);
+    await MatchModel.updateOne({ _id: excluded._id }, { $set: { completed_at: excludedDate } });
+
+    const perDay = await matchesPerDay('gMatchBoundary', days);
+    const total = perDay.reduce((sum, d) => sum + d.count, 0);
+    expect(total).toBe(1);
+    expect(perDay.some((d) => d.date === daysAgoKey(days - 1))).toBe(true);
+    expect(perDay.some((d) => d.date === daysAgoKey(days))).toBe(false);
+  });
 });
 
 describe('analytics-repo: aiUsageDaily', () => {
@@ -113,6 +146,17 @@ describe('analytics-repo: aiUsageDaily', () => {
     expect(usage[0].ai_questions).toBe(2);
     expect(usage[1].date).toBe(daysAgoKey(1));
     expect(usage[1].listen_seconds).toBe(45);
+  });
+
+  it('includes the boundary day today-days+1 and excludes today-days (the rendered window is inclusive)', async () => {
+    const days = 7;
+    await incrementAiQuestions('gUseBoundary', daysAgoKey(days - 1)); // earliest rendered day -> included
+    await incrementAiQuestions('gUseBoundary', daysAgoKey(days)); // one day before the window -> excluded
+
+    const usage = await aiUsageDaily('gUseBoundary', days);
+    const dates = usage.map((u) => u.date);
+    expect(dates).toContain(daysAgoKey(days - 1));
+    expect(dates).not.toContain(daysAgoKey(days));
   });
 });
 

@@ -164,4 +164,54 @@ describe('stats route', () => {
     expect(res.body.matchesPerDay.at(-1).date).toBe(todayKey());
     expect(res.body.mostActive).toEqual([]);
   });
+
+  it('usage seeded on the boundary day (today-days+1, i.e. fillDays[0]) appears with its true value and is included in totals', async () => {
+    const { app, cookie } = setup('gStatsBoundaryUsage');
+    const days = 7;
+    const boundaryKey = dateKeyDaysAgo(days - 1); // earliest day the response renders
+
+    await incrementAiQuestions('gStatsBoundaryUsage', boundaryKey);
+    await incrementAiQuestions('gStatsBoundaryUsage', boundaryKey);
+
+    const res = await request(app).get(`/api/guilds/gStatsBoundaryUsage/stats?days=${days}`).set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.usageDaily[0].date).toBe(boundaryKey);
+    expect(res.body.usageDaily[0].ai_questions).toBe(2);
+    expect(res.body.totals.aiQuestions).toBe(2);
+  });
+
+  it('a member joined exactly on the boundary day (today-days+1) counts in the fallback series first day, not dropped', async () => {
+    const { app, rest, cookie } = setup('gStatsBoundaryJoin');
+    const days = 7;
+    const boundaryIso = isoDaysAgo(days - 1);
+    const boundaryKey = boundaryIso.slice(0, 10);
+    rest.membersList.set('gStatsBoundaryJoin', [
+      { id: 'm1', username: 'A', avatar: null, joined_at: boundaryIso },
+    ]);
+
+    const res = await request(app).get(`/api/guilds/gStatsBoundaryJoin/stats?days=${days}`).set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.memberSeriesSource).toBe('joined_fallback');
+    expect(res.body.memberSeries[0].date).toBe(boundaryKey);
+    expect(res.body.memberSeries[0].member_count).toBe(1);
+    expect(res.body.totals.newMembers).toBe(1);
+  });
+
+  it('a member joined exactly on the old (pre-fix) cutoff day today-days is treated as pre-window baseline, never silently dropped', async () => {
+    const { app, rest, cookie } = setup('gStatsPreFixCutoff');
+    const days = 7;
+    // Under the old buggy cutoff (today-days), a join on this exact day was excluded from the
+    // baseline test AND fell on a date fillDays never visits -- vanishing from the series entirely.
+    const droppedJoinIso = isoDaysAgo(days);
+    rest.membersList.set('gStatsPreFixCutoff', [
+      { id: 'm1', username: 'A', avatar: null, joined_at: droppedJoinIso },
+    ]);
+
+    const res = await request(app).get(`/api/guilds/gStatsPreFixCutoff/stats?days=${days}`).set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.memberSeriesSource).toBe('joined_fallback');
+    // Now correctly folded into the pre-window baseline: present from the first rendered day onward.
+    expect(res.body.memberSeries[0].member_count).toBe(1);
+    expect(res.body.memberSeries.at(-1).member_count).toBe(1);
+  });
 });

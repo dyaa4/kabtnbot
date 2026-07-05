@@ -4,9 +4,12 @@ function dateKeyOf(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+// Inclusive window contract: callers render exactly `days` calendar days, from
+// (today - days + 1) through today inclusive. The cutoff must therefore land on
+// (today - days + 1), not (today - days), or the earliest rendered day's data is dropped.
 function cutoffDate(days: number): Date {
   const d = new Date();
-  d.setUTCDate(d.getUTCDate() - days);
+  d.setUTCDate(d.getUTCDate() - (days - 1));
   return d;
 }
 
