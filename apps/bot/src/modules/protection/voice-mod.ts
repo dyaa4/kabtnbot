@@ -51,14 +51,22 @@ export async function handleTranscriptModeration(
   const channel = resolveModerationChannel(guild, config.protection.log_channel_id);
   console.log(`[Mod ${guild.id}] MATCH → kicking ${userId}; notice channel=${channel ? 'found' : 'none'}`);
 
-  // Immediate kick on the first profane word. Text notice works even without
-  // TTS; the spoken line is best-effort.
-  await channel
-    ?.send(`🚫 تم إخراج <@${userId}> من الصوت بسبب ألفاظ غير لائقة.`)
-    .catch((e) => console.error('[Mod] send failed (needs Send Messages perm?):', (e as Error)?.message ?? e));
-  await playSpeech(guild.id, `يا ${name}، تم إخراجك بسبب الألفاظ غير اللائقة.`).catch(() => {});
-  await member?.voice
-    .disconnect()
-    .catch((e) => console.error('[Mod] disconnect failed (needs Move Members perm?):', (e as Error)?.message ?? e));
+  // Attempt the kick FIRST, then post a notice reflecting what actually happened.
+  // A disconnect can fail on role hierarchy (bot role must be above the target)
+  // or a missing Move Members permission — surface that instead of falsely
+  // claiming the member was removed.
+  let kicked = false;
+  try {
+    await member?.voice.disconnect();
+    kicked = true;
+  } catch (e) {
+    console.error('[Mod] disconnect failed (role hierarchy / Move Members perm):', (e as Error)?.message ?? e);
+  }
+
+  const notice = kicked
+    ? `🚫 تم إخراج <@${userId}> من الصوت بسبب ألفاظ غير لائقة.`
+    : `⚠️ رصدت ألفاظاً من <@${userId}> لكن تعذّر إخراجه — تأكد أن رتبة البوت أعلى من رتبته ولديه صلاحية «نقل الأعضاء».`;
+  await channel?.send(notice).catch((e) => console.error('[Mod] send failed (needs Send Messages perm?):', (e as Error)?.message ?? e));
+  if (kicked) await playSpeech(guild.id, `يا ${name}، تم إخراجك بسبب الألفاظ غير اللائقة.`).catch(() => {});
   return true;
 }

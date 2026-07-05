@@ -60,7 +60,7 @@ describe('handleTranscriptModeration — immediate kick', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it('kicks on the FIRST profane word and posts a text notice', async () => {
+  it('kicks on the FIRST profane word and posts a success notice', async () => {
     vi.mocked(getCachedGuildConfig).mockResolvedValue(enabled as never);
     const disconnect = vi.fn(async () => {});
     const send = vi.fn(async () => {});
@@ -68,6 +68,21 @@ describe('handleTranscriptModeration — immediate kick', () => {
     expect(acted).toBe(true);
     expect(disconnect).toHaveBeenCalledTimes(1);
     expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toContain('تم إخراج');
+  });
+
+  it('when the kick fails (role hierarchy), posts a failure notice instead of a false success', async () => {
+    vi.mocked(getCachedGuildConfig).mockResolvedValue(enabled as never);
+    const disconnect = vi.fn(async () => {
+      throw new Error('Missing Permissions');
+    });
+    const send = vi.fn(async () => {});
+    const acted = await handleTranscriptModeration(guildWithMember(disconnect, send), {} as never, 'u', 'انت بادوورد');
+    expect(acted).toBe(true);
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toContain('تعذّر إخراجه');
+    expect(send.mock.calls[0][0]).not.toContain('تم إخراج');
   });
 
   it('does nothing for clean speech', async () => {
