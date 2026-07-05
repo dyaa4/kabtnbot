@@ -9,7 +9,7 @@ interface GuildConfigResp {
     enabled: boolean;
     channel_id: string | null;
     message: string;
-    banner_url: string | null;
+    banner_url: string | null; // legacy URL banners keep working as a preview/render fallback
     avatar_x: number;
     avatar_y: number;
     avatar_size: number;
@@ -24,6 +24,8 @@ interface Pos {
 }
 
 const DEFAULT_POS: Pos = { x: 0.5, y: 0.4, size: 0.25 };
+const SIZE_MIN = 0.05;
+const SIZE_MAX = 0.6;
 
 function clamp(n: number, min: number, max: number): number {
   if (Number.isNaN(n)) return min;
@@ -34,15 +36,23 @@ function round(n: number): number {
   return Math.round(n * 1000) / 1000;
 }
 
-function posTextOf(p: Pos): { x: string; y: string; size: string } {
-  return { x: String(p.x), y: String(p.y), size: String(p.size) };
-}
-
 export function WelcomeTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
   const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
+
+  // Uploaded banner bytes, exposed as an object URL for the preview; null = none uploaded.
+  const banner = useQuery({
+    queryKey: ['banner', guildId],
+    staleTime: Infinity,
+    queryFn: async () => {
+      const res = await fetch(`/api/guilds/${guildId}/assets/welcome-banner`, { credentials: 'same-origin' });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`banner ${res.status}`);
+      return URL.createObjectURL(await res.blob());
+    },
+  });
 
   const patch = useMutation({
     mutationFn: (body: object) => api(`/api/guilds/${guildId}/config`, { method: 'PATCH', body: JSON.stringify(body) }),
@@ -53,21 +63,43 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
     },
   });
 
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      const res = await fetch(`/api/guilds/${guildId}/assets/welcome-banner`, {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': file.type || 'application/octet-stream' },
+        body: file,
+      });
+      if (!res.ok) throw new Error(`upload ${res.status}`);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['banner', guildId] }),
+  });
+
+  const removeBanner = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/guilds/${guildId}/assets/welcome-banner`, {
+        method: 'DELETE',
+        credentials: 'same-origin',
+      });
+      if (!res.ok) throw new Error(`delete ${res.status}`);
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['banner', guildId] }),
+  });
+
   const [enabled, setEnabled] = useState(false);
   const [channelId, setChannelId] = useState('');
   const [message, setMessage] = useState('');
-  const [bannerUrl, setBannerUrl] = useState('');
   const [showName, setShowName] = useState(true);
-  // `pos` is the committed numeric state used for the drag handle and for saving.
-  // `posText` mirrors the raw text of the three number inputs so that typing a decimal
-  // (e.g. "0", "0.", "0.3") is never reformatted mid-keystroke by a clamped numeric
-  // round-trip - that reformatting corrupts what the user is typing and can leave the
-  // native number input in a state that blocks form submission.
   const [pos, setPos] = useState<Pos>(DEFAULT_POS);
-  const [posText, setPosText] = useState(posTextOf(DEFAULT_POS));
+  // Natural width/height ratio of the banner so the preview matches what the bot renders.
+  const [ratio, setRatio] = useState<number | null>(null);
 
   const boxRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const draggingRef = useRef(false);
+  const resizingRef = useRef(false);
 
   useEffect(() => {
     if (cfg.data) {
@@ -75,28 +107,36 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       setEnabled(w.enabled);
       setChannelId(w.channel_id ?? '');
       setMessage(w.message);
-      setBannerUrl(w.banner_url ?? '');
       setShowName(w.show_name);
-      const next = { x: w.avatar_x, y: w.avatar_y, size: w.avatar_size };
-      setPos(next);
-      setPosText(posTextOf(next));
+      setPos({ x: w.avatar_x, y: w.avatar_y, size: w.avatar_size });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.data]);
 
-  if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  const bannerSrc = banner.data ?? cfg.data?.welcome.banner_url ?? null;
+  const hasBanner = bannerSrc !== null;
 
-  const commitPos = (next: Pos) => {
-    setPos(next);
-    setPosText(posTextOf(next));
-  };
+  // React attaches onWheel passively, so preventDefault (needed to stop the page
+  // from scrolling while resizing) requires a native non-passive listener.
+  useEffect(() => {
+    const el = handleRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      setPos((p) => ({ ...p, size: round(clamp(p.size + (e.deltaY < 0 ? 0.02 : -0.02), SIZE_MIN, SIZE_MAX)) }));
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [hasBanner]);
+
+  if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
 
   const updateFromPointer = (clientX: number, clientY: number) => {
     const rect = boxRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0 || rect.height === 0) return;
     const x = round(clamp((clientX - rect.left) / rect.width, 0, 1));
     const y = round(clamp((clientY - rect.top) / rect.height, 0, 1));
-    commitPos({ ...pos, x, y });
+    setPos((p) => ({ ...p, x, y }));
   };
 
   const onHandlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -116,38 +156,62 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   };
   const onHandleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const step = 0.01;
-    if (e.key === 'ArrowLeft') commitPos({ ...pos, x: round(clamp(pos.x - step, 0, 1)) });
-    else if (e.key === 'ArrowRight') commitPos({ ...pos, x: round(clamp(pos.x + step, 0, 1)) });
-    else if (e.key === 'ArrowUp') commitPos({ ...pos, y: round(clamp(pos.y - step, 0, 1)) });
-    else if (e.key === 'ArrowDown') commitPos({ ...pos, y: round(clamp(pos.y + step, 0, 1)) });
+    if (e.key === 'ArrowLeft') setPos((p) => ({ ...p, x: round(clamp(p.x - step, 0, 1)) }));
+    else if (e.key === 'ArrowRight') setPos((p) => ({ ...p, x: round(clamp(p.x + step, 0, 1)) }));
+    else if (e.key === 'ArrowUp') setPos((p) => ({ ...p, y: round(clamp(p.y - step, 0, 1)) }));
+    else if (e.key === 'ArrowDown') setPos((p) => ({ ...p, y: round(clamp(p.y + step, 0, 1)) }));
+    else if (e.key === '+' || e.key === '=') setPos((p) => ({ ...p, size: round(clamp(p.size + 0.02, SIZE_MIN, SIZE_MAX)) }));
+    else if (e.key === '-') setPos((p) => ({ ...p, size: round(clamp(p.size - 0.02, SIZE_MIN, SIZE_MAX)) }));
     else return;
     e.preventDefault();
   };
 
-  const onNumberInputChange =
-    (field: keyof Pos, min: number, max: number) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value;
-      setPosText((prev) => ({ ...prev, [field]: raw }));
-      const n = Number(raw);
-      if (raw.trim() !== '' && Number.isFinite(n)) {
-        setPos((p) => ({ ...p, [field]: clamp(n, min, max) }));
-      }
-    };
+  const resizeFromPointer = (clientX: number, clientY: number) => {
+    const rect = boxRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const cx = rect.left + pos.x * rect.width;
+    const cy = rect.top + pos.y * rect.height;
+    // The grip sits on the corner of the circle's bounding square → radius = dist / √2.
+    const dist = Math.hypot(clientX - cx, clientY - cy);
+    const size = round(clamp((2 * dist) / Math.SQRT2 / rect.width, SIZE_MIN, SIZE_MAX));
+    setPos((p) => ({ ...p, size }));
+  };
 
-  const onNumberInputBlur = (field: keyof Pos) => () => {
-    setPosText((prev) => ({ ...prev, [field]: String(pos[field]) }));
+  const onGripPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    resizingRef.current = true;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const onGripPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!resizingRef.current) return;
+    e.stopPropagation();
+    resizeFromPointer(e.clientX, e.clientY);
+  };
+  const onGripPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    resizingRef.current = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
+  const onFilePicked = (file: File | null | undefined) => {
+    if (file) upload.mutate(file);
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    onFilePicked(e.dataTransfer.files?.[0]);
   };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedChannel = channelId.trim();
-    const trimmedBanner = bannerUrl.trim();
     patch.mutate({
       welcome: {
         enabled,
         channel_id: trimmedChannel === '' ? null : trimmedChannel,
         message,
-        banner_url: trimmedBanner === '' ? null : trimmedBanner,
         avatar_x: pos.x,
         avatar_y: pos.y,
         avatar_size: pos.size,
@@ -155,8 +219,6 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       },
     });
   };
-
-  const hasBanner = bannerUrl.trim() !== '';
 
   return (
     <div className="grid gap-8">
@@ -192,19 +254,39 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('welcome.message.hint')}</p>
 
-        <label className="mb-4 block">
-          <span className="mb-1 block text-sm text-slate-400">{t('welcome.bannerUrl')}</span>
-          <input
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-            value={bannerUrl}
-            onChange={(e) => setBannerUrl(e.target.value)}
-          />
-        </label>
-
         <label className="mb-4 flex items-center gap-2">
           <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
           <span>{t('welcome.showName')}</span>
         </label>
+
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          className="hidden"
+          data-testid="banner-file-input"
+          onChange={(e) => {
+            onFilePicked(e.target.files?.[0]);
+            e.target.value = '';
+          }}
+        />
+
+        {!hasBanner && (
+          <div
+            role="button"
+            tabIndex={0}
+            aria-label={t('welcome.upload')}
+            onClick={() => fileRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') fileRef.current?.click();
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={onDrop}
+            className="mb-4 flex h-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-slate-950/40 text-slate-400 transition hover:border-cyan-400/50 hover:text-cyan-300"
+          >
+            {upload.isPending ? t('welcome.uploading') : t('welcome.upload')}
+          </div>
+        )}
 
         {hasBanner && (
           <div className="mb-4">
@@ -212,12 +294,24 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
             <div
               ref={boxRef}
               className="relative w-full select-none overflow-hidden rounded-xl border border-white/10 bg-slate-950/60"
-              style={{ aspectRatio: '16 / 9' }}
+              style={{ aspectRatio: ratio ?? 16 / 9 }}
               onPointerMove={onHandlePointerMove}
               onPointerUp={onHandlePointerUp}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={onDrop}
             >
-              <img src={bannerUrl} alt="" className="h-full w-full object-cover" draggable={false} />
+              <img
+                src={bannerSrc}
+                alt=""
+                className="h-full w-full object-cover"
+                draggable={false}
+                onLoad={(e) => {
+                  const img = e.currentTarget;
+                  if (img.naturalWidth > 0 && img.naturalHeight > 0) setRatio(img.naturalWidth / img.naturalHeight);
+                }}
+              />
               <div
+                ref={handleRef}
                 role="slider"
                 tabIndex={0}
                 aria-label={t('welcome.avatarHandle')}
@@ -236,52 +330,40 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
                 }}
-              />
+              >
+                <div
+                  role="slider"
+                  aria-label={t('welcome.resizeGrip')}
+                  aria-valuemin={SIZE_MIN}
+                  aria-valuemax={SIZE_MAX}
+                  aria-valuenow={pos.size}
+                  onPointerDown={onGripPointerDown}
+                  onPointerMove={onGripPointerMove}
+                  onPointerUp={onGripPointerUp}
+                  className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-nwse-resize touch-none rounded-full border border-slate-900 bg-cyan-300 shadow"
+                />
+              </div>
+            </div>
+            <div className="mt-2 flex gap-3">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300"
+              >
+                {upload.isPending ? t('welcome.uploading') : t('welcome.changeImage')}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeBanner.mutate()}
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-red-400/50 hover:text-red-300"
+              >
+                {t('welcome.removeImage')}
+              </button>
             </div>
           </div>
         )}
 
-        <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <label className="block">
-            <span className="mb-1 block text-sm text-slate-400">{t('welcome.avatarX')}</span>
-            <input
-              type="number"
-              step={0.01}
-              min={0}
-              max={1}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-              value={posText.x}
-              onChange={onNumberInputChange('x', 0, 1)}
-              onBlur={onNumberInputBlur('x')}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm text-slate-400">{t('welcome.avatarY')}</span>
-            <input
-              type="number"
-              step={0.01}
-              min={0}
-              max={1}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-              value={posText.y}
-              onChange={onNumberInputChange('y', 0, 1)}
-              onBlur={onNumberInputBlur('y')}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm text-slate-400">{t('welcome.avatarSize')}</span>
-            <input
-              type="number"
-              step={0.01}
-              min={0.05}
-              max={0.6}
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-              value={posText.size}
-              onChange={onNumberInputChange('size', 0.05, 0.6)}
-              onBlur={onNumberInputBlur('size')}
-            />
-          </label>
-        </div>
+        {upload.isError && <p className="mb-3 text-sm text-red-400">{t('welcome.uploadFailed')}</p>}
 
         <button
           className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"

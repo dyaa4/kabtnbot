@@ -67,6 +67,32 @@ const activityDailySchema = new Schema<ActivityDailyDoc>({
 activityDailySchema.index({ guild_id: 1, user_id: 1, date: 1 }, { unique: true });
 activityDailySchema.index({ guild_id: 1, date: 1 });
 
+export type GuildAssetKind = 'welcome_banner';
+
+export interface GuildAssetDoc {
+  guild_id: string;
+  kind: GuildAssetKind;
+  content_type: string;
+  data: Buffer;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const guildAssetSchema = new Schema<GuildAssetDoc>(
+  {
+    guild_id: { type: String, required: true },
+    kind: { type: String, required: true },
+    content_type: { type: String, required: true },
+    data: { type: Buffer, required: true },
+  },
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
+);
+guildAssetSchema.index({ guild_id: 1, kind: 1 }, { unique: true });
+
+export const GuildAssetModel =
+  (mongoose.models.GuildAsset as mongoose.Model<GuildAssetDoc>) ??
+  mongoose.model<GuildAssetDoc>('GuildAsset', guildAssetSchema);
+
 export const ActivityDailyModel =
   (mongoose.models.ActivityDaily as mongoose.Model<ActivityDailyDoc>) ??
   mongoose.model<ActivityDailyDoc>('ActivityDaily', activityDailySchema);

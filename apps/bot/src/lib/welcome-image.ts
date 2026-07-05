@@ -8,7 +8,7 @@ export function formatWelcome(template: string, vars: { user: string; server: st
 }
 
 export async function renderWelcomeImage(opts: {
-  bannerUrl: string;
+  banner: Buffer | string; // uploaded image bytes, or a legacy https URL
   avatarUrl: string;
   name: string | null;
   x: number;
@@ -18,8 +18,10 @@ export async function renderWelcomeImage(opts: {
   // Guild-admin-gated but cheap to harden: reject non-https URLs so an admin can't point
   // banner_url at internal/metadata endpoints (e.g. http://169.254.169.254). The caller
   // catches and falls back to a text-only welcome.
-  if (!opts.bannerUrl.startsWith('https://')) throw new Error('bannerUrl must be https');
-  const banner = await loadImage(opts.bannerUrl);
+  if (typeof opts.banner === 'string' && !opts.banner.startsWith('https://')) {
+    throw new Error('banner URL must be https');
+  }
+  const banner = await loadImage(opts.banner);
   const W = banner.width;
   const H = banner.height;
   const canvas = createCanvas(W, H);

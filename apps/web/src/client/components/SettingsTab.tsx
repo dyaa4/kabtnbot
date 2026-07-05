@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DIALECTS } from '@gamebot/shared';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { BotProfileCard } from './BotProfileCard.js';
 
 const VoiceForm = z.object({
   enabled: z.boolean(),
@@ -140,6 +141,8 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           {t('settings.save')}
         </button>
       </form>
+
+      <BotProfileCard guildId={guildId} />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { AttachmentBuilder, type Client, type TextChannel } from 'discord.js';
-import { getGuildConfig } from '@gamebot/db';
+import { getGuildAsset, getGuildConfig } from '@gamebot/db';
 import { formatWelcome, renderWelcomeImage } from '../lib/welcome-image.js';
 
 export function registerWelcome(client: Client): void {
@@ -17,9 +17,12 @@ export function registerWelcome(client: Client): void {
       });
 
       const files: AttachmentBuilder[] = [];
-      if (config.welcome.banner_url) {
+      // Uploaded banner (dashboard) wins; banner_url is the legacy fallback.
+      const asset = await getGuildAsset(member.guild.id, 'welcome_banner').catch(() => null);
+      const banner = asset?.data ?? config.welcome.banner_url;
+      if (banner) {
         const buf = await renderWelcomeImage({
-          bannerUrl: config.welcome.banner_url,
+          banner,
           avatarUrl: member.displayAvatarURL({ extension: 'png', size: 256 }),
           name: config.welcome.show_name ? member.displayName : null,
           x: config.welcome.avatar_x,

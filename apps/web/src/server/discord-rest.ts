@@ -7,6 +7,12 @@ export interface DiscordMember {
   joined_at: string;
 }
 
+export interface BotMember {
+  nick: string | null;
+  avatar: string | null; // guild-specific avatar hash
+  user: { id: string; username: string; avatar: string | null };
+}
+
 export interface DiscordRest {
   exchangeCode(code: string): Promise<{ access_token: string }>;
   getMe(accessToken: string): Promise<{ id: string; username: string; avatar: string | null }>;
@@ -18,6 +24,9 @@ export interface DiscordRest {
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
+  getBotMember(guildId: string): Promise<BotMember | null>;
+  editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember>;
+  editBotUser(patch: { avatar: string }): Promise<void>;
 }
 
 const API = 'https://discord.com/api/v10';
@@ -25,6 +34,17 @@ const API = 'https://discord.com/api/v10';
 export class DiscordAuthError extends Error {
   constructor() {
     super('DISCORD_AUTH_REVOKED');
+  }
+}
+
+// Carries the Discord HTTP status so routes can map e.g. 403 (missing permission)
+// to a friendly API error instead of a generic 500.
+export class DiscordApiError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
   }
 }
 
@@ -112,6 +132,30 @@ export function createDiscordRest(): DiscordRest {
         headers: { ...bot, 'Content-Type': 'application/json' },
         body: JSON.stringify({ components: [] }),
       }).catch(() => {});
+    },
+    async getBotMember(guildId) {
+      return discordJson<BotMember>(
+        `${API}/guilds/${guildId}/members/${config.DISCORD_CLIENT_ID}`,
+        { headers: bot },
+        true,
+      );
+    },
+    async editBotMember(guildId, patch) {
+      const res = await fetch(`${API}/guilds/${guildId}/members/@me`, {
+        method: 'PATCH',
+        headers: { ...bot, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+      return (await res.json()) as BotMember;
+    },
+    async editBotUser(patch) {
+      const res = await fetch(`${API}/users/@me`, {
+        method: 'PATCH',
+        headers: { ...bot, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
     },
   };
 }

@@ -47,6 +47,10 @@ export function buildApp(deps: AppDeps): Express {
       apiError(res, 401, 'UNAUTHENTICATED', 'Discord authorization expired');
       return;
     }
+    if ((err as { type?: string }).type === 'entity.too.large') {
+      apiError(res, 413, 'TOO_LARGE', 'File exceeds the size limit');
+      return;
+    }
     console.error('[Web] Unhandled:', err);
     apiError(res, 500, 'INTERNAL', 'Internal server error');
   });

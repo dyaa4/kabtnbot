@@ -3,6 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-config-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
+import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -40,6 +41,34 @@ describe('guild-config-repo', () => {
     expect(await GuildConfigModel.countDocuments({ guild_id: 'gReadOnly' })).toBe(0); // no write
     await updateGuildConfig('gReadOnly', { protection: { custom_words: ['zzz'] } });
     expect((await getGuildConfigRead('gReadOnly')).protection.custom_words).toContain('zzz');
+  });
+});
+
+describe('guild-asset-repo', () => {
+  it('round-trips an asset and overwrites on re-upload', async () => {
+    await putGuildAsset('gA', 'welcome_banner', 'image/png', Buffer.from([1, 2, 3]));
+    const a = await getGuildAsset('gA', 'welcome_banner');
+    expect(a?.content_type).toBe('image/png');
+    expect(Buffer.compare(a!.data, Buffer.from([1, 2, 3]))).toBe(0);
+
+    await putGuildAsset('gA', 'welcome_banner', 'image/jpeg', Buffer.from([9]));
+    const b = await getGuildAsset('gA', 'welcome_banner');
+    expect(b?.content_type).toBe('image/jpeg');
+    expect(Buffer.compare(b!.data, Buffer.from([9]))).toBe(0);
+  });
+
+  it('returns null for missing assets and after delete', async () => {
+    expect(await getGuildAsset('gNone', 'welcome_banner')).toBeNull();
+    await putGuildAsset('gDel', 'welcome_banner', 'image/png', Buffer.from([5]));
+    await deleteGuildAsset('gDel', 'welcome_banner');
+    expect(await getGuildAsset('gDel', 'welcome_banner')).toBeNull();
+  });
+
+  it('rejects empty and oversized payloads', async () => {
+    await expect(putGuildAsset('gBig', 'welcome_banner', 'image/png', Buffer.alloc(0))).rejects.toThrow();
+    await expect(
+      putGuildAsset('gBig', 'welcome_banner', 'image/png', Buffer.alloc(MAX_ASSET_BYTES + 1)),
+    ).rejects.toThrow();
   });
 });
 

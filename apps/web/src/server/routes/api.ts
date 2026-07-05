@@ -11,6 +11,8 @@ import type { Session } from '../session.js';
 import { requireSession } from '../session.js';
 import { listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
+import { registerAssetRoutes } from './assets.js';
+import { registerBotProfileRoutes } from './bot-profile.js';
 
 const ConfigPatch = z
   .object({
@@ -109,6 +111,8 @@ export function apiRouter(rest: DiscordRest): Router {
   });
 
   registerStatsRoutes(router, rest); // grown in Task 8
+  registerAssetRoutes(router, rest);
+  registerBotProfileRoutes(router, rest);
 
   return router;
 }

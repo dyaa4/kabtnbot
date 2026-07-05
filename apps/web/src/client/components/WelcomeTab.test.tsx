@@ -1,33 +1,40 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
 import { WelcomeTab } from './WelcomeTab.js';
 
-const config = {
-  welcome: {
-    enabled: true,
-    channel_id: '123',
-    message: 'أهلاً {user} في {server}! أنت العضو رقم {count}',
-    banner_url: 'https://example.com/banner.png',
-    avatar_x: 0.5,
-    avatar_y: 0.4,
-    avatar_size: 0.25,
-    show_name: true,
-  },
-};
+function configWith(bannerUrl: string | null) {
+  return {
+    welcome: {
+      enabled: true,
+      channel_id: '123',
+      message: 'أهلاً {user} في {server}! أنت العضو رقم {count}',
+      banner_url: bannerUrl,
+      avatar_x: 0.5,
+      avatar_y: 0.4,
+      avatar_size: 0.25,
+      show_name: true,
+    },
+  };
+}
 
 const channels = [
   { id: '123', name: 'general' },
   { id: '456', name: 'welcome' },
 ];
 
-beforeEach(() => {
+function stubFetch(config: ReturnType<typeof configWith>) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes('/assets/welcome-banner')) {
+        if (init?.method === 'PUT') return new Response(JSON.stringify({ ok: true, content_type: 'image/png' }), { status: 200 });
+        if (init?.method === 'DELETE') return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
+      }
       if (init?.method === 'PATCH') {
         const body = JSON.parse((init.body as string) ?? '{}');
         return new Response(
@@ -41,6 +48,10 @@ beforeEach(() => {
       return new Response(JSON.stringify(config), { status: 200 });
     }),
   );
+}
+
+beforeEach(() => {
+  vi.unstubAllGlobals();
 });
 
 function renderTab() {
@@ -55,41 +66,69 @@ function renderTab() {
 }
 
 describe('WelcomeTab', () => {
-  it('renders the draggable avatar handle once a banner is loaded', async () => {
+  it('shows the upload dropzone (and no drag handle) when no banner exists', async () => {
+    stubFetch(configWith(null));
     renderTab();
-    expect(await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: /ارفع صورة البانر|Upload a banner image/ })).toBeTruthy();
+    expect(screen.queryByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ })).toBeNull();
   });
 
-  it('adjusting the position number inputs and saving PATCHes avatar_x/avatar_y/avatar_size as numbers in 0-1', async () => {
+  it('uploads a picked file with PUT to the asset endpoint', async () => {
+    stubFetch(configWith(null));
     const user = userEvent.setup();
     renderTab();
-    await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ });
+    await screen.findByRole('button', { name: /ارفع صورة البانر|Upload a banner image/ });
 
-    const xInput = screen.getByLabelText(/إحداثي X|Avatar X/i);
-    const yInput = screen.getByLabelText(/إحداثي Y|Avatar Y/i);
-    const sizeInput = screen.getByLabelText(/حجم الصورة الرمزية|Avatar size/i);
+    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'banner.png', { type: 'image/png' });
+    await user.upload(screen.getByTestId('banner-file-input'), file);
 
-    await user.clear(xInput);
-    await user.type(xInput, '0.2');
-    await user.clear(yInput);
-    await user.type(yInput, '0.65');
-    await user.clear(sizeInput);
-    await user.type(sizeInput, '0.3');
+    await waitFor(() => {
+      const putCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === 'PUT',
+      );
+      expect(putCalls).toHaveLength(1);
+      expect(String(putCalls[0][0])).toContain('/api/guilds/g1/assets/welcome-banner');
+    });
+  });
+
+  it('renders the drag handle for a banner, moves via keyboard, resizes via wheel, and saves the position', async () => {
+    stubFetch(configWith('https://example.com/banner.png'));
+    const user = userEvent.setup();
+    renderTab();
+    const handle = await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ });
+
+    handle.focus();
+    fireEvent.keyDown(handle, { key: 'ArrowRight' }); // x 0.5 → 0.51
+    fireEvent.wheel(handle, { deltaY: -100 }); // size 0.25 → 0.27
 
     await user.click(screen.getByRole('button', { name: /حفظ|Save/ }));
 
     await waitFor(() => {
-      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === 'PATCH',
+      );
       expect(patchCalls).toHaveLength(1);
       const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
-      expect(body.welcome.avatar_x).toBe(0.2);
-      expect(body.welcome.avatar_y).toBe(0.65);
-      expect(body.welcome.avatar_size).toBe(0.3);
-      expect(typeof body.welcome.avatar_x).toBe('number');
-      expect(typeof body.welcome.avatar_y).toBe('number');
-      expect(typeof body.welcome.avatar_size).toBe('number');
-      expect(body.welcome.avatar_x).toBeGreaterThanOrEqual(0);
-      expect(body.welcome.avatar_x).toBeLessThanOrEqual(1);
+      expect(body.welcome.avatar_x).toBe(0.51);
+      expect(body.welcome.avatar_y).toBe(0.4);
+      expect(body.welcome.avatar_size).toBe(0.27);
+      expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
+    });
+  });
+
+  it('removes the banner with DELETE', async () => {
+    stubFetch(configWith('https://example.com/banner.png'));
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ });
+
+    await user.click(screen.getByRole('button', { name: /إزالة الصورة|Remove image/ }));
+
+    await waitFor(() => {
+      const delCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === 'DELETE',
+      );
+      expect(delCalls).toHaveLength(1);
     });
   });
 });

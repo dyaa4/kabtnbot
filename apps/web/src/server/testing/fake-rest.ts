@@ -1,5 +1,5 @@
-import { DiscordAuthError } from '../discord-rest.js';
-import type { DiscordRest, DiscordMember } from '../discord-rest.js';
+import { DiscordAuthError, DiscordApiError } from '../discord-rest.js';
+import type { DiscordRest, DiscordMember, BotMember } from '../discord-rest.js';
 
 export class FakeDiscordRest implements DiscordRest {
   users = new Map<string, { id: string; username: string; avatar: string | null }>();
@@ -13,6 +13,11 @@ export class FakeDiscordRest implements DiscordRest {
   deletedChannels: string[] = [];
   clearedMessages: string[] = [];
   revokedTokens = new Set<string>();
+  botUser = { id: 'bot1', username: 'kabtn', avatar: null as string | null };
+  botProfiles = new Map<string, { nick: string | null; avatar: string | null }>();
+  supportsGuildAvatar = true;
+  forbidNickname = false;
+  globalAvatar: string | null = null;
 
   async exchangeCode(_code: string) {
     return { access_token: 'at-123' };
@@ -50,5 +55,24 @@ export class FakeDiscordRest implements DiscordRest {
   }
   async clearMessageComponents(channelId: string, messageId: string) {
     this.clearedMessages.push(`${channelId}:${messageId}`);
+  }
+  async getBotMember(guildId: string): Promise<BotMember | null> {
+    if (!this.botGuilds.has(guildId)) return null;
+    const p = this.botProfiles.get(guildId) ?? { nick: null, avatar: null };
+    return { nick: p.nick, avatar: p.avatar, user: this.botUser };
+  }
+  async editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember> {
+    if (patch.nick !== undefined && this.forbidNickname) throw new DiscordApiError(403, 'Missing Permissions');
+    const p = this.botProfiles.get(guildId) ?? { nick: null, avatar: null };
+    if (patch.nick !== undefined) p.nick = patch.nick;
+    // Mirrors Discord's behavior when guild avatars are unsupported: the unknown
+    // field is silently ignored, so the returned member has no guild avatar.
+    if (patch.avatar !== undefined && this.supportsGuildAvatar) p.avatar = patch.avatar === null ? null : 'hash-guild';
+    this.botProfiles.set(guildId, p);
+    return { nick: p.nick, avatar: p.avatar, user: this.botUser };
+  }
+  async editBotUser(patch: { avatar: string }): Promise<void> {
+    this.globalAvatar = patch.avatar;
+    this.botUser.avatar = 'hash-global';
   }
 }

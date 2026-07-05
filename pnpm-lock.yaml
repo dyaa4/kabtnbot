@@ -188,6 +188,9 @@ importers:
         specifier: ^8.9.0
         version: 8.24.1
     devDependencies:
+      '@types/node':
+        specifier: ^26.1.0
+        version: 26.1.0
       mongodb-memory-server:
         specifier: ^10.1.0
         version: 10.4.3
