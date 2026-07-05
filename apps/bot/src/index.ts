@@ -3,6 +3,7 @@ import { config } from './config.js';
 import { createClient } from './client.js';
 import { onReady } from './events/ready.js';
 import { onInteractionCreate } from './events/interactionCreate.js';
+import { registerActivityTracking } from './events/activity.js';
 
 async function main(): Promise<void> {
   await connectDb(config.MONGODB_URI);
@@ -10,6 +11,7 @@ async function main(): Promise<void> {
   const client = createClient();
   onReady(client);
   onInteractionCreate(client);
+  registerActivityTracking(client);
   await client.login(config.DISCORD_TOKEN);
 }
 
