@@ -12,6 +12,8 @@ export const voiceJoinTimes = new Map<string, number>();
 export function registerActivityTracking(client: Client, now: () => number = Date.now): void {
   client.on('messageCreate', (msg) => {
     if (!msg.guildId || msg.author.bot) return;
+    // Runs independently of text protection (which may delete the message afterwards), so
+    // a message later deleted as a scam/violation still counts toward activity — accepted.
     void recordMessage(msg.guildId, msg.author.id, todayKey()).catch((e) => console.error('[activity] msg:', e));
   });
 

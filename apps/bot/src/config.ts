@@ -20,6 +20,12 @@ const Env = z.object({
   ELEVENLABS_API_KEY: z.string().optional().default(''),
   ELEVENLABS_VOICE_ID: z.string().optional().default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().optional().default('eleven_flash_v2_5'),
+  // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
+  // only if a guild's text protection is actually enabled AND the Message Content Intent
+  // is turned on in the Discord Developer Portal. See README.
+  ENABLE_TEXT_PROTECTION: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
+
+export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION === 'true';

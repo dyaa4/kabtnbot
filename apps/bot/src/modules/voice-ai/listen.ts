@@ -2,7 +2,7 @@ import OpusScript from 'opusscript';
 import { EndBehaviorType } from '@discordjs/voice';
 import type { Guild, VoiceState } from 'discord.js';
 import { parseWakeWord } from '@gamebot/shared';
-import { getGuildConfig } from '@gamebot/db';
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { transcribe } from './stt.js';
 import { pcmToWav } from './wav.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
@@ -114,7 +114,7 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
         return;
       }
 
-      const config = await getGuildConfig(guild.id);
+      const config = await getCachedGuildConfig(guild.id);
       const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');

@@ -15,6 +15,10 @@ export async function renderWelcomeImage(opts: {
   y: number;
   size: number;
 }): Promise<Buffer> {
+  // Guild-admin-gated but cheap to harden: reject non-https URLs so an admin can't point
+  // banner_url at internal/metadata endpoints (e.g. http://169.254.169.254). The caller
+  // catches and falls back to a text-only welcome.
+  if (!opts.bannerUrl.startsWith('https://')) throw new Error('bannerUrl must be https');
   const banner = await loadImage(opts.bannerUrl);
   const W = banner.width;
   const H = banner.height;

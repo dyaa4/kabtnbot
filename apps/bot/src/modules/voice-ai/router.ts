@@ -45,7 +45,11 @@ export async function routeVoiceCommand(
     if (!targetId) return S.kickNoMatch;
 
     const target = guild.members.cache.get(targetId);
-    await target?.voice.disconnect();
+    try {
+      await target?.voice.disconnect();
+    } catch {
+      return S.kickFailed;
+    }
     return `طردت ${target?.displayName ?? 'العضو'} من الفويس.`;
   }
 

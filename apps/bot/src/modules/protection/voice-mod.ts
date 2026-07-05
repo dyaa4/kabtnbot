@@ -1,6 +1,6 @@
 import type { Guild } from 'discord.js';
 import { matchesProfanity } from '@gamebot/shared';
-import { getGuildConfig } from '@gamebot/db';
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { playSpeech, type VoiceSession } from '../voice-ai/sessions.js';
 
 const WINDOW_MS = 60 * 60 * 1000;
@@ -29,7 +29,7 @@ export async function handleTranscriptModeration(
   text: string,
   now: () => number = Date.now,
 ): Promise<boolean> {
-  const config = await getGuildConfig(guild.id);
+  const config = await getCachedGuildConfig(guild.id);
   if (!config.protection.enabled || !config.protection.voice_moderation) return false;
   if (!matchesProfanity(text, config.protection.custom_words)) return false;
 

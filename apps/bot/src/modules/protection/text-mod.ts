@@ -1,6 +1,6 @@
 import { type Client, type GuildMember, type TextChannel } from 'discord.js';
 import { scanMessage } from '@gamebot/shared';
-import { getGuildConfig } from '@gamebot/db';
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
 import type { GuildConfig } from '@gamebot/shared';
 
@@ -12,7 +12,7 @@ export function registerTextProtection(client: Client): void {
   client.on('messageCreate', async (msg) => {
     try {
       if (!msg.guild || msg.author.bot || !msg.member) return;
-      const config = await getGuildConfig(msg.guild.id);
+      const config = await getCachedGuildConfig(msg.guild.id);
       const admin = isGuildAdmin(msg.member as GuildMember, config.admin_role_id);
       if (!shouldModerate(config, admin)) return;
 
