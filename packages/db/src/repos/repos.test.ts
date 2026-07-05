@@ -17,10 +17,10 @@ afterAll(async () => {
 describe('guild-config-repo', () => {
   it('creates defaults on first access and persists patches', async () => {
     const c = await getGuildConfig('g1');
-    expect(c.voice.wake_word).toBe('يا بوت');
+    expect(c.voice.wake_word).toBe('يا كابتن');
     const updated = await updateGuildConfig('g1', { voice: { dialect: 'syrian' } });
     expect(updated.voice.dialect).toBe('syrian');
-    expect(updated.voice.wake_word).toBe('يا بوت'); // merge, not replace
+    expect(updated.voice.wake_word).toBe('يا كابتن'); // merge, not replace
   });
 
   it('rejects invalid patches', async () => {
