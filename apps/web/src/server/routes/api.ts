@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { getGuildConfig, updateGuildConfig } from '@gamebot/db';
-import { DIALECTS } from '@gamebot/shared';
+import {
+  getGuildConfig, updateGuildConfig,
+  topPlayers, getActiveMatch, recentMatches, cancelMatch, adjustPlayerPoints, getUsage,
+} from '@gamebot/db';
+import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
 import type { DiscordRest } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -84,5 +87,72 @@ export function apiRouter(rest: DiscordRest): Router {
   return router;
 }
 
-// Task 8 fills this in.
-function registerStatsRoutes(_router: Router, _rest: DiscordRest): void {}
+const AdjustBody = z.object({
+  delta: z.number().int().min(-1000).max(1000).refine((d) => d !== 0, 'delta must not be zero'),
+});
+
+function registerStatsRoutes(router: Router, rest: DiscordRest): void {
+  const guard = requireGuildAccess(rest);
+
+  router.get('/guilds/:guildId/leaderboard', guard, async (req, res, next) => {
+    try {
+      res.json(await topPlayers(req.params.guildId, 10));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/guilds/:guildId/matches', guard, async (req, res, next) => {
+    try {
+      const [active, recent] = await Promise.all([
+        getActiveMatch(req.params.guildId),
+        recentMatches(req.params.guildId, 10),
+      ]);
+      res.json({ active, recent });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/guilds/:guildId/usage', guard, async (req, res, next) => {
+    try {
+      const [guildConfig, usage] = await Promise.all([
+        getGuildConfig(req.params.guildId),
+        getUsage(req.params.guildId, todayKey()),
+      ]);
+      res.json({ ...usage, limits: effectiveQuotas(guildConfig), premium_active: guildConfig.premium.active });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post('/guilds/:guildId/matches/:matchId/cancel', guard, async (req, res, next) => {
+    try {
+      const cancelled = await cancelMatch(req.params.guildId, req.params.matchId);
+      if (!cancelled) {
+        apiError(res, 404, 'NO_ACTIVE_MATCH', 'No active match to cancel');
+        return;
+      }
+      await Promise.allSettled(cancelled.temp_channel_ids.map((id) => rest.deleteChannel(id)));
+      if (cancelled.lobby_message_id) {
+        await rest.clearMessageComponents(cancelled.lobby_channel_id, cancelled.lobby_message_id).catch(() => {});
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post('/guilds/:guildId/players/:userId/adjust', guard, async (req, res, next) => {
+    try {
+      const parsed = AdjustBody.safeParse(req.body);
+      if (!parsed.success) {
+        apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid delta');
+        return;
+      }
+      res.json(await adjustPlayerPoints(req.params.guildId, req.params.userId, parsed.data.delta));
+    } catch (err) {
+      next(err);
+    }
+  });
+}
