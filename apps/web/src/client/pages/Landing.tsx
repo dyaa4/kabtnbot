@@ -77,9 +77,9 @@ export function Landing() {
       </section>
 
       <section className="mx-auto grid max-w-4xl gap-6 px-6 pb-16 sm:grid-cols-3">
-        <FeatureCard title={t('landing.feature.customs.title')} body={t('landing.feature.customs.body')} />
         <FeatureCard title={t('landing.feature.voice.title')} body={t('landing.feature.voice.body')} />
-        <FeatureCard title={t('landing.feature.board.title')} body={t('landing.feature.board.body')} />
+        <FeatureCard title={t('landing.feature.protection.title')} body={t('landing.feature.protection.body')} />
+        <FeatureCard title={t('landing.feature.activity.title')} body={t('landing.feature.activity.body')} />
       </section>
 
       <section className="mx-auto max-w-3xl px-6 pb-24 text-center">
