@@ -1,4 +1,4 @@
-import { MatchModel, PlayerModel, UsageModel, MemberSnapshotModel } from '../models.js';
+import { UsageModel, MemberSnapshotModel } from '../models.js';
 
 function dateKeyOf(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -38,20 +38,6 @@ export async function memberSnapshots(
   return docs.map((d) => ({ date: d.date, member_count: d.member_count }));
 }
 
-export async function matchesPerDay(guildId: string, days: number): Promise<{ date: string; count: number }[]> {
-  const results = await MatchModel.aggregate([
-    { $match: { guild_id: guildId, status: 'completed', completed_at: { $gte: cutoffDate(days) } } },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$completed_at' } },
-        count: { $sum: 1 },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ]);
-  return results.map((r) => ({ date: r._id as string, count: r.count as number }));
-}
-
 export async function aiUsageDaily(
   guildId: string,
   days: number,
@@ -60,34 +46,4 @@ export async function aiUsageDaily(
     .sort({ date: 1 })
     .lean();
   return docs.map((d) => ({ date: d.date, ai_questions: d.ai_questions, listen_seconds: d.listen_seconds }));
-}
-
-export async function newPlayersPerDay(guildId: string, days: number): Promise<{ date: string; count: number }[]> {
-  const results = await PlayerModel.aggregate([
-    { $match: { guild_id: guildId, created_at: { $gte: cutoffDate(days) } } },
-    {
-      $group: {
-        _id: { $dateToString: { format: '%Y-%m-%d', date: '$created_at' } },
-        count: { $sum: 1 },
-      },
-    },
-    { $sort: { _id: 1 } },
-  ]);
-  return results.map((r) => ({ date: r._id as string, count: r.count as number }));
-}
-
-export async function mostActivePlayers(
-  guildId: string,
-  days: number,
-  limit = 5,
-): Promise<{ user_id: string; matches: number }[]> {
-  const results = await MatchModel.aggregate([
-    { $match: { guild_id: guildId, status: 'completed', completed_at: { $gte: cutoffDate(days) } } },
-    { $project: { players: { $concatArrays: ['$team_a', '$team_b'] } } },
-    { $unwind: '$players' },
-    { $group: { _id: '$players', matches: { $sum: 1 } } },
-    { $sort: { matches: -1 } },
-    { $limit: limit },
-  ]);
-  return results.map((r) => ({ user_id: r._id as string, matches: r.matches as number }));
 }

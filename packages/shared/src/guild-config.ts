@@ -2,9 +2,6 @@ import { z } from 'zod';
 
 export const DIALECTS = ['gulf', 'syrian', 'egyptian', 'msa'] as const;
 export type Dialect = (typeof DIALECTS)[number];
-export type BalanceMode = 'random' | 'balanced';
-export type MatchStatus = 'lobby' | 'in_progress' | 'completed' | 'cancelled';
-export type TeamKey = 'a' | 'b';
 
 export const GuildConfigSchema = z.object({
   language: z.literal('ar').default('ar'),

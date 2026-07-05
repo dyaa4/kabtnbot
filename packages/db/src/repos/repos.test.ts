@@ -2,11 +2,6 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, updateGuildConfig } from './guild-config-repo.js';
-import { applyMatchResult, getPlayer, topPlayers, getPointsMap, adjustPlayerPoints } from './player-repo.js';
-import {
-  createMatch, getActiveMatch, addPlayerToMatch, removePlayerFromMatch,
-  setMatchStarted, completeMatch, cancelMatch, findExpiredMatches, recentMatches,
-} from './match-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -39,82 +34,6 @@ describe('guild-config-repo', () => {
   });
 });
 
-describe('player-repo', () => {
-  it('applies match results and isolates guilds', async () => {
-    await applyMatchResult('gA', ['w1', 'w2'], ['l1'], 25, -10);
-    const w1 = await getPlayer('gA', 'w1');
-    expect(w1?.points).toBe(25);
-    expect(w1?.wins).toBe(1);
-    const l1 = await getPlayer('gA', 'l1');
-    expect(l1?.points).toBe(-10);
-    expect(l1?.losses).toBe(1);
-    // tenant isolation: same user id in another guild is untouched
-    expect(await getPlayer('gB', 'w1')).toBeNull();
-    const top = await topPlayers('gA', 10);
-    expect(top[0].user_id).toBe('w1');
-    const map = await getPointsMap('gA', ['w1', 'unknown']);
-    expect(map.get('w1')).toBe(25);
-    expect(map.get('unknown')).toBe(0);
-  });
-});
-
-describe('match-repo', () => {
-  it('runs full lifecycle and enforces one active match per guild', async () => {
-    const m = await createMatch({
-      guildId: 'gM', creatorId: 'c1', game: 'فالورانت',
-      teamSize: 2, balanceMode: 'random', lobbyChannelId: 'ch1',
-    });
-    await expect(
-      createMatch({ guildId: 'gM', creatorId: 'c1', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch1' }),
-    ).rejects.toThrow('ACTIVE_MATCH_EXISTS');
-
-    await addPlayerToMatch('gM', m._id.toString(), 'p1');
-    await addPlayerToMatch('gM', m._id.toString(), 'p1'); // duplicate: no-op
-    let active = await getActiveMatch('gM');
-    expect(active?.players).toEqual(['p1']);
-
-    await removePlayerFromMatch('gM', m._id.toString(), 'p1');
-    active = await getActiveMatch('gM');
-    expect(active?.players).toEqual([]);
-
-    await setMatchStarted('gM', m._id.toString(), ['p1'], ['p2'], ['vc1', 'vc2']);
-    active = await getActiveMatch('gM');
-    expect(active?.status).toBe('in_progress');
-
-    await completeMatch('gM', m._id.toString(), 'a');
-    expect(await getActiveMatch('gM')).toBeNull();
-
-    // wrong guild id cannot touch another guild's match (isolation)
-    const m2 = await createMatch({
-      guildId: 'gM', creatorId: 'c1', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch1',
-    });
-    expect(await cancelMatch('OTHER_GUILD', m2._id.toString())).toBeNull();
-    expect(await getActiveMatch('gM')).not.toBeNull();
-    await cancelMatch('gM', m2._id.toString());
-  });
-
-  it('finds expired matches across guilds', async () => {
-    await createMatch({
-      guildId: 'gOld', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch',
-    });
-    const future = new Date(Date.now() + 1000);
-    const expired = await findExpiredMatches(future);
-    expect(expired.some((m) => m.guild_id === 'gOld')).toBe(true);
-    const past = new Date(Date.now() - 60_000);
-    expect((await findExpiredMatches(past)).some((m) => m.guild_id === 'gOld')).toBe(false);
-  });
-
-  it('rejects joins beyond team_size * 2 capacity', async () => {
-    const m = await createMatch({
-      guildId: 'gCap', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch',
-    });
-    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p1')).not.toBeNull();
-    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p2')).not.toBeNull();
-    expect(await addPlayerToMatch('gCap', m._id.toString(), 'p3')).toBeNull();
-    await cancelMatch('gCap', m._id.toString());
-  });
-});
-
 describe('usage-repo', () => {
   it('accumulates per guild per day', async () => {
     await incrementAiQuestions('gU', '2026-07-04');
@@ -124,32 +43,5 @@ describe('usage-repo', () => {
     expect(u.ai_questions).toBe(2);
     expect(u.listen_seconds).toBe(30);
     expect((await getUsage('gU', '2026-07-05')).ai_questions).toBe(0);
-  });
-});
-
-describe('adjustPlayerPoints', () => {
-  it('upserts and increments, scoped to guild', async () => {
-    const p1 = await adjustPlayerPoints('gAdj', 'u1', 50);
-    expect(p1.points).toBe(50);
-    const p2 = await adjustPlayerPoints('gAdj', 'u1', -20);
-    expect(p2.points).toBe(30);
-    expect(await getPlayer('OTHER', 'u1')).toBeNull();
-  });
-});
-
-describe('recentMatches', () => {
-  it('returns only finished matches of the guild, newest first, limited', async () => {
-    const m1 = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
-    await setMatchStarted('gRec', m1._id.toString(), ['a'], ['b'], []);
-    await completeMatch('gRec', m1._id.toString(), 'a');
-    const m2 = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'y', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
-    await cancelMatch('gRec', m2._id.toString());
-    const active = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'z', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
-    const recent = await recentMatches('gRec');
-    expect(recent).toHaveLength(2);
-    expect(recent[0].game).toBe('y'); // newest first
-    expect(recent.every((m) => m.status === 'completed' || m.status === 'cancelled')).toBe(true);
-    await cancelMatch('gRec', active._id.toString());
-    expect(await recentMatches('gRec', 1)).toHaveLength(1);
   });
 });
