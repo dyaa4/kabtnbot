@@ -2,6 +2,7 @@ import { NavLink, Route, Routes, useParams } from 'react-router-dom';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
+import { ProtectionTab } from '../components/ProtectionTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 
@@ -13,6 +14,7 @@ export function GuildView() {
   const tabs = [
     { to: '', key: 'tabs.overview' },
     { to: 'settings', key: 'tabs.settings' },
+    { to: 'protection', key: 'tabs.protection' },
     { to: 'stats', key: 'tabs.stats' },
   ];
 
@@ -39,6 +41,7 @@ export function GuildView() {
       <Routes>
         <Route index element={<Overview guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
+        <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
       </Routes>
     </Layout>
