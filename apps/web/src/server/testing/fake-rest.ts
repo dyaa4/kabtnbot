@@ -1,3 +1,4 @@
+import { DiscordAuthError } from '../discord-rest.js';
 import type { DiscordRest } from '../discord-rest.js';
 
 export class FakeDiscordRest implements DiscordRest {
@@ -8,16 +9,19 @@ export class FakeDiscordRest implements DiscordRest {
   members = new Map<string, { roles: string[] }>();
   deletedChannels: string[] = [];
   clearedMessages: string[] = [];
+  revokedTokens = new Set<string>();
 
   async exchangeCode(_code: string) {
     return { access_token: 'at-123' };
   }
   async getMe(accessToken: string) {
+    if (this.revokedTokens.has(accessToken)) throw new DiscordAuthError();
     const u = this.users.get(accessToken);
     if (!u) throw new Error('unknown token');
     return u;
   }
   async getMyGuilds(accessToken: string) {
+    if (this.revokedTokens.has(accessToken)) throw new DiscordAuthError();
     return this.userGuilds.get(accessToken) ?? [];
   }
   async getGuild(guildId: string) {

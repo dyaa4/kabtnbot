@@ -3,8 +3,10 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import type { DiscordRest } from './discord-rest.js';
+import { DiscordAuthError } from './discord-rest.js';
 import { authRouter } from './routes/auth.js';
 import { apiRouter } from './routes/api.js';
+import { clearSessionCookie } from './session.js';
 
 export interface AppDeps {
   rest: DiscordRest;
@@ -18,6 +20,9 @@ export function apiError(res: Response, status: number, code: string, message: s
 
 export function buildApp(deps: AppDeps): Express {
   const app = express();
+  // Trust the first hop (TLS-terminating reverse proxy) so the rate limiter sees the real
+  // client IP and secure cookies are set correctly behind HTTPS termination.
+  app.set('trust proxy', 1);
   app.use(express.json());
   app.use(cookieParser());
 
@@ -37,6 +42,11 @@ export function buildApp(deps: AppDeps): Express {
   });
 
   app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    if (err instanceof DiscordAuthError) {
+      clearSessionCookie(res);
+      apiError(res, 401, 'UNAUTHENTICATED', 'Discord authorization expired');
+      return;
+    }
     console.error('[Web] Unhandled:', err);
     apiError(res, 500, 'INTERNAL', 'Internal server error');
   });

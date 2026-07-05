@@ -8,7 +8,7 @@ export default defineConfig({
       DISCORD_CLIENT_ID: '000000000000000000',
       DISCORD_CLIENT_SECRET: 'test-secret',
       MONGODB_URI: 'mongodb://127.0.0.1:27017/gamebot-test-unused',
-      SESSION_SECRET: 'test-session-secret-16chars',
+      SESSION_SECRET: 'test-session-secret-at-least-32-chars-long',
       WEB_BASE_URL: 'http://localhost:3000',
     },
   },

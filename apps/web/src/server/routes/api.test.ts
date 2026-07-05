@@ -26,7 +26,7 @@ function setup() {
   rest.userGuilds.set('at-1', [{ id: 'g1', name: 'ARAB', icon: null, permissions: MANAGE }]);
   rest.botGuilds.add('g1');
   const cookie = `${SESSION_COOKIE}=${signSession({ uid: 'u1', uname: 'x', avatar: null, eat: encryptToken('at-1') })}`;
-  return { app: buildApp({ rest }), cookie };
+  return { app: buildApp({ rest }), cookie, rest };
 }
 
 describe('api routes', () => {
@@ -81,5 +81,16 @@ describe('api routes', () => {
       .set('Cookie', cookie)
       .send({ premium: { active: true } });
     expect(premium.status).toBe(400);
+  });
+
+  it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {
+    clearAccessCache();
+    const { app, cookie, rest } = setup();
+    rest.revokedTokens.add('at-1');
+    const res = await request(app).get('/api/guilds').set('Cookie', cookie);
+    expect(res.status).toBe(401);
+    expect(res.body.error.code).toBe('UNAUTHENTICATED');
+    const setCookie = res.headers['set-cookie'] as unknown as string[];
+    expect(setCookie.some((c) => c.startsWith('gb_session=;'))).toBe(true);
   });
 });

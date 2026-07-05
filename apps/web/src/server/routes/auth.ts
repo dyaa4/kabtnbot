@@ -15,7 +15,12 @@ export function authRouter(rest: DiscordRest): Router {
 
   router.get('/discord', (_req, res) => {
     const state = randomBytes(16).toString('hex');
-    res.cookie(STATE_COOKIE, state, { httpOnly: true, sameSite: 'lax', maxAge: 10 * 60 * 1000 });
+    res.cookie(STATE_COOKIE, state, {
+      httpOnly: true,
+      sameSite: 'lax',
+      maxAge: 10 * 60 * 1000,
+      secure: config.WEB_BASE_URL.startsWith('https'),
+    });
     const url = new URL('https://discord.com/oauth2/authorize');
     url.searchParams.set('client_id', config.DISCORD_CLIENT_ID);
     url.searchParams.set('redirect_uri', `${config.WEB_BASE_URL}/auth/callback`);

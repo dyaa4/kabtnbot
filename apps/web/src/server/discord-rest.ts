@@ -12,8 +12,20 @@ export interface DiscordRest {
 
 const API = 'https://discord.com/api/v10';
 
-async function discordJson<T>(url: string, init: RequestInit, allow404 = false): Promise<T | null> {
+export class DiscordAuthError extends Error {
+  constructor() {
+    super('DISCORD_AUTH_REVOKED');
+  }
+}
+
+async function discordJson<T>(
+  url: string,
+  init: RequestInit,
+  allow404 = false,
+  userToken = false,
+): Promise<T | null> {
   const res = await fetch(url, init);
+  if (userToken && res.status === 401) throw new DiscordAuthError();
   if (allow404 && (res.status === 404 || res.status === 403)) return null;
   if (!res.ok) throw new Error(`Discord ${res.status} for ${url}`);
   return (await res.json()) as T;
@@ -37,10 +49,20 @@ export function createDiscordRest(): DiscordRest {
       }))!;
     },
     async getMe(accessToken) {
-      return (await discordJson(`${API}/users/@me`, { headers: { Authorization: `Bearer ${accessToken}` } }))!;
+      return (await discordJson(
+        `${API}/users/@me`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+        false,
+        true,
+      ))!;
     },
     async getMyGuilds(accessToken) {
-      return (await discordJson(`${API}/users/@me/guilds`, { headers: { Authorization: `Bearer ${accessToken}` } }))!;
+      return (await discordJson(
+        `${API}/users/@me/guilds`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+        false,
+        true,
+      ))!;
     },
     async getGuild(guildId) {
       return discordJson(`${API}/guilds/${guildId}`, { headers: bot }, true);

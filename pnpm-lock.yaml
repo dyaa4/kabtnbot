@@ -93,6 +93,9 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
+      mongoose:
+        specifier: ^8.9.0
+        version: 8.24.1
       react:
         specifier: ^18.3.0
         version: 18.3.1

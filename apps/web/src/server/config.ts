@@ -11,7 +11,7 @@ const Env = z.object({
   DISCORD_CLIENT_ID: z.string().min(1),
   DISCORD_CLIENT_SECRET: z.string().min(1),
   MONGODB_URI: z.string().min(1),
-  SESSION_SECRET: z.string().min(16),
+  SESSION_SECRET: z.string().min(32),
   WEB_PORT: z.coerce.number().default(3000),
   WEB_BASE_URL: z.string().default('http://localhost:3000'),
 });

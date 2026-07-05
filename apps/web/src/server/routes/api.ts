@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig,
@@ -128,6 +129,10 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
   router.post('/guilds/:guildId/matches/:matchId/cancel', guard, async (req, res, next) => {
     try {
+      if (!mongoose.isValidObjectId(req.params.matchId)) {
+        apiError(res, 404, 'NO_ACTIVE_MATCH', 'No active match to cancel');
+        return;
+      }
       const cancelled = await cancelMatch(req.params.guildId, req.params.matchId);
       if (!cancelled) {
         apiError(res, 404, 'NO_ACTIVE_MATCH', 'No active match to cancel');
