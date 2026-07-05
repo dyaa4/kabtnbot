@@ -1,20 +1,23 @@
-import { getGuildConfig } from '@gamebot/db';
+import { getGuildConfigRead } from '@gamebot/db';
 import type { GuildConfig } from '@gamebot/shared';
 
-const TTL_MS = 15_000;
+// Short TTL so dashboard changes (e.g. new blocklist words) apply within a few
+// seconds — no restart needed — while still shielding the DB from a read on
+// literally every message/utterance.
+const TTL_MS = 3_000;
 
 const cache = new Map<string, { at: number; value: GuildConfig }>();
 
 /**
- * Short-TTL cache in front of getGuildConfig for hot paths (per-message text protection,
- * per-utterance voice moderation) — getGuildConfig is a findOneAndUpdate (a write) on every
- * call, so calling it unconditionally on every message/utterance is unnecessary DB load.
- * Slash-command handlers should keep using getGuildConfig directly for fresh reads.
+ * Short-TTL cache in front of getGuildConfigRead for hot paths (per-message text
+ * protection, per-utterance voice moderation). getGuildConfigRead is a read-only
+ * findOne (no write), so config edits propagate within TTL_MS with no write load.
+ * Slash-command handlers should keep using getGuildConfig directly.
  */
 export async function getCachedGuildConfig(guildId: string): Promise<GuildConfig> {
   const hit = cache.get(guildId);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
-  const value = await getGuildConfig(guildId);
+  const value = await getGuildConfigRead(guildId);
   cache.set(guildId, { at: Date.now(), value });
   return value;
 }

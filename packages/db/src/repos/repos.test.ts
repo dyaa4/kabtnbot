@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
-import { getGuildConfig, updateGuildConfig } from './guild-config-repo.js';
+import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-config-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -31,6 +31,15 @@ describe('guild-config-repo', () => {
     await Promise.all([getGuildConfig('gRace'), getGuildConfig('gRace'), getGuildConfig('gRace')]);
     const { GuildConfigModel } = await import('../models.js');
     expect(await GuildConfigModel.countDocuments({ guild_id: 'gRace' })).toBe(1);
+  });
+
+  it('getGuildConfigRead returns defaults without creating a document, and reads updates', async () => {
+    const { GuildConfigModel } = await import('../models.js');
+    const c = await getGuildConfigRead('gReadOnly');
+    expect(c.voice.wake_word).toBe('يا كابتن'); // defaults
+    expect(await GuildConfigModel.countDocuments({ guild_id: 'gReadOnly' })).toBe(0); // no write
+    await updateGuildConfig('gReadOnly', { protection: { custom_words: ['zzz'] } });
+    expect((await getGuildConfigRead('gReadOnly')).protection.custom_words).toContain('zzz');
   });
 });
 

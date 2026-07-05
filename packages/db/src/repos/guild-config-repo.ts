@@ -38,6 +38,17 @@ export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
   }
 }
 
+/**
+ * Read-only fetch: returns the stored config, or schema defaults if none exists,
+ * WITHOUT creating a document (a plain findOne, no write). Use on hot paths that
+ * read the config frequently so dashboard changes are picked up quickly without
+ * a write per call.
+ */
+export async function getGuildConfigRead(guildId: string): Promise<GuildConfig> {
+  const doc = (await GuildConfigModel.findOne({ guild_id: guildId }).lean()) as GuildConfigDoc | null;
+  return GuildConfigSchema.parse(doc?.config ?? {});
+}
+
 export async function updateGuildConfig(guildId: string, patch: Record<string, unknown>): Promise<GuildConfig> {
   const current = await getGuildConfig(guildId);
   const merged = GuildConfigSchema.parse(deepMerge(current as unknown as Record<string, unknown>, patch));
