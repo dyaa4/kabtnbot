@@ -36,6 +36,19 @@ describe('matchesProfanity', () => {
     expect(matchesProfanity('يا حمــار', ['حمار'])).toBe(true);
     expect(matchesProfanity('أنت حِمَآر', ['حمار'])).toBe(true);
   });
+  it('ships a bilingual built-in blocklist (no custom words needed)', () => {
+    // representative English
+    for (const s of ['you fucking noob', 'what a bitch', 'go to hell asshole']) {
+      expect(matchesProfanity(s, [])).toBe(true);
+    }
+    // representative Arabic
+    for (const s of ['يا كلب', 'انت عرص', 'روح يا خرا']) {
+      expect(matchesProfanity(s, [])).toBe(true);
+    }
+    // clean text in both languages stays clean
+    expect(matchesProfanity('good game everyone', [])).toBe(false);
+    expect(matchesProfanity('يعطيك العافية يا بطل', [])).toBe(false);
+  });
 });
 
 describe('scanMessage', () => {

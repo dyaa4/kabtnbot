@@ -1,8 +1,19 @@
+// Built-in bilingual blocklist for the voice/text moderation filter. These are
+// matched (not used) — the whole point is to detect and block them. normalizeText
+// folds spelling variants (alef/ta-marbuta/alef-maqsura/tatweel/diacritics/elongation),
+// so each entry also covers its variants. Admins extend this via custom_words.
 const BUILTIN_PROFANITY = [
-  // English (kept intentionally mild in source; extend as needed)
-  'idiot', 'stupid', 'moron', 'bastard', 'asshole',
-  // Arabic (common insults)
-  'حيوان', 'غبي', 'كلب', 'حقير', 'وسخ',
+  // English profanity + slurs
+  'fuck', 'fuk', 'fucker', 'motherfucker', 'fucking', 'shit', 'bullshit', 'bitch',
+  'asshole', 'dumbass', 'jackass', 'bastard', 'dick', 'dickhead', 'cock', 'pussy',
+  'cunt', 'whore', 'slut', 'faggot', 'fag', 'nigger', 'nigga', 'retard', 'retarded',
+  'moron', 'idiot', 'stupid', 'wanker', 'prick', 'twat', 'douchebag', 'skank',
+  'spic', 'chink', 'kike', 'coon',
+  // Arabic profanity + insults (write natural forms; normalizeText handles variants)
+  'كس', 'كسمك', 'كسختك', 'طيز', 'زب', 'زبي', 'خرا', 'عرص', 'شرموط', 'شرموطة',
+  'قحبة', 'منيك', 'منيوك', 'نيك', 'انيك', 'يلعن', 'لعنة', 'حمار', 'كلب', 'خنزير',
+  'نجس', 'وسخ', 'غبي', 'حقير', 'متخلف', 'معفن', 'لوطي', 'خول', 'داعر', 'زانية',
+  'ملعون', 'حيوان', 'بهيمة', 'منحط',
 ];
 
 const SHORTENERS = ['bit.ly', 'tinyurl.com', 'goo.gl', 't.co', 'is.gd', 'cutt.ly', 'rb.gy'];
