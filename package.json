@@ -7,6 +7,7 @@
     "build": "pnpm -r build",
     "test": "pnpm -r --if-present test",
     "dev": "pnpm --filter @gamebot/bot dev",
+    "dev:web": "pnpm --filter @gamebot/web dev",
     "deploy:commands": "pnpm --filter @gamebot/bot deploy:commands"
   },
   "devDependencies": {
