@@ -2,6 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
+    globals: true,
     env: {
       DISCORD_TOKEN: 'test-token',
       DISCORD_CLIENT_ID: '000000000000000000',
