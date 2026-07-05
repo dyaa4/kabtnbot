@@ -2,8 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import {
-  connectDb, disconnectDb, createMatch, setMatchStarted, completeMatch,
-  applyMatchResult, incrementAiQuestions, recordMemberSnapshot,
+  connectDb, disconnectDb, recordMemberSnapshot, recordMessage, recordReaction, addVoiceSeconds,
 } from '@gamebot/db';
 import { todayKey } from '@gamebot/shared';
 import { buildApp } from '../app.js';
@@ -71,7 +70,7 @@ describe('stats route', () => {
     expect(res.status).toBe(200);
   });
 
-  it('happy path with >=2 member snapshots: memberCount, joinedRecent order, totals, aggregates, mostActive', async () => {
+  it('happy path with >=2 member snapshots: memberCount, joinedRecent order, totals, topActive', async () => {
     const { app, rest, cookie } = setup('gStats1');
     const m1JoinedAt = isoDaysAgo(1);
     rest.membersList.set('gStats1', [
@@ -82,16 +81,11 @@ describe('stats route', () => {
     ]);
     rest.guildCounts.set('gStats1', 250);
 
-    const m = await createMatch({
-      guildId: 'gStats1', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch1',
-    });
-    await setMatchStarted('gStats1', m._id.toString(), ['a'], ['b'], []);
-    await completeMatch('gStats1', m._id.toString(), 'a');
-
-    await incrementAiQuestions('gStats1', todayKey());
-    await incrementAiQuestions('gStats1', todayKey());
-
-    await applyMatchResult('gStats1', ['a'], ['b'], 25, -10);
+    await recordMessage('gStats1', 'a', todayKey());
+    await recordMessage('gStats1', 'a', todayKey());
+    await recordReaction('gStats1', 'a', todayKey());
+    await addVoiceSeconds('gStats1', 'a', todayKey(), 120); // 2 minutes
+    await recordMessage('gStats1', 'm1', todayKey());
 
     // Two snapshots (>=2) so the growth chart uses 'snapshots', carried forward across gaps.
     await recordMemberSnapshot('gStats1', 190, dateKeyDaysAgo(5));
@@ -109,11 +103,11 @@ describe('stats route', () => {
     expect(res.body.memberSeries[0].member_count).toBe(190);
     expect(res.body.memberSeries.at(-2).member_count).toBe(190);
     expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 200 });
-    expect(res.body.totals.matches).toBe(1);
-    expect(res.body.totals.aiQuestions).toBe(2);
-    expect(res.body.topPlayers[0].user_id).toBe('a');
-    expect(res.body.topPlayers[0].name).toBe('Player_A');
-    expect(res.body.mostActive).toContainEqual({ user_id: 'a', name: 'Player_A', matches: 1 });
+    expect(res.body.totals.messages).toBe(3);
+    expect(res.body.totals.voiceMinutes).toBe(2);
+    expect(res.body.topActive[0].user_id).toBe('a');
+    expect(res.body.topActive[0].name).toBe('Player_A');
+    expect(res.body.topActive.map((r: { user_id: string }) => r.user_id)).toContain('m1');
   });
 
   it('single snapshot falls back to joined_fallback (not enough points for a trend)', async () => {
@@ -154,30 +148,27 @@ describe('stats route', () => {
     const { app, cookie } = setup('gStatsFullWindow');
     const res = await request(app).get('/api/guilds/gStatsFullWindow/stats?days=7').set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.matchesPerDay).toHaveLength(7);
-    expect(res.body.usageDaily).toHaveLength(7);
-    expect(res.body.newPlayersPerDay).toHaveLength(7);
-    expect(res.body.matchesPerDay.every((d: { count: number }) => d.count === 0)).toBe(true);
-    expect(res.body.usageDaily.every((d: { ai_questions: number; listen_seconds: number }) =>
-      d.ai_questions === 0 && d.listen_seconds === 0)).toBe(true);
-    expect(res.body.newPlayersPerDay.every((d: { count: number }) => d.count === 0)).toBe(true);
-    expect(res.body.matchesPerDay.at(-1).date).toBe(todayKey());
-    expect(res.body.mostActive).toEqual([]);
+    expect(res.body.messagesDaily).toHaveLength(7);
+    expect(res.body.voiceMinutesDaily).toHaveLength(7);
+    expect(res.body.messagesDaily.every((d: { count: number }) => d.count === 0)).toBe(true);
+    expect(res.body.voiceMinutesDaily.every((d: { count: number }) => d.count === 0)).toBe(true);
+    expect(res.body.messagesDaily.at(-1).date).toBe(todayKey());
+    expect(res.body.topActive).toEqual([]);
   });
 
-  it('usage seeded on the boundary day (today-days+1, i.e. fillDays[0]) appears with its true value and is included in totals', async () => {
+  it('activity seeded on the boundary day (today-days+1, i.e. fillDays[0]) appears with its true value and is included in totals', async () => {
     const { app, cookie } = setup('gStatsBoundaryUsage');
     const days = 7;
     const boundaryKey = dateKeyDaysAgo(days - 1); // earliest day the response renders
 
-    await incrementAiQuestions('gStatsBoundaryUsage', boundaryKey);
-    await incrementAiQuestions('gStatsBoundaryUsage', boundaryKey);
+    await recordMessage('gStatsBoundaryUsage', 'u1', boundaryKey);
+    await recordMessage('gStatsBoundaryUsage', 'u1', boundaryKey);
 
     const res = await request(app).get(`/api/guilds/gStatsBoundaryUsage/stats?days=${days}`).set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.usageDaily[0].date).toBe(boundaryKey);
-    expect(res.body.usageDaily[0].ai_questions).toBe(2);
-    expect(res.body.totals.aiQuestions).toBe(2);
+    expect(res.body.messagesDaily[0].date).toBe(boundaryKey);
+    expect(res.body.messagesDaily[0].count).toBe(2);
+    expect(res.body.totals.messages).toBe(2);
   });
 
   it('a member joined exactly on the boundary day (today-days+1) counts in the fallback series first day, not dropped', async () => {

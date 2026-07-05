@@ -1,10 +1,8 @@
 import { Router } from 'express';
-import mongoose from 'mongoose';
 import { z } from 'zod';
 import {
-  getGuildConfig, updateGuildConfig,
-  topPlayers, getActiveMatch, recentMatches, cancelMatch, adjustPlayerPoints, getUsage,
-  memberSnapshots, matchesPerDay, aiUsageDaily, newPlayersPerDay, mostActivePlayers,
+  getGuildConfig, updateGuildConfig, getUsage,
+  memberSnapshots, topActive, activityDaily,
 } from '@gamebot/db';
 import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -88,10 +86,6 @@ export function apiRouter(rest: DiscordRest): Router {
 
   return router;
 }
-
-const AdjustBody = z.object({
-  delta: z.number().int().min(-1000).max(1000).refine((d) => d !== 0, 'delta must not be zero'),
-});
 
 const DaysParam = z.enum(['7', '30', '90']).default('30');
 
@@ -193,20 +187,20 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
       const guildId = req.params.guildId;
       const cutoffKey = cutoffKeyFor(days);
 
-      const [members, counts, snapshots, matchesRaw, usageRaw, playersRaw, top, mostActiveRaw] = await Promise.all([
+      const [members, counts, snapshots, activeRows, dailyRows] = await Promise.all([
         statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
         statsCached(`counts:${guildId}`, () => rest.getGuildCounts(guildId)),
         memberSnapshots(guildId, days),
-        matchesPerDay(guildId, days),
-        aiUsageDaily(guildId, days),
-        newPlayersPerDay(guildId, days),
-        topPlayers(guildId, 5),
-        mostActivePlayers(guildId, days, 5),
+        topActive(guildId, days, 10),
+        activityDaily(guildId, days),
       ]);
 
-      const matches = fillSeries(days, matchesRaw, (date) => ({ date, count: 0 }));
-      const players = fillSeries(days, playersRaw, (date) => ({ date, count: 0 }));
-      const usage = fillSeries(days, usageRaw, (date) => ({ date, ai_questions: 0, listen_seconds: 0 }));
+      const messagesDaily = fillSeries(days, dailyRows.map((r) => ({ date: r.date, count: r.messages })), (date) => ({ date, count: 0 }));
+      const voiceMinutesDaily = fillSeries(
+        days,
+        dailyRows.map((r) => ({ date: r.date, count: Math.round(r.voice_seconds / 60) })),
+        (date) => ({ date, count: 0 }),
+      );
 
       const joinedRecent = [...members]
         .sort((a, b) => b.joined_at.localeCompare(a.joined_at))
@@ -227,17 +221,10 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
       const memberCount = counts?.approximate_member_count ?? (members.length > 0 ? members.length : null);
 
-      const totalMatches = matches.reduce((sum, d) => sum + d.count, 0);
-      const totalAiQuestions = usage.reduce((sum, d) => sum + d.ai_questions, 0);
-
       const nameById = new Map(members.map((m) => [m.id, m.username]));
-      const topPlayersWithNames = top.map((p) => ({
-        ...p,
-        name: nameById.get(p.user_id) ?? `#${p.user_id.slice(-4)}`,
-      }));
-      const mostActive = mostActiveRaw.map((p) => ({
-        ...p,
-        name: nameById.get(p.user_id) ?? `#${p.user_id.slice(-4)}`,
+      const topActiveWithNames = activeRows.map((r) => ({
+        ...r,
+        name: nameById.get(r.user_id) ?? `#${r.user_id.slice(-4)}`,
       }));
 
       res.json({
@@ -245,33 +232,15 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         joinedRecent,
         memberSeries,
         memberSeriesSource,
-        matchesPerDay: matches,
-        usageDaily: usage,
-        newPlayersPerDay: players,
-        topPlayers: topPlayersWithNames,
-        mostActive,
-        totals: { newMembers, matches: totalMatches, aiQuestions: totalAiQuestions },
+        messagesDaily,
+        voiceMinutesDaily,
+        topActive: topActiveWithNames,
+        totals: {
+          newMembers,
+          messages: dailyRows.reduce((sum, r) => sum + r.messages, 0),
+          voiceMinutes: Math.round(dailyRows.reduce((sum, r) => sum + r.voice_seconds, 0) / 60),
+        },
       });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.get('/guilds/:guildId/leaderboard', guard, async (req, res, next) => {
-    try {
-      res.json(await topPlayers(req.params.guildId, 10));
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.get('/guilds/:guildId/matches', guard, async (req, res, next) => {
-    try {
-      const [active, recent] = await Promise.all([
-        getActiveMatch(req.params.guildId),
-        recentMatches(req.params.guildId, 10),
-      ]);
-      res.json({ active, recent });
     } catch (err) {
       next(err);
     }
@@ -284,40 +253,6 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         getUsage(req.params.guildId, todayKey()),
       ]);
       res.json({ ...usage, limits: effectiveQuotas(guildConfig), premium_active: guildConfig.premium.active });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.post('/guilds/:guildId/matches/:matchId/cancel', guard, async (req, res, next) => {
-    try {
-      if (!mongoose.isValidObjectId(req.params.matchId)) {
-        apiError(res, 404, 'NO_ACTIVE_MATCH', 'No active match to cancel');
-        return;
-      }
-      const cancelled = await cancelMatch(req.params.guildId, req.params.matchId);
-      if (!cancelled) {
-        apiError(res, 404, 'NO_ACTIVE_MATCH', 'No active match to cancel');
-        return;
-      }
-      await Promise.allSettled(cancelled.temp_channel_ids.map((id) => rest.deleteChannel(id)));
-      if (cancelled.lobby_message_id) {
-        await rest.clearMessageComponents(cancelled.lobby_channel_id, cancelled.lobby_message_id).catch(() => {});
-      }
-      res.json({ ok: true });
-    } catch (err) {
-      next(err);
-    }
-  });
-
-  router.post('/guilds/:guildId/players/:userId/adjust', guard, async (req, res, next) => {
-    try {
-      const parsed = AdjustBody.safeParse(req.body);
-      if (!parsed.success) {
-        apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid delta');
-        return;
-      }
-      res.json(await adjustPlayerPoints(req.params.guildId, req.params.userId, parsed.data.delta));
     } catch (err) {
       next(err);
     }
