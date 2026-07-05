@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { userEvent } from '@testing-library/user-event';
 import { I18nProvider, useI18n } from './i18n.js';
 
 function Probe() {
@@ -17,6 +17,7 @@ function Probe() {
 
 describe('i18n', () => {
   it('defaults to arabic with rtl, switches to english ltr', async () => {
+    const user = userEvent.setup();
     render(
       <I18nProvider>
         <Probe />
@@ -24,7 +25,7 @@ describe('i18n', () => {
     );
     expect(screen.getByTestId('lang').textContent).toBe('ar');
     expect(document.documentElement.dir).toBe('rtl');
-    await userEvent.click(screen.getByText('switch'));
+    await user.click(screen.getByText('switch'));
     expect(document.documentElement.dir).toBe('ltr');
     expect(screen.getByTestId('lang').textContent).toBe('en');
   });

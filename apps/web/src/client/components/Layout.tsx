@@ -24,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className="rounded border border-slate-700 px-2 py-1 text-sm"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
           >
-            {lang === 'ar' ? 'EN' : 'عربي'}
+            {t('lang.switch')}
           </button>
           {me.data && (
             <div className="flex items-center gap-2">

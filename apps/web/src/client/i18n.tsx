@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import ar from './locales/ar.json';
-import en from './locales/en.json';
+import ar from './locales/ar.json' with { type: 'json' };
+import en from './locales/en.json' with { type: 'json' };
 
 type Lang = 'ar' | 'en';
 const dicts: Record<Lang, Record<string, string>> = { ar, en };
