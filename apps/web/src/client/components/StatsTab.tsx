@@ -16,6 +16,7 @@ interface UsagePoint {
 }
 interface TopPlayer {
   user_id: string;
+  name: string;
   points: number;
   wins: number;
   losses: number;
@@ -155,7 +156,7 @@ export function StatsTab({ guildId }: { guildId: string }) {
 
       <ChartCard title={t('stats.matchesPerDay')} empty={isAllZero(matchesSeries.map((d) => d.count ?? 0))}>
         <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={matchesSeries} barCategoryGap={4}>
+          <BarChart data={matchesSeries} barCategoryGap={2}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="date" tick={AXIS_TICK} axisLine={false} tickLine={false} />
             <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
@@ -197,9 +198,9 @@ export function StatsTab({ guildId }: { guildId: string }) {
             <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
             <YAxis
               type="category"
-              dataKey="user_id"
+              dataKey="name"
               width={90}
-              tick={{ fill: '#64748b', fontSize: 11, fontFamily: 'monospace' }}
+              tick={{ fill: '#64748b', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
             />

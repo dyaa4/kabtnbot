@@ -14,7 +14,7 @@ const statsResponse = {
   matchesPerDay: [{ date: '2026-07-01', count: 3 }],
   usageDaily: [{ date: '2026-07-01', ai_questions: 5, listen_seconds: 120 }],
   newPlayersPerDay: [{ date: '2026-07-01', count: 1 }],
-  topPlayers: [{ user_id: 'a', points: 25, wins: 1, losses: 0 }],
+  topPlayers: [{ user_id: 'a', name: 'Alice', points: 25, wins: 1, losses: 0 }],
   totals: { newMembers: 7, matches: 3, aiQuestions: 5 },
 };
 

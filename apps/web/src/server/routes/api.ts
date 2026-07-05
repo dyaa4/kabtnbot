@@ -188,6 +188,12 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
       const totalMatches = matches.reduce((sum, d) => sum + d.count, 0);
       const totalAiQuestions = usage.reduce((sum, d) => sum + d.ai_questions, 0);
 
+      const nameById = new Map(members.map((m) => [m.id, m.username]));
+      const topPlayersWithNames = top.map((p) => ({
+        ...p,
+        name: nameById.get(p.user_id) ?? `#${p.user_id.slice(-4)}`,
+      }));
+
       res.json({
         memberCount,
         joinedRecent,
@@ -196,7 +202,7 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         matchesPerDay: matches,
         usageDaily: usage,
         newPlayersPerDay: players,
-        topPlayers: top,
+        topPlayers: topPlayersWithNames,
         totals: { newMembers, matches: totalMatches, aiQuestions: totalAiQuestions },
       });
     } catch (err) {

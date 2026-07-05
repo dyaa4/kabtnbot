@@ -74,6 +74,7 @@ describe('stats route', () => {
       { id: 'm1', username: 'Alice', avatar: null, joined_at: m1JoinedAt },
       { id: 'm2', username: 'Bob', avatar: null, joined_at: isoDaysAgo(5) },
       { id: 'm3', username: 'Carl', avatar: null, joined_at: isoDaysAgo(40) }, // outside 30d window
+      { id: 'a', username: 'Player_A', avatar: null, joined_at: isoDaysAgo(50) }, // old join; just in members list for name mapping
     ]);
     rest.guildCounts.set('gStats1', 250);
 
@@ -93,7 +94,7 @@ describe('stats route', () => {
     const res = await request(app).get('/api/guilds/gStats1/stats').set('Cookie', cookie);
     expect(res.status).toBe(200);
     expect(res.body.memberCount).toBe(250);
-    expect(res.body.joinedRecent.map((j: { id: string }) => j.id)).toEqual(['m1', 'm2', 'm3']);
+    expect(res.body.joinedRecent.map((j: { id: string }) => j.id)).toEqual(['m1', 'm2', 'm3', 'a']);
     expect(res.body.joinedRecent[0]).toEqual({ id: 'm1', username: 'Alice', avatar: null, joined_at: m1JoinedAt });
     expect(res.body.totals.newMembers).toBe(2); // m1, m2 within default 30d window; m3 outside
     expect(res.body.memberSeriesSource).toBe('snapshots');
@@ -101,6 +102,7 @@ describe('stats route', () => {
     expect(res.body.totals.matches).toBe(1);
     expect(res.body.totals.aiQuestions).toBe(2);
     expect(res.body.topPlayers[0].user_id).toBe('a');
+    expect(res.body.topPlayers[0].name).toBe('Player_A');
   });
 
   it('happy path without snapshots: joined_fallback cumulative series and memberCount fallback', async () => {
