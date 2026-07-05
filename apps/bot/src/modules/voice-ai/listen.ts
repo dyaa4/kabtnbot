@@ -116,6 +116,7 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
 
       const config = await getCachedGuildConfig(guild.id);
       const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word);
+      console.log(`[Voice ${guild.id}] STT="${text}"`);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
       if (await handleTranscriptModeration(guild, session, userId, text)) {
