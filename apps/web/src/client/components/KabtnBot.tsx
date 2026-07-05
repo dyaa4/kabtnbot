@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useI18n } from '../i18n.js';
 
 /**
  * KabtnBot — the Kabtn captain-robot mascot.
@@ -124,6 +125,7 @@ function Layer({
 }
 
 export function KabtnBot({ className = '' }: { className?: string }) {
+  const { t } = useI18n();
   const wrapRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -207,6 +209,8 @@ export function KabtnBot({ className = '' }: { className?: string }) {
   return (
     <div
       ref={wrapRef}
+      role="img"
+      aria-label={t('mascotAlt')}
       className={`relative ${reduceMotion ? '' : 'animate-float'} ${className}`}
       style={{
         aspectRatio: '240 / 260',
@@ -225,6 +229,9 @@ export function KabtnBot({ className = '' }: { className?: string }) {
         @keyframes kabtn-antenna-glow {
           0%, 100% { opacity: 1; filter: drop-shadow(0 0 2px rgba(103,232,249,0.9)); }
           50% { opacity: 0.55; filter: drop-shadow(0 0 9px rgba(103,232,249,1)); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .kabtn-antenna-glow, .kabtn-shadow-pulse, .animate-float { animation: none !important; }
         }
       `}</style>
       <KabtnDefs />
@@ -298,18 +305,28 @@ export function KabtnBot({ className = '' }: { className?: string }) {
             </g>
             {/* blink eyelids (static, layered above pupils) */}
             <rect x="90" y="120" width="26" height="16" rx="8" fill="#0b1220">
-              <animate attributeName="height" values="0;16;0" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
-              <animate attributeName="y" values="128;120;128" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+              {!reduceMotion && (
+                <>
+                  <animate attributeName="height" values="0;16;0" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+                  <animate attributeName="y" values="128;120;128" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+                </>
+              )}
             </rect>
             <rect x="124" y="120" width="26" height="16" rx="8" fill="#0b1220">
-              <animate attributeName="height" values="0;16;0" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
-              <animate attributeName="y" values="128;120;128" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+              {!reduceMotion && (
+                <>
+                  <animate attributeName="height" values="0;16;0" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+                  <animate attributeName="y" values="128;120;128" keyTimes="0;0.5;1" dur="4s" begin="1.2s" repeatCount="indefinite" />
+                </>
+              )}
             </rect>
             {/* glossy specular streak sweeping across the visor glass */}
             <g clipPath="url(#kb-visor-clip)">
               <g transform="skewX(-20)">
                 <rect x="-60" y="90" width="34" height="90" fill="url(#kb-specular)">
-                  <animateTransform attributeName="transform" type="translate" values="-20 0; 260 0" keyTimes="0;1" dur="3.2s" repeatCount="indefinite" />
+                  {!reduceMotion && (
+                    <animateTransform attributeName="transform" type="translate" values="-20 0; 260 0" keyTimes="0;1" dur="3.2s" repeatCount="indefinite" />
+                  )}
                 </rect>
               </g>
             </g>
@@ -332,7 +349,7 @@ export function KabtnBot({ className = '' }: { className?: string }) {
           {/* antenna tip — z 28 */}
           <Layer innerRef={antennaRef} z={28}>
             <line x1="120" y1="16" x2="120" y2="42" stroke="#475569" strokeWidth="4" />
-            <circle cx="120" cy="12" r="8" fill="#67e8f9" style={{ animation: 'kabtn-antenna-glow 2s ease-in-out infinite' }} />
+            <circle cx="120" cy="12" r="8" fill="#67e8f9" style={{ animation: reduceMotion ? 'none' : 'kabtn-antenna-glow 2s ease-in-out infinite' }} />
           </Layer>
         </div>
       </div>
