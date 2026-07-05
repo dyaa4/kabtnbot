@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { ChannelSelect } from './ChannelSelect.js';
 
 function splitList(raw: string): string[] {
   return raw
@@ -123,9 +124,10 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         </label>
         <label className="mb-4 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.logChannelId')}</span>
-          <input
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-            {...form.register('log_channel_id')}
+          <ChannelSelect
+            guildId={guildId}
+            value={form.watch('log_channel_id') ?? ''}
+            onChange={(id) => form.setValue('log_channel_id', id)}
           />
         </label>
         <button

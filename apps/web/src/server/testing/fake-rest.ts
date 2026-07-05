@@ -8,6 +8,7 @@ export class FakeDiscordRest implements DiscordRest {
   guildNames = new Map<string, string>();
   members = new Map<string, { roles: string[] }>();
   membersList = new Map<string, DiscordMember[]>();
+  textChannels = new Map<string, { id: string; name: string }[]>();
   guildCounts = new Map<string, number>();
   deletedChannels: string[] = [];
   clearedMessages: string[] = [];
@@ -36,6 +37,9 @@ export class FakeDiscordRest implements DiscordRest {
   }
   async listMembers(guildId: string, limit = 1000) {
     return (this.membersList.get(guildId) ?? []).slice(0, limit);
+  }
+  async listTextChannels(guildId: string) {
+    return this.textChannels.get(guildId) ?? [];
   }
   async getGuildCounts(guildId: string) {
     const count = this.guildCounts.get(guildId);

@@ -14,6 +14,7 @@ export interface DiscordRest {
   getGuild(guildId: string): Promise<{ id: string; name: string; icon: string | null } | null>;
   getMember(guildId: string, userId: string): Promise<{ roles: string[] } | null>;
   listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
+  listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
@@ -88,6 +89,16 @@ export function createDiscordRest(): DiscordRest {
       );
       if (!members) return [];
       return members.map((m) => ({ id: m.user.id, username: m.user.username, avatar: m.user.avatar, joined_at: m.joined_at }));
+    },
+    async listTextChannels(guildId) {
+      const channels = await discordJson<{ id: string; name: string; type: number }[]>(
+        `${API}/guilds/${guildId}/channels`,
+        { headers: bot },
+        true,
+      );
+      if (!channels) return [];
+      // Discord channel types: 0 = text, 5 = announcement — both accept messages.
+      return channels.filter((c) => c.type === 0 || c.type === 5).map((c) => ({ id: c.id, name: c.name }));
     },
     async getGuildCounts(guildId) {
       return discordJson(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);

@@ -19,6 +19,11 @@ const config = {
   },
 };
 
+const channels = [
+  { id: '123', name: 'general' },
+  { id: '456', name: 'welcome' },
+];
+
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
@@ -29,6 +34,9 @@ beforeEach(() => {
           JSON.stringify({ ...config, ...body, welcome: { ...config.welcome, ...(body.welcome ?? {}) } }),
           { status: 200 },
         );
+      }
+      if (url.endsWith('/channels')) {
+        return new Response(JSON.stringify(channels), { status: 200 });
       }
       return new Response(JSON.stringify(config), { status: 200 });
     }),

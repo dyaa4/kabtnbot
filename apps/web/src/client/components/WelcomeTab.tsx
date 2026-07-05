@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { ChannelSelect } from './ChannelSelect.js';
 
 interface GuildConfigResp {
   welcome: {
@@ -178,11 +179,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
 
         <label className="mb-4 block">
           <span className="mb-1 block text-sm text-slate-400">{t('welcome.channelId')}</span>
-          <input
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-            value={channelId}
-            onChange={(e) => setChannelId(e.target.value)}
-          />
+          <ChannelSelect guildId={guildId} value={channelId} onChange={setChannelId} />
         </label>
 
         <label className="mb-1 block">

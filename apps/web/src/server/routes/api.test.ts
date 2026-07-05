@@ -123,6 +123,21 @@ describe('api routes', () => {
     expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
   });
 
+  it('lists text channels by name; denies non-managed guild', async () => {
+    const { app, cookie, rest } = setup();
+    rest.textChannels.set('g1', [
+      { id: '111', name: 'general' },
+      { id: '222', name: 'logs' },
+    ]);
+    const res = await request(app).get('/api/guilds/g1/channels').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { id: '111', name: 'general' },
+      { id: '222', name: 'logs' },
+    ]);
+    expect((await request(app).get('/api/guilds/gX/channels').set('Cookie', cookie)).status).toBe(403);
+  });
+
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {
     clearAccessCache();
     const { app, cookie, rest } = setup();

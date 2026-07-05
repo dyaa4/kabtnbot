@@ -87,6 +87,14 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  router.get('/guilds/:guildId/channels', guard, async (req, res, next) => {
+    try {
+      res.json(await rest.listTextChannels(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.patch('/guilds/:guildId/config', guard, async (req, res, next) => {
     try {
       const parsed = ConfigPatch.safeParse(req.body);

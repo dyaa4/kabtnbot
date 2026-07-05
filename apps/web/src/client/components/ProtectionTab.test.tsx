@@ -17,6 +17,11 @@ const config = {
   },
 };
 
+const channels = [
+  { id: '111', name: 'general' },
+  { id: '222', name: 'logs' },
+];
+
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
@@ -27,6 +32,9 @@ beforeEach(() => {
           JSON.stringify({ ...config, ...body, protection: { ...config.protection, ...(body.protection ?? {}) } }),
           { status: 200 },
         );
+      }
+      if (url.endsWith('/channels')) {
+        return new Response(JSON.stringify(channels), { status: 200 });
       }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
@@ -64,6 +72,22 @@ describe('ProtectionTab', () => {
       expect(patchCalls).toHaveLength(1);
       const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
       expect(body.protection.enabled).toBe(true);
+    });
+  });
+
+  it('lists text channels by name and PATCHes the selected channel id', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('كلمة1\nكلمة2', { collapseWhitespace: false });
+    const select = await screen.findByRole('combobox');
+    await screen.findByRole('option', { name: '#logs' });
+    await user.selectOptions(select, '222');
+    await user.click(screen.getByRole('button', { name: /حفظ|Save/ }));
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
+      expect(body.protection.log_channel_id).toBe('222');
     });
   });
 
