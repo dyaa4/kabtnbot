@@ -132,10 +132,19 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       }
 
       const query = parseWakeWord(text, config.voice.wake_word);
+      console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
       if (query !== null) {
         const { routeVoiceCommand } = await import('./router.js');
         const answer = await routeVoiceCommand(guild, session, query, userId);
-        if (answer) await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
+        if (answer) {
+          // Best-effort spoken reply (needs TTS/ElevenLabs)...
+          await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
+          // ...and always a text reply so the answer is visible without TTS.
+          const { resolveModerationChannel } = await import('../protection/voice-mod.js');
+          await resolveModerationChannel(guild, config.protection.log_channel_id)
+            ?.send(`🤖 ${answer}`)
+            .catch(() => {});
+        }
       }
     } catch (err) {
       console.error(`[Listen ${guild.id}]`, err);
