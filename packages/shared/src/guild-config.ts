@@ -5,19 +5,36 @@ export type Dialect = (typeof DIALECTS)[number];
 
 export const GuildConfigSchema = z.object({
   language: z.literal('ar').default('ar'),
+  admin_role_id: z.string().nullable().default(null),
   voice: z
     .object({
       enabled: z.boolean().default(true),
-      wake_word: z.string().min(2).max(30).default('يا بوت'),
+      wake_word: z.string().min(2).max(30).default('يا كابتن'),
       dialect: z.enum(DIALECTS).default('gulf'),
       allowed_channel_ids: z.array(z.string()).default([]),
+      personality_enabled: z.boolean().default(false),
     })
     .default({}),
-  customs: z
+  protection: z
     .object({
-      win_points: z.number().int().default(25),
-      loss_points: z.number().int().default(-10),
-      admin_role_id: z.string().nullable().default(null),
+      enabled: z.boolean().default(false),
+      voice_moderation: z.boolean().default(true),
+      text_protection: z.boolean().default(false),
+      custom_words: z.array(z.string()).max(200).default([]),
+      allowed_domains: z.array(z.string()).max(200).default([]),
+      log_channel_id: z.string().nullable().default(null),
+    })
+    .default({}),
+  welcome: z
+    .object({
+      enabled: z.boolean().default(false),
+      channel_id: z.string().nullable().default(null),
+      message: z.string().max(500).default('أهلاً {user} في {server}! 🎮'),
+      banner_url: z.string().url().nullable().default(null),
+      avatar_x: z.number().min(0).max(1).default(0.5),
+      avatar_y: z.number().min(0).max(1).default(0.4),
+      avatar_size: z.number().min(0.05).max(0.6).default(0.25),
+      show_name: z.boolean().default(true),
     })
     .default({}),
   quotas: z
