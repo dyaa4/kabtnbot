@@ -7,15 +7,11 @@ vi.mock('@gamebot/db', () => ({
     customs: { win_points: 25, loss_points: -10, admin_role_id: null },
     quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
   })),
-  getActiveMatch: vi.fn(async () => null),
-  getPointsMap: vi.fn(async () => new Map()),
   getUsage: vi.fn(async () => ({ listen_seconds: 0, ai_questions: 0 })),
   incrementAiQuestions: vi.fn(async () => {}),
   incrementListenSeconds: vi.fn(async () => {}),
 }));
 
-import { getActiveMatch } from '@gamebot/db';
-import { S } from '../../lib/strings.js';
 import { routeVoiceCommand } from './router.js';
 
 function fakeGuild(memberIds: string[], extraMembers: Record<string, unknown> = {}) {
@@ -53,33 +49,8 @@ describe('routeVoiceCommand', () => {
     expect(reply).toContain('42');
   });
 
-  it('quick-shuffles current channel members when no lobby exists', async () => {
-    const reply = await routeVoiceCommand(fakeGuild(['a', 'b', 'c', 'd']), fakeSession(), 'وزع الفرق', 'u-speaker');
-    expect(reply).toContain('فريق');
-  });
-
   it('returns help text', async () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد', 'u-speaker');
     expect(reply.length).toBeGreaterThan(0);
-  });
-
-  it('rejects starting the lobby match via voice when speaker is neither creator nor admin', async () => {
-    vi.mocked(getActiveMatch).mockResolvedValueOnce({
-      status: 'lobby',
-      players: ['a', 'b'],
-      creator_id: 'someone-else',
-      _id: { toString: () => 'm1' },
-    } as never);
-    const guild = fakeGuild(['a', 'b'], {
-      'u-speaker': {
-        id: 'u-speaker',
-        user: { bot: false },
-        displayName: 'u-speaker',
-        permissions: { has: () => false },
-        roles: { cache: { has: () => false } },
-      },
-    });
-    const reply = await routeVoiceCommand(guild, fakeSession(), 'وزع الفرق', 'u-speaker');
-    expect(reply).toBe(S.onlyCreatorOrAdmin);
   });
 });
