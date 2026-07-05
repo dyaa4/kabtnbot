@@ -36,6 +36,15 @@ describe('matchesProfanity', () => {
     expect(matchesProfanity('يا حمــار', ['حمار'])).toBe(true);
     expect(matchesProfanity('أنت حِمَآر', ['حمار'])).toBe(true);
   });
+  it('treats a word-final ة/ه/ا as interchangeable (Whisper STT ambiguity)', () => {
+    // entry ends in ta-marbuta, STT rendered the ending as alef → still matches
+    expect(matchesProfanity('قال زنبورا', ['زنبورة'])).toBe(true);
+    // and if the admin typed the alef form, an STT ha/ta ending still matches
+    expect(matchesProfanity('قال زنبوره', ['زنبورا'])).toBe(true);
+    expect(matchesProfanity('يا قحبه', ['قحبة'])).toBe(true);
+    // but it must not turn an unrelated clean word into a match
+    expect(matchesProfanity('مرحبا يا شباب', ['زنبورة'])).toBe(false);
+  });
   it('ships a bilingual built-in blocklist (no custom words needed)', () => {
     // representative English
     for (const s of ['you fucking noob', 'what a bitch', 'go to hell asshole']) {

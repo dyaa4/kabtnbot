@@ -46,7 +46,10 @@ export function matchesProfanity(text: string, customWords: string[]): boolean {
   return words.some((w) => {
     const nw = normalizeText(w);
     if (!nw) return false;
-    return new RegExp(`(^|[^\\p{L}])${escapeRe(nw)}([^\\p{L}]|$)`, 'u').test(` ${n} `);
+    // Whisper renders a word-final ta-marbuta (ة, normalized to ه) as ه or ا
+    // inconsistently, so let a trailing ه/ا in the entry match either ending.
+    const body = /[ها]$/.test(nw) ? `${escapeRe(nw.slice(0, -1))}[ها]` : escapeRe(nw);
+    return new RegExp(`(^|[^\\p{L}])${body}([^\\p{L}]|$)`, 'u').test(` ${n} `);
   });
 }
 
