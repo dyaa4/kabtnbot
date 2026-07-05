@@ -1,4 +1,4 @@
-import type { Guild } from 'discord.js';
+import type { Guild, TextChannel } from 'discord.js';
 import { matchesProfanity } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { playSpeech, type VoiceSession } from '../voice-ai/sessions.js';
@@ -20,6 +20,31 @@ export class ProfanityTracker {
   }
 }
 
+/**
+ * Where to post a visible moderation notice: the configured log channel if it
+ * exists and is text-based, else the guild's system channel, else the first
+ * usable text channel. Returns null if nothing usable exists.
+ */
+export function resolveModerationChannel(
+  guild: Guild,
+  logChannelId: string | null,
+): { send: (content: string) => Promise<unknown> } | null {
+  const isText = (c: unknown): c is TextChannel =>
+    !!c && typeof (c as { isTextBased?: () => boolean }).isTextBased === 'function' && (c as TextChannel).isTextBased();
+
+  if (logChannelId) {
+    const c = guild.channels.cache.get(logChannelId);
+    if (isText(c)) return c as unknown as { send: (content: string) => Promise<unknown> };
+  }
+  if (isText(guild.systemChannel)) {
+    return guild.systemChannel as unknown as { send: (content: string) => Promise<unknown> };
+  }
+  for (const c of guild.channels.cache.values()) {
+    if (isText(c)) return c as unknown as { send: (content: string) => Promise<unknown> };
+  }
+  return null;
+}
+
 const tracker = new ProfanityTracker();
 
 export async function handleTranscriptModeration(
@@ -35,10 +60,15 @@ export async function handleTranscriptModeration(
 
   const member = guild.members.cache.get(userId);
   const name = member?.displayName ?? 'عضو';
+  const channel = resolveModerationChannel(guild, config.protection.log_channel_id);
   const action = tracker.register(guild.id, userId, now());
+
   if (action === 'warn') {
+    // Text notice works even without TTS; spoken warning is best-effort.
+    await channel?.send(`⚠️ <@${userId}> تنبيه: لغة غير لائقة في الصوت. عند التكرار سيتم إخراجك.`).catch(() => {});
     await playSpeech(guild.id, `يا ${name}، انتبه لألفاظك من فضلك.`).catch(() => {});
   } else {
+    await channel?.send(`🚫 تم إخراج <@${userId}> من الصوت بسبب تكرار الألفاظ غير اللائقة.`).catch(() => {});
     await playSpeech(guild.id, `يا ${name}، تم إخراجك بسبب تكرار الألفاظ.`).catch(() => {});
     await member?.voice.disconnect().catch(() => {});
   }
