@@ -48,13 +48,27 @@ export class DiscordApiError extends Error {
   }
 }
 
+// Discord rate-limits aggressively (429 + Retry-After in seconds). Retry once
+// after the advertised wait (capped) so a transient limit doesn't surface as a
+// 500 in the dashboard.
+const RETRY_AFTER_CAP_MS = 5000;
+
+export async function discordFetch(url: string, init: RequestInit): Promise<Response> {
+  const res = await fetch(url, init);
+  if (res.status !== 429) return res;
+  const after = Number(res.headers.get('retry-after'));
+  const waitMs = Math.min((Number.isFinite(after) && after >= 0 ? after : 1) * 1000, RETRY_AFTER_CAP_MS);
+  await new Promise((resolve) => setTimeout(resolve, waitMs));
+  return fetch(url, init);
+}
+
 async function discordJson<T>(
   url: string,
   init: RequestInit,
   allow404 = false,
   userToken = false,
 ): Promise<T | null> {
-  const res = await fetch(url, init);
+  const res = await discordFetch(url, init);
   if (userToken && res.status === 401) throw new DiscordAuthError();
   if (allow404 && (res.status === 404 || res.status === 403)) return null;
   if (!res.ok) throw new Error(`Discord ${res.status} for ${url}`);
@@ -141,7 +155,7 @@ export function createDiscordRest(): DiscordRest {
       );
     },
     async editBotMember(guildId, patch) {
-      const res = await fetch(`${API}/guilds/${guildId}/members/@me`, {
+      const res = await discordFetch(`${API}/guilds/${guildId}/members/@me`, {
         method: 'PATCH',
         headers: { ...bot, 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -150,7 +164,7 @@ export function createDiscordRest(): DiscordRest {
       return (await res.json()) as BotMember;
     },
     async editBotUser(patch) {
-      const res = await fetch(`${API}/users/@me`, {
+      const res = await discordFetch(`${API}/users/@me`, {
         method: 'PATCH',
         headers: { ...bot, 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
