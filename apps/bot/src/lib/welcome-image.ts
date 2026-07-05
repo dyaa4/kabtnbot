@@ -9,7 +9,7 @@ export function formatWelcome(template: string, vars: { user: string; server: st
 
 export async function renderWelcomeImage(opts: {
   banner: Buffer | string; // uploaded image bytes, or a legacy https URL
-  avatarUrl: string;
+  avatar: Buffer | string; // avatar bytes or CDN URL
   name: string | null;
   x: number;
   y: number;
@@ -20,6 +20,9 @@ export async function renderWelcomeImage(opts: {
   // catches and falls back to a text-only welcome.
   if (typeof opts.banner === 'string' && !opts.banner.startsWith('https://')) {
     throw new Error('banner URL must be https');
+  }
+  if (typeof opts.avatar === 'string' && !opts.avatar.startsWith('https://')) {
+    throw new Error('avatar URL must be https');
   }
   const banner = await loadImage(opts.banner);
   const W = banner.width;
@@ -33,7 +36,7 @@ export async function renderWelcomeImage(opts: {
   const cy = Math.round(opts.y * H);
   const r = d / 2;
 
-  const avatar = await loadImage(opts.avatarUrl);
+  const avatar = await loadImage(opts.avatar);
   ctx.save();
   ctx.beginPath();
   ctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -49,10 +52,18 @@ export async function renderWelcomeImage(opts: {
   ctx.stroke();
 
   if (opts.name) {
-    ctx.font = `bold ${Math.round(d * 0.22)}px sans-serif`;
+    const fontSize = Math.round(d * 0.22);
+    // Keep the baseline on-canvas even when the avatar sits near the bottom edge.
+    const textY = Math.min(cy + r + Math.round(d * 0.28), H - Math.round(fontSize * 0.25));
+    ctx.font = `bold ${fontSize}px sans-serif`;
     ctx.textAlign = 'center';
+    // Dark halo behind the white name so it stays readable on light banners.
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = Math.max(2, Math.round(fontSize * 0.15));
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.strokeText(opts.name, cx, textY);
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(opts.name, cx, cy + r + Math.round(d * 0.28));
+    ctx.fillText(opts.name, cx, textY);
   }
 
   return canvas.toBuffer('image/png');

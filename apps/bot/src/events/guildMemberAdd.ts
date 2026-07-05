@@ -1,11 +1,11 @@
 import { AttachmentBuilder, type Client, type TextChannel } from 'discord.js';
-import { getGuildAsset, getGuildConfig } from '@gamebot/db';
+import { getGuildAsset, getGuildConfigRead } from '@gamebot/db';
 import { formatWelcome, renderWelcomeImage } from '../lib/welcome-image.js';
 
 export function registerWelcome(client: Client): void {
   client.on('guildMemberAdd', async (member) => {
     try {
-      const config = await getGuildConfig(member.guild.id);
+      const config = await getGuildConfigRead(member.guild.id);
       if (!config.welcome.enabled || !config.welcome.channel_id) return;
       const channel = member.guild.channels.cache.get(config.welcome.channel_id);
       if (!channel?.isTextBased()) return;
@@ -23,7 +23,7 @@ export function registerWelcome(client: Client): void {
       if (banner) {
         const buf = await renderWelcomeImage({
           banner,
-          avatarUrl: member.displayAvatarURL({ extension: 'png', size: 256 }),
+          avatar: member.displayAvatarURL({ extension: 'png', size: 256 }),
           name: config.welcome.show_name ? member.displayName : null,
           x: config.welcome.avatar_x,
           y: config.welcome.avatar_y,
