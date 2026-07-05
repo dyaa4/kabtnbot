@@ -107,14 +107,14 @@ describe('analytics-repo: matchesPerDay', () => {
     });
     await setMatchStarted('gMatchBoundary', included._id.toString(), ['a'], ['b'], []);
     await completeMatch('gMatchBoundary', included._id.toString(), 'a');
-    // End-of-day timestamp so it's deterministically >= cutoffDate() regardless of how many
-    // milliseconds elapse between this setup and the query's own `new Date()` call below.
+    // The very START of the boundary day: the cutoff is floored to UTC midnight, so even
+    // 00:00:00.000 on today-days+1 must be included (regression for time-of-day cutoffs).
     const includedDate = new Date();
     includedDate.setUTCDate(includedDate.getUTCDate() - (days - 1));
-    includedDate.setUTCHours(23, 59, 59, 999);
+    includedDate.setUTCHours(0, 0, 0, 0);
     await MatchModel.updateOne({ _id: included._id }, { $set: { completed_at: includedDate } });
 
-    // Completed exactly on today-days -> one day before the rendered window. Must be excluded.
+    // The very END of today-days -> one millisecond before the rendered window. Must be excluded.
     const excluded = await createMatch({
       guildId: 'gMatchBoundary', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'chb2',
     });
@@ -122,6 +122,7 @@ describe('analytics-repo: matchesPerDay', () => {
     await completeMatch('gMatchBoundary', excluded._id.toString(), 'a');
     const excludedDate = new Date();
     excludedDate.setUTCDate(excludedDate.getUTCDate() - days);
+    excludedDate.setUTCHours(23, 59, 59, 999);
     await MatchModel.updateOne({ _id: excluded._id }, { $set: { completed_at: excludedDate } });
 
     const perDay = await matchesPerDay('gMatchBoundary', days);
