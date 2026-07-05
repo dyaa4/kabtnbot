@@ -4,7 +4,7 @@ import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig,
   topPlayers, getActiveMatch, recentMatches, cancelMatch, adjustPlayerPoints, getUsage,
-  memberSnapshots, matchesPerDay, aiUsageDaily, newPlayersPerDay,
+  memberSnapshots, matchesPerDay, aiUsageDaily, newPlayersPerDay, mostActivePlayers,
 } from '@gamebot/db';
 import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -123,6 +123,24 @@ function cutoffKeyFor(days: number): string {
   return dateKeyOf(d);
 }
 
+// Every UTC calendar day from (today - days + 1) to today, inclusive — `days` entries total.
+// Used to zero/carry-fill sparse per-day series so charts always span the full selected window.
+function fillDays(days: number): string[] {
+  const out: string[] = [];
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(d.getUTCDate() - i);
+    out.push(dateKeyOf(d));
+  }
+  return out;
+}
+
+function fillSeries<T extends { date: string }>(days: number, series: T[], zeroFactory: (date: string) => T): T[] {
+  const byDate = new Map(series.map((item) => [item.date, item]));
+  return fillDays(days).map((date) => byDate.get(date) ?? zeroFactory(date));
+}
+
 // Limitation (documented per spec): this fallback curve only reflects members still present
 // today (survivors) — members who joined and later left are invisible retroactively.
 function joinedFallbackSeries(members: DiscordMember[], days: number): { date: string; member_count: number }[] {
@@ -139,9 +157,25 @@ function joinedFallbackSeries(members: DiscordMember[], days: number): { date: s
     perDayCounts.set(key, (perDayCounts.get(key) ?? 0) + 1);
   }
   let cumulative = baseline;
-  return [...perDayCounts.keys()].sort().map((date) => {
-    cumulative += perDayCounts.get(date)!;
+  return fillDays(days).map((date) => {
+    cumulative += perDayCounts.get(date) ?? 0;
     return { date, member_count: cumulative };
+  });
+}
+
+// Carries the last known snapshot count forward across every day in the window; days before the
+// earliest snapshot are back-filled with that earliest known value (no earlier data exists).
+function fillSnapshotSeries(
+  snapshots: { date: string; member_count: number }[],
+  days: number,
+): { date: string; member_count: number }[] {
+  const byDate = new Map(snapshots.map((s) => [s.date, s.member_count]));
+  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
+  let last = sorted[0]?.member_count ?? 0;
+  return fillDays(days).map((date) => {
+    const known = byDate.get(date);
+    if (known !== undefined) last = known;
+    return { date, member_count: last };
   });
 }
 
@@ -159,7 +193,7 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
       const guildId = req.params.guildId;
       const cutoffKey = cutoffKeyFor(days);
 
-      const [members, counts, snapshots, matches, usage, players, top] = await Promise.all([
+      const [members, counts, snapshots, matchesRaw, usageRaw, playersRaw, top, mostActiveRaw] = await Promise.all([
         statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
         statsCached(`counts:${guildId}`, () => rest.getGuildCounts(guildId)),
         memberSnapshots(guildId, days),
@@ -167,7 +201,12 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         aiUsageDaily(guildId, days),
         newPlayersPerDay(guildId, days),
         topPlayers(guildId, 5),
+        mostActivePlayers(guildId, days, 5),
       ]);
+
+      const matches = fillSeries(days, matchesRaw, (date) => ({ date, count: 0 }));
+      const players = fillSeries(days, playersRaw, (date) => ({ date, count: 0 }));
+      const usage = fillSeries(days, usageRaw, (date) => ({ date, ai_questions: 0, listen_seconds: 0 }));
 
       const joinedRecent = [...members]
         .sort((a, b) => b.joined_at.localeCompare(a.joined_at))
@@ -176,9 +215,12 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
       const newMembers = members.filter((m) => m.joined_at.slice(0, 10) >= cutoffKey).length;
 
-      let memberSeriesSource: 'snapshots' | 'joined_fallback' = 'snapshots';
-      let memberSeries = snapshots;
-      if (memberSeries.length === 0) {
+      let memberSeriesSource: 'snapshots' | 'joined_fallback';
+      let memberSeries: { date: string; member_count: number }[];
+      if (snapshots.length >= 2) {
+        memberSeriesSource = 'snapshots';
+        memberSeries = fillSnapshotSeries(snapshots, days);
+      } else {
         memberSeriesSource = 'joined_fallback';
         memberSeries = joinedFallbackSeries(members, days);
       }
@@ -193,6 +235,10 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         ...p,
         name: nameById.get(p.user_id) ?? `#${p.user_id.slice(-4)}`,
       }));
+      const mostActive = mostActiveRaw.map((p) => ({
+        ...p,
+        name: nameById.get(p.user_id) ?? `#${p.user_id.slice(-4)}`,
+      }));
 
       res.json({
         memberCount,
@@ -203,6 +249,7 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         usageDaily: usage,
         newPlayersPerDay: players,
         topPlayers: topPlayersWithNames,
+        mostActive,
         totals: { newMembers, matches: totalMatches, aiQuestions: totalAiQuestions },
       });
     } catch (err) {

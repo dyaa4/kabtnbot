@@ -32,6 +32,8 @@
   "stats.aiPerDay": "AI questions per day",
   "stats.listenPerDay": "Listen minutes per day",
   "stats.topPlayers": "Top players",
+  "stats.mostActive": "Most active players (matches)",
+  "stats.newPlayersPerDay": "New players per day",
   "stats.recentJoins": "Recently joined",
   "stats.fallbackHint": "Estimated from current members' join dates — accuracy improves daily once tracking is enabled",
   "stats.empty": "No data yet",

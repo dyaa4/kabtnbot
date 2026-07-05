@@ -10,6 +10,7 @@ import {
   matchesPerDay,
   aiUsageDaily,
   newPlayersPerDay,
+  mostActivePlayers,
 } from './analytics-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -112,6 +113,57 @@ describe('analytics-repo: aiUsageDaily', () => {
     expect(usage[0].ai_questions).toBe(2);
     expect(usage[1].date).toBe(daysAgoKey(1));
     expect(usage[1].listen_seconds).toBe(45);
+  });
+});
+
+describe('analytics-repo: mostActivePlayers', () => {
+  it('ranks players by matches played within the window, excluding matches outside it and other guilds', async () => {
+    // u1 plays two completed matches "now" (team_a + team_b), u2 plays one.
+    const m1 = await createMatch({
+      guildId: 'gActive', creatorId: 'c', game: 'x', teamSize: 2, balanceMode: 'random', lobbyChannelId: 'ch1',
+    });
+    await setMatchStarted('gActive', m1._id.toString(), ['u1', 'u2'], ['u3'], []);
+    await completeMatch('gActive', m1._id.toString(), 'a');
+
+    const m2 = await createMatch({
+      guildId: 'gActive', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch2',
+    });
+    await setMatchStarted('gActive', m2._id.toString(), ['u1'], ['u4'], []);
+    await completeMatch('gActive', m2._id.toString(), 'a');
+
+    // Completed 50 days ago -> outside a 30-day window; u1 should not get credit for it.
+    const m3 = await createMatch({
+      guildId: 'gActive', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch3',
+    });
+    await setMatchStarted('gActive', m3._id.toString(), ['u1'], ['u5'], []);
+    await completeMatch('gActive', m3._id.toString(), 'a');
+    const oldDate = new Date();
+    oldDate.setUTCDate(oldDate.getUTCDate() - 50);
+    await MatchModel.updateOne({ _id: m3._id }, { $set: { completed_at: oldDate } });
+
+    // A different guild's matches must not leak in.
+    const mOther = await createMatch({
+      guildId: 'gActiveOther', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch4',
+    });
+    await setMatchStarted('gActiveOther', mOther._id.toString(), ['u1'], ['u6'], []);
+    await completeMatch('gActiveOther', mOther._id.toString(), 'a');
+
+    const ranked = await mostActivePlayers('gActive', 30, 5);
+    expect(ranked[0]).toEqual({ user_id: 'u1', matches: 2 });
+    const others = ranked.filter((r) => r.user_id !== 'u1').map((r) => r.user_id);
+    expect(others.sort()).toEqual(['u2', 'u3', 'u4']);
+    expect(ranked.every((r) => r.user_id !== 'u5' && r.user_id !== 'u6')).toBe(true);
+  });
+
+  it('respects the limit parameter', async () => {
+    const m = await createMatch({
+      guildId: 'gActiveLimit', creatorId: 'c', game: 'x', teamSize: 3, balanceMode: 'random', lobbyChannelId: 'ch',
+    });
+    await setMatchStarted('gActiveLimit', m._id.toString(), ['p1', 'p2', 'p3'], ['p4', 'p5', 'p6'], []);
+    await completeMatch('gActiveLimit', m._id.toString(), 'a');
+
+    const ranked = await mostActivePlayers('gActiveLimit', 30, 2);
+    expect(ranked).toHaveLength(2);
   });
 });
 

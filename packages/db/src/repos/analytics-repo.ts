@@ -69,3 +69,19 @@ export async function newPlayersPerDay(guildId: string, days: number): Promise<{
   ]);
   return results.map((r) => ({ date: r._id as string, count: r.count as number }));
 }
+
+export async function mostActivePlayers(
+  guildId: string,
+  days: number,
+  limit = 5,
+): Promise<{ user_id: string; matches: number }[]> {
+  const results = await MatchModel.aggregate([
+    { $match: { guild_id: guildId, status: 'completed', completed_at: { $gte: cutoffDate(days) } } },
+    { $project: { players: { $concatArrays: ['$team_a', '$team_b'] } } },
+    { $unwind: '$players' },
+    { $group: { _id: '$players', matches: { $sum: 1 } } },
+    { $sort: { matches: -1 } },
+    { $limit: limit },
+  ]);
+  return results.map((r) => ({ user_id: r._id as string, matches: r.matches as number }));
+}

@@ -9,12 +9,37 @@ import { StatsTab } from './StatsTab.js';
 const statsResponse = {
   memberCount: 250,
   joinedRecent: [{ id: 'm1', username: 'Alice', avatar: null, joined_at: new Date().toISOString() }],
-  memberSeries: [{ date: '2026-07-01', member_count: 200 }],
+  memberSeries: [
+    { date: '2026-06-27', member_count: 190 },
+    { date: '2026-06-28', member_count: 190 },
+    { date: '2026-06-29', member_count: 190 },
+    { date: '2026-06-30', member_count: 190 },
+    { date: '2026-07-01', member_count: 200 },
+  ],
   memberSeriesSource: 'snapshots',
-  matchesPerDay: [{ date: '2026-07-01', count: 3 }],
-  usageDaily: [{ date: '2026-07-01', ai_questions: 5, listen_seconds: 120 }],
-  newPlayersPerDay: [{ date: '2026-07-01', count: 1 }],
+  matchesPerDay: [
+    { date: '2026-06-27', count: 0 },
+    { date: '2026-06-28', count: 0 },
+    { date: '2026-06-29', count: 0 },
+    { date: '2026-06-30', count: 0 },
+    { date: '2026-07-01', count: 3 },
+  ],
+  usageDaily: [
+    { date: '2026-06-27', ai_questions: 0, listen_seconds: 0 },
+    { date: '2026-06-28', ai_questions: 0, listen_seconds: 0 },
+    { date: '2026-06-29', ai_questions: 0, listen_seconds: 0 },
+    { date: '2026-06-30', ai_questions: 0, listen_seconds: 0 },
+    { date: '2026-07-01', ai_questions: 5, listen_seconds: 120 },
+  ],
+  newPlayersPerDay: [
+    { date: '2026-06-27', count: 0 },
+    { date: '2026-06-28', count: 0 },
+    { date: '2026-06-29', count: 0 },
+    { date: '2026-06-30', count: 0 },
+    { date: '2026-07-01', count: 1 },
+  ],
   topPlayers: [{ user_id: 'a', name: 'Alice', points: 25, wins: 1, losses: 0 }],
+  mostActive: [{ user_id: 'a', name: 'Alice', matches: 3 }],
   totals: { newMembers: 7, matches: 3, aiQuestions: 5 },
 };
 

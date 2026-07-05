@@ -21,6 +21,11 @@ interface TopPlayer {
   wins: number;
   losses: number;
 }
+interface ActivePlayer {
+  user_id: string;
+  name: string;
+  matches: number;
+}
 interface JoinedMember {
   id: string;
   username: string;
@@ -36,6 +41,7 @@ interface StatsResp {
   usageDaily: UsagePoint[];
   newPlayersPerDay: SeriesPoint[];
   topPlayers: TopPlayer[];
+  mostActive: ActivePlayer[];
   totals: { newMembers: number; matches: number; aiQuestions: number };
 }
 
@@ -108,7 +114,9 @@ export function StatsTab({ guildId }: { guildId: string }) {
   const memberSeries = data?.memberSeries ?? [];
   const matchesSeries = data?.matchesPerDay ?? [];
   const usageSeries = data?.usageDaily ?? [];
+  const newPlayersSeries = data?.newPlayersPerDay ?? [];
   const topPlayers = data?.topPlayers ?? [];
+  const mostActive = data?.mostActive ?? [];
   const listenMinutesSeries = usageSeries.map((d) => ({ date: d.date, minutes: Math.round(d.listen_seconds / 60) }));
   const joinedRecent = data?.joinedRecent ?? [];
 
@@ -206,6 +214,37 @@ export function StatsTab({ guildId }: { guildId: string }) {
             />
             <Tooltip {...TOOLTIP_PROPS} />
             <Bar dataKey="points" fill="#6366f1" radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ChartCard title={t('stats.mostActive')} empty={mostActive.length === 0}>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={mostActive} layout="vertical">
+            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={90}
+              tick={{ fill: '#64748b', fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+            />
+            <Tooltip {...TOOLTIP_PROPS} />
+            <Bar dataKey="matches" fill="#6366f1" radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
+
+      <ChartCard title={t('stats.newPlayersPerDay')} empty={isAllZero(newPlayersSeries.map((d) => d.count ?? 0))}>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={newPlayersSeries} barCategoryGap={2}>
+            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="date" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <Tooltip {...TOOLTIP_PROPS} />
+            <Bar dataKey="count" fill="#0891b2" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </ChartCard>

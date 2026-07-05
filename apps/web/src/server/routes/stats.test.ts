@@ -41,6 +41,10 @@ function isoDaysAgo(days: number): string {
   return d.toISOString();
 }
 
+function dateKeyDaysAgo(days: number): string {
+  return isoDaysAgo(days).slice(0, 10);
+}
+
 describe('stats route', () => {
   beforeEach(() => {
     clearAccessCache();
@@ -67,7 +71,7 @@ describe('stats route', () => {
     expect(res.status).toBe(200);
   });
 
-  it('happy path with member snapshots present: memberCount, joinedRecent order, totals, aggregates', async () => {
+  it('happy path with >=2 member snapshots: memberCount, joinedRecent order, totals, aggregates, mostActive', async () => {
     const { app, rest, cookie } = setup('gStats1');
     const m1JoinedAt = isoDaysAgo(1);
     rest.membersList.set('gStats1', [
@@ -89,6 +93,8 @@ describe('stats route', () => {
 
     await applyMatchResult('gStats1', ['a'], ['b'], 25, -10);
 
+    // Two snapshots (>=2) so the growth chart uses 'snapshots', carried forward across gaps.
+    await recordMemberSnapshot('gStats1', 190, dateKeyDaysAgo(5));
     await recordMemberSnapshot('gStats1', 200, todayKey());
 
     const res = await request(app).get('/api/guilds/gStats1/stats').set('Cookie', cookie);
@@ -98,14 +104,32 @@ describe('stats route', () => {
     expect(res.body.joinedRecent[0]).toEqual({ id: 'm1', username: 'Alice', avatar: null, joined_at: m1JoinedAt });
     expect(res.body.totals.newMembers).toBe(2); // m1, m2 within default 30d window; m3 outside
     expect(res.body.memberSeriesSource).toBe('snapshots');
-    expect(res.body.memberSeries).toEqual([{ date: todayKey(), member_count: 200 }]);
+    // Full 30-day window, carried forward: flat 190 up to the 5-days-ago snapshot, then 200 through today.
+    expect(res.body.memberSeries).toHaveLength(30);
+    expect(res.body.memberSeries[0].member_count).toBe(190);
+    expect(res.body.memberSeries.at(-2).member_count).toBe(190);
+    expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 200 });
     expect(res.body.totals.matches).toBe(1);
     expect(res.body.totals.aiQuestions).toBe(2);
     expect(res.body.topPlayers[0].user_id).toBe('a');
     expect(res.body.topPlayers[0].name).toBe('Player_A');
+    expect(res.body.mostActive).toContainEqual({ user_id: 'a', name: 'Player_A', matches: 1 });
   });
 
-  it('happy path without snapshots: joined_fallback cumulative series and memberCount fallback', async () => {
+  it('single snapshot falls back to joined_fallback (not enough points for a trend)', async () => {
+    const { app, rest, cookie } = setup('gStatsOneSnap');
+    rest.membersList.set('gStatsOneSnap', [
+      { id: 'm1', username: 'A', avatar: null, joined_at: isoDaysAgo(1) },
+    ]);
+    await recordMemberSnapshot('gStatsOneSnap', 200, todayKey());
+
+    const res = await request(app).get('/api/guilds/gStatsOneSnap/stats?days=7').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.memberSeriesSource).toBe('joined_fallback');
+    expect(res.body.memberSeries).toHaveLength(7);
+  });
+
+  it('happy path without snapshots: joined_fallback cumulative series spans the full window', async () => {
     const { app, rest, cookie } = setup('gStats2');
     rest.membersList.set('gStats2', [
       { id: 'm1', username: 'A', avatar: null, joined_at: isoDaysAgo(20) }, // within 30d window
@@ -118,9 +142,26 @@ describe('stats route', () => {
     expect(res.status).toBe(200);
     expect(res.body.memberCount).toBe(3);
     expect(res.body.memberSeriesSource).toBe('joined_fallback');
-    expect(res.body.memberSeries).toHaveLength(2);
-    expect(res.body.memberSeries[0].member_count).toBe(2); // baseline 1 (m3) + m1
-    expect(res.body.memberSeries[1].member_count).toBe(3); // + m2
+    expect(res.body.memberSeries).toHaveLength(30); // full window, zero-gap days carried forward
+    expect(res.body.memberSeries[0].member_count).toBe(1); // baseline: m3 joined before the window
+    const day20 = res.body.memberSeries.find((d: { date: string }) => d.date === dateKeyDaysAgo(20));
+    expect(day20.member_count).toBe(2); // + m1
+    expect(res.body.memberSeries.at(-1).member_count).toBe(3); // + m2, carried to today
     expect(res.body.totals.newMembers).toBe(2);
+  });
+
+  it('daily series span the full selected window with zero-fill on empty days', async () => {
+    const { app, cookie } = setup('gStatsFullWindow');
+    const res = await request(app).get('/api/guilds/gStatsFullWindow/stats?days=7').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.matchesPerDay).toHaveLength(7);
+    expect(res.body.usageDaily).toHaveLength(7);
+    expect(res.body.newPlayersPerDay).toHaveLength(7);
+    expect(res.body.matchesPerDay.every((d: { count: number }) => d.count === 0)).toBe(true);
+    expect(res.body.usageDaily.every((d: { ai_questions: number; listen_seconds: number }) =>
+      d.ai_questions === 0 && d.listen_seconds === 0)).toBe(true);
+    expect(res.body.newPlayersPerDay.every((d: { count: number }) => d.count === 0)).toBe(true);
+    expect(res.body.matchesPerDay.at(-1).date).toBe(todayKey());
+    expect(res.body.mostActive).toEqual([]);
   });
 });
