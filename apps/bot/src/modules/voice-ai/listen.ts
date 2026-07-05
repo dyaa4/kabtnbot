@@ -118,7 +118,14 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
-      if (await handleTranscriptModeration(guild, session, userId, text)) return; // moderated → skip wake-word handling
+      if (await handleTranscriptModeration(guild, session, userId, text)) {
+        // moderated → skip wake-word handling, but re-subscribe if the member is still
+        // in the channel (i.e. was warned, not kicked) so a second offense can escalate.
+        if (session.listening && guild.members.cache.get(userId)?.voice.channelId === session.channelId) {
+          subscribeToUser(session, guild, userId);
+        }
+        return;
+      }
 
       const query = parseWakeWord(text, config.voice.wake_word);
       if (query !== null) {
