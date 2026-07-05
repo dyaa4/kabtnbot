@@ -116,6 +116,10 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
 
       const config = await getGuildConfig(guild.id);
       const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word);
+
+      const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
+      if (await handleTranscriptModeration(guild, session, userId, text)) return; // moderated → skip wake-word handling
+
       const query = parseWakeWord(text, config.voice.wake_word);
       if (query !== null) {
         const { routeVoiceCommand } = await import('./router.js');
