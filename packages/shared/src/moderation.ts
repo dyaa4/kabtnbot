@@ -14,8 +14,12 @@ const INVITE_RE = /\b(discord\.gg|discord\.com\/invite|discordapp\.com\/invite)\
 export function normalizeText(s: string): string {
   return s
     .toLowerCase()
-    .replace(/[ً-ْٰ]/g, '') // Arabic diacritics
-    .replace(/(.)\1{2,}/g, '$1') // 3+ repeats → 1
+    .replace(/[ً-ْٰ]/g, '') // Arabic diacritics (tashkeel)
+    .replace(/ـ/g, '') // tatweel ـ
+    .replace(/[أإآٱ]/g, 'ا') // unify alef forms → ا
+    .replace(/ة/g, 'ه') // ta-marbuta → ha
+    .replace(/ى/g, 'ي') // alef-maqsura → ya
+    .replace(/(.)\1{2,}/g, '$1') // 3+ repeats → 1 (elongation)
     .replace(/\s+/g, ' ')
     .trim();
 }

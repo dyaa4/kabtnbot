@@ -4,7 +4,19 @@ import { normalizeText, matchesProfanity, scanMessage } from './moderation.js';
 describe('normalizeText', () => {
   it('lowercases, strips diacritics, collapses elongation', () => {
     expect(normalizeText('HELLOOOO')).toBe('hello');
-    expect(normalizeText('كلْمَة')).toBe('كلمة');
+    expect(normalizeText('كلْمَة')).toBe('كلمه'); // ة → ه
+  });
+  it('unifies Arabic letter variants (alef, ta-marbuta, alef-maqsura, tatweel)', () => {
+    // all alef forms → ا (each individually)
+    expect(normalizeText('أ')).toBe('ا');
+    expect(normalizeText('إ')).toBe('ا');
+    expect(normalizeText('آ')).toBe('ا');
+    expect(normalizeText('أحمد')).toBe(normalizeText('احمد'));
+    // ta-marbuta → ha, alef-maqsura → ya
+    expect(normalizeText('مدرسة')).toBe(normalizeText('مدرسه'));
+    expect(normalizeText('على')).toBe(normalizeText('علي'));
+    // tatweel removed
+    expect(normalizeText('كــلمة')).toBe('كلمه');
   });
 });
 
@@ -16,6 +28,13 @@ describe('matchesProfanity', () => {
   });
   it('sees through simple elongation obfuscation', () => {
     expect(matchesProfanity('idioooot', [])).toBe(true);
+  });
+  it('one Arabic list entry matches its spelling variants automatically', () => {
+    // entry written with ta-marbuta matches text with ha, and vice-versa
+    expect(matchesProfanity('قال كلمه بذيئه', ['بذيئة'])).toBe(true);
+    // entry with alef-maqsura matches alef-variant + tatweel + diacritics
+    expect(matchesProfanity('يا حمــار', ['حمار'])).toBe(true);
+    expect(matchesProfanity('أنت حِمَآر', ['حمار'])).toBe(true);
   });
 });
 
