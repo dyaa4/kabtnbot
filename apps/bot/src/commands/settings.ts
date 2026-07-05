@@ -28,14 +28,8 @@ export const settingsCommand: Command = {
         .addChannelOption((o) =>
           o.setName('allow_channel').setDescription('إضافة روم صوتي لقائمة المسموح').addChannelTypes(ChannelType.GuildVoice),
         )
-        .addBooleanOption((o) => o.setName('clear_channels').setDescription('السماح بكل الرومات (مسح القائمة)')),
-    )
-    .addSubcommand((sc) =>
-      sc
-        .setName('customs')
-        .setDescription('إعدادات الكستمز')
-        .addIntegerOption((o) => o.setName('win_points').setDescription('نقاط الفوز'))
-        .addIntegerOption((o) => o.setName('loss_points').setDescription('نقاط الخسارة (سالبة عادة)'))
+        .addBooleanOption((o) => o.setName('clear_channels').setDescription('السماح بكل الرومات (مسح القائمة)'))
+        .addBooleanOption((o) => o.setName('personality').setDescription('الشخصية الكوميدية'))
         .addRoleOption((o) => o.setName('admin_role').setDescription('الرول الإداري للبوت')),
     ),
   async execute(interaction) {
@@ -44,7 +38,7 @@ export const settingsCommand: Command = {
       return;
     }
     const config = await getGuildConfig(interaction.guildId);
-    if (!isGuildAdmin(interaction.member as GuildMember, config.customs.admin_role_id)) {
+    if (!isGuildAdmin(interaction.member as GuildMember, config.admin_role_id)) {
       await interaction.reply({ content: S.notAdmin, flags: MessageFlags.Ephemeral });
       return;
     }
@@ -61,14 +55,14 @@ export const settingsCommand: Command = {
               `مفعل: ${config.voice.enabled ? 'نعم' : 'لا'}`,
               `كلمة التنبيه: ${config.voice.wake_word}`,
               `اللهجة: ${DIALECT_LABELS[config.voice.dialect]}`,
+              `الشخصية الكوميدية: ${config.voice.personality_enabled ? 'نعم' : 'لا'}`,
             ].join('\n'),
           },
           {
-            name: '🎮 الكستمز',
+            name: '🛡️ الحماية والترحيب',
             value: [
-              `نقاط الفوز: ${config.customs.win_points}`,
-              `نقاط الخسارة: ${config.customs.loss_points}`,
-              `الرول الإداري: ${config.customs.admin_role_id ? `<@&${config.customs.admin_role_id}>` : '—'}`,
+              `الحماية: ${config.protection.enabled ? 'مفعّلة' : 'معطّلة'}`,
+              `الترحيب: ${config.welcome.enabled ? 'مفعّل' : 'معطّل'}`,
             ].join('\n'),
           },
           {
@@ -81,7 +75,7 @@ export const settingsCommand: Command = {
       return;
     }
 
-    const patch: Record<string, Record<string, unknown>> = {};
+    const patch: Record<string, unknown> = {};
     if (sub === 'voice') {
       const voice: Record<string, unknown> = {};
       const enabled = interaction.options.getBoolean('enabled');
@@ -89,6 +83,8 @@ export const settingsCommand: Command = {
       const dialect = interaction.options.getString('dialect');
       const allowChannel = interaction.options.getChannel('allow_channel');
       const clearChannels = interaction.options.getBoolean('clear_channels');
+      const personality = interaction.options.getBoolean('personality');
+      const adminRole = interaction.options.getRole('admin_role');
       if (enabled !== null) voice.enabled = enabled;
       if (wakeWord !== null) voice.wake_word = wakeWord;
       if (dialect !== null) voice.dialect = dialect;
@@ -96,16 +92,9 @@ export const settingsCommand: Command = {
       else if (allowChannel) {
         voice.allowed_channel_ids = [...new Set([...config.voice.allowed_channel_ids, allowChannel.id])];
       }
+      if (personality !== null) voice.personality_enabled = personality;
       patch.voice = voice;
-    } else if (sub === 'customs') {
-      const customs: Record<string, unknown> = {};
-      const win = interaction.options.getInteger('win_points');
-      const loss = interaction.options.getInteger('loss_points');
-      const role = interaction.options.getRole('admin_role');
-      if (win !== null) customs.win_points = win;
-      if (loss !== null) customs.loss_points = loss;
-      if (role !== null) customs.admin_role_id = role.id;
-      patch.customs = customs;
+      if (adminRole !== null) patch.admin_role_id = adminRole.id;
     }
     await updateGuildConfig(interaction.guildId, patch);
     await interaction.reply({ content: S.settingsSaved, flags: MessageFlags.Ephemeral });
