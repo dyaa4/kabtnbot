@@ -20,14 +20,18 @@ export function GuildView() {
 
   return (
     <Layout>
-      <nav className="mb-6 flex gap-2 border-b border-slate-800">
+      <nav className="mb-6 flex flex-wrap gap-2">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === ''}
             className={({ isActive }) =>
-              `px-4 py-2 text-sm font-semibold ${isActive ? 'border-b-2 border-indigo-500 text-indigo-300' : 'text-slate-400'}`
+              `rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                isActive
+                  ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)]'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+              }`
             }
           >
             {t(tab.key)}

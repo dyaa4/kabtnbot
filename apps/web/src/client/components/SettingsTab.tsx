@@ -63,10 +63,14 @@ export function SettingsTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="grid gap-8">
-      {saved && <div className="rounded bg-emerald-900/40 px-4 py-2 text-emerald-300">{t('settings.saved')}</div>}
+      {saved && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-900/30 px-4 py-2 text-emerald-300 backdrop-blur-md">
+          {t('settings.saved')}
+        </div>
+      )}
 
       <form
-        className="rounded-xl border border-slate-800 bg-slate-900 p-6"
+        className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
         onSubmit={voice.handleSubmit((v) => patch.mutate({ voice: v }))}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('settings.voice')}</h3>
@@ -76,11 +80,17 @@ export function SettingsTab({ guildId }: { guildId: string }) {
         </label>
         <label className="mb-3 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.wakeWord')}</span>
-          <input className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" {...voice.register('wake_word')} />
+          <input
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+            {...voice.register('wake_word')}
+          />
         </label>
         <label className="mb-4 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
-          <select className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" {...voice.register('dialect')}>
+          <select
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+            {...voice.register('dialect')}
+          >
             {DIALECTS.map((d) => (
               <option key={d} value={d}>
                 {t(`settings.dialect.${d}`)}
@@ -91,34 +101,51 @@ export function SettingsTab({ guildId }: { guildId: string }) {
         <p data-testid="voice-error" className="mb-2 text-sm text-red-400">
           {voiceError ?? ''}
         </p>
-        <button className="rounded bg-indigo-600 px-4 py-2 font-semibold hover:bg-indigo-500" type="submit">
+        <button
+          className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
+          type="submit"
+        >
           {t('settings.save')}
         </button>
       </form>
 
       <form
-        className="rounded-xl border border-slate-800 bg-slate-900 p-6"
+        className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
         onSubmit={customs.handleSubmit((v) => patch.mutate({ customs: CustomsForm.parse(v) }))}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('settings.customs')}</h3>
         <div className="mb-3 grid grid-cols-2 gap-4">
           <label className="block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.customs.winPoints')}</span>
-            <input type="number" className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" {...customs.register('win_points')} />
+            <input
+              type="number"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              {...customs.register('win_points')}
+            />
           </label>
           <label className="block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.customs.lossPoints')}</span>
-            <input type="number" className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" {...customs.register('loss_points')} />
+            <input
+              type="number"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              {...customs.register('loss_points')}
+            />
           </label>
         </div>
         <label className="mb-4 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.customs.adminRole')}</span>
-          <input className="w-full rounded border border-slate-700 bg-slate-950 px-3 py-2" {...customs.register('admin_role_id')} />
+          <input
+            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+            {...customs.register('admin_role_id')}
+          />
         </label>
         <p data-testid="customs-error" className="mb-2 text-sm text-red-400">
           {customsError ?? ''}
         </p>
-        <button className="rounded bg-indigo-600 px-4 py-2 font-semibold hover:bg-indigo-500" type="submit">
+        <button
+          className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
+          type="submit"
+        >
           {t('settings.save')}
         </button>
       </form>

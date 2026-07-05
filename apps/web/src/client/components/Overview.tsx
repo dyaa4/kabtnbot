@@ -23,8 +23,11 @@ function Bar({ label, used, max }: { label: string; used: number; max: number })
           {used} / {max}
         </span>
       </div>
-      <div className="h-2 rounded bg-slate-800">
-        <div className="h-2 rounded bg-indigo-500" style={{ width: `${pct}%` }} />
+      <div className="h-2 rounded-full bg-white/10">
+        <div
+          className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
@@ -46,12 +49,12 @@ export function Overview({ guildId }: { guildId: string }) {
   return (
     <div>
       {usage.data && (
-        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6">
+        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
           <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_day} />
           <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_day} />
         </div>
       )}
-      <div className="rounded-xl border border-slate-800 bg-slate-900 p-6">
+      <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
         <h3 className="mb-3 font-semibold">{t('overview.activeMatch')}</h3>
         {matches.data?.active ? (
           <div className="flex items-center justify-between">
@@ -59,7 +62,7 @@ export function Overview({ guildId }: { guildId: string }) {
               {matches.data.active.game} — {matches.data.active.players.length} 👤
             </span>
             <button
-              className="rounded bg-red-600 px-3 py-1 text-sm font-semibold hover:bg-red-500 disabled:opacity-50"
+              className="rounded-xl bg-red-600 px-3 py-1 text-sm font-semibold shadow-[0_0_16px_-4px_rgba(220,38,38,0.8)] transition hover:bg-red-500 hover:shadow-[0_0_22px_-2px_rgba(220,38,38,0.9)] disabled:opacity-50"
               disabled={cancel.isPending}
               onClick={() => cancel.mutate(matches.data!.active!._id)}
             >

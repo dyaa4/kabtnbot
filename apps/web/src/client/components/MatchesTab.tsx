@@ -31,7 +31,10 @@ export function MatchesTab({ guildId }: { guildId: string }) {
       {!matches.data?.recent.length && <p className="text-slate-400">{t('matches.empty')}</p>}
       <div className="grid gap-3">
         {matches.data?.recent.map((m) => (
-          <div key={m._id} className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div
+            key={m._id}
+            className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-cyan-400/30"
+          >
             <div>
               <span className="font-semibold">{m.game}</span>
               <span className="ms-3 text-sm text-slate-400">

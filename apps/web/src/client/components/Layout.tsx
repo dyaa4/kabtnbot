@@ -15,13 +15,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-        <Link to="/app" className="text-xl font-bold text-indigo-400">
-          GameBot
+      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-md">
+        <Link
+          to="/app"
+          className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-xl font-black text-transparent"
+        >
+          Kabtn
         </Link>
         <div className="flex items-center gap-4">
           <button
-            className="rounded border border-slate-700 px-2 py-1 text-sm"
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
           >
             {t('lang.switch')}
@@ -30,7 +33,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-300">{me.data.uname}</span>
               <button
-                className="text-sm text-slate-400 hover:text-slate-200"
+                className="text-sm text-slate-400 hover:text-cyan-300"
                 onClick={async () => {
                   await fetch('/auth/logout', { method: 'POST' });
                   window.location.href = '/';
