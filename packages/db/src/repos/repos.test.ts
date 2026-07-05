@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, updateGuildConfig } from './guild-config-repo.js';
-import { applyMatchResult, getPlayer, topPlayers, getPointsMap } from './player-repo.js';
+import { applyMatchResult, getPlayer, topPlayers, getPointsMap, adjustPlayerPoints } from './player-repo.js';
 import {
   createMatch, getActiveMatch, addPlayerToMatch, removePlayerFromMatch,
-  setMatchStarted, completeMatch, cancelMatch, findExpiredMatches,
+  setMatchStarted, completeMatch, cancelMatch, findExpiredMatches, recentMatches,
 } from './match-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 
@@ -124,5 +124,32 @@ describe('usage-repo', () => {
     expect(u.ai_questions).toBe(2);
     expect(u.listen_seconds).toBe(30);
     expect((await getUsage('gU', '2026-07-05')).ai_questions).toBe(0);
+  });
+});
+
+describe('adjustPlayerPoints', () => {
+  it('upserts and increments, scoped to guild', async () => {
+    const p1 = await adjustPlayerPoints('gAdj', 'u1', 50);
+    expect(p1.points).toBe(50);
+    const p2 = await adjustPlayerPoints('gAdj', 'u1', -20);
+    expect(p2.points).toBe(30);
+    expect(await getPlayer('OTHER', 'u1')).toBeNull();
+  });
+});
+
+describe('recentMatches', () => {
+  it('returns only finished matches of the guild, newest first, limited', async () => {
+    const m1 = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'x', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
+    await setMatchStarted('gRec', m1._id.toString(), ['a'], ['b'], []);
+    await completeMatch('gRec', m1._id.toString(), 'a');
+    const m2 = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'y', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
+    await cancelMatch('gRec', m2._id.toString());
+    const active = await createMatch({ guildId: 'gRec', creatorId: 'c', game: 'z', teamSize: 1, balanceMode: 'random', lobbyChannelId: 'ch' });
+    const recent = await recentMatches('gRec');
+    expect(recent).toHaveLength(2);
+    expect(recent[0].game).toBe('y'); // newest first
+    expect(recent.every((m) => m.status === 'completed' || m.status === 'cancelled')).toBe(true);
+    await cancelMatch('gRec', active._id.toString());
+    expect(await recentMatches('gRec', 1)).toHaveLength(1);
   });
 });

@@ -42,3 +42,12 @@ export async function applyMatchResult(
   ];
   if (ops.length > 0) await PlayerModel.bulkWrite(ops);
 }
+
+export async function adjustPlayerPoints(guildId: string, userId: string, delta: number): Promise<PlayerDoc> {
+  const doc = await PlayerModel.findOneAndUpdate(
+    { guild_id: guildId, user_id: userId },
+    { $inc: { points: delta } },
+    { upsert: true, new: true, setDefaultsOnInsert: true },
+  ).lean();
+  return doc as PlayerDoc;
+}

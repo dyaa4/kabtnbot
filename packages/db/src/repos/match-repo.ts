@@ -103,3 +103,10 @@ export async function cancelMatch(guildId: string, matchId: string): Promise<Mat
 export async function findExpiredMatches(cutoff: Date): Promise<MatchDoc[]> {
   return MatchModel.find({ status: { $in: ACTIVE }, created_at: { $lt: cutoff } }).lean();
 }
+
+export async function recentMatches(guildId: string, limit = 10): Promise<MatchDoc[]> {
+  return MatchModel.find({ guild_id: guildId, status: { $in: ['completed', 'cancelled'] } })
+    .sort({ completed_at: -1 })
+    .limit(limit)
+    .lean();
+}
