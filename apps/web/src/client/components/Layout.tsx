@@ -20,8 +20,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           to="/app"
           className="text-xl font-black"
         >
-          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">Kabtn</span>
-          <span className="ms-1 text-slate-400">bot</span>
+          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">{t('brand.name')}</span>
+          <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
           <button
