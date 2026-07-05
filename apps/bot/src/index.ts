@@ -5,6 +5,7 @@ import { onReady } from './events/ready.js';
 import { onInteractionCreate } from './events/interactionCreate.js';
 import { registerActivityTracking } from './events/activity.js';
 import { registerTextProtection } from './modules/protection/text-mod.js';
+import { registerWelcome } from './events/guildMemberAdd.js';
 
 async function main(): Promise<void> {
   await connectDb(config.MONGODB_URI);
@@ -14,6 +15,7 @@ async function main(): Promise<void> {
   onInteractionCreate(client);
   registerActivityTracking(client);
   registerTextProtection(client);
+  registerWelcome(client);
   await client.login(config.DISCORD_TOKEN);
 }
 
