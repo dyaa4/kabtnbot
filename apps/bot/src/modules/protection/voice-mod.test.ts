@@ -1,21 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { ProfanityTracker, resolveModerationChannel } from './voice-mod.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-describe('ProfanityTracker', () => {
-  it('warns first, kicks second within the hour, warns again after the window', () => {
-    const t = new ProfanityTracker();
-    const base = 1_000_000_000;
-    expect(t.register('g', 'u', base)).toBe('warn');
-    expect(t.register('g', 'u', base + 5 * 60_000)).toBe('kick'); // 5 min later
-    // > 1h after the FIRST → window reset → warn again
-    expect(t.register('g', 'u', base + 61 * 60_000)).toBe('warn');
-  });
-  it('tracks users independently', () => {
-    const t = new ProfanityTracker();
-    expect(t.register('g', 'a', 0)).toBe('warn');
-    expect(t.register('g', 'b', 0)).toBe('warn');
-  });
-});
+vi.mock('../../lib/config-cache.js', () => ({ getCachedGuildConfig: vi.fn() }));
+vi.mock('../voice-ai/sessions.js', () => ({ playSpeech: vi.fn(async () => {}) }));
+
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { resolveModerationChannel, handleTranscriptModeration } from './voice-mod.js';
 
 function textChannel(id: string) {
   return { id, isTextBased: () => true };
@@ -52,5 +41,50 @@ describe('resolveModerationChannel', () => {
   it('returns null when there is no usable text channel', () => {
     const guild = fakeGuild({ channels: [voiceChannel('v')], systemChannel: null });
     expect(resolveModerationChannel(guild, null)).toBeNull();
+  });
+});
+
+describe('handleTranscriptModeration — immediate kick', () => {
+  const enabled = {
+    protection: { enabled: true, voice_moderation: true, custom_words: ['بادوورد'], log_channel_id: null },
+  };
+
+  function guildWithMember(disconnect: () => Promise<void>, send: (c: string) => Promise<void>) {
+    return {
+      id: 'g',
+      members: { cache: new Map([['u', { displayName: 'زيد', voice: { disconnect } }]]) },
+      channels: { cache: new Map([['c', { isTextBased: () => true, send }]]) },
+      systemChannel: null,
+    } as never;
+  }
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it('kicks on the FIRST profane word and posts a text notice', async () => {
+    vi.mocked(getCachedGuildConfig).mockResolvedValue(enabled as never);
+    const disconnect = vi.fn(async () => {});
+    const send = vi.fn(async () => {});
+    const acted = await handleTranscriptModeration(guildWithMember(disconnect, send), {} as never, 'u', 'انت بادوورد يا رجل');
+    expect(acted).toBe(true);
+    expect(disconnect).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing for clean speech', async () => {
+    vi.mocked(getCachedGuildConfig).mockResolvedValue(enabled as never);
+    const disconnect = vi.fn(async () => {});
+    const acted = await handleTranscriptModeration(guildWithMember(disconnect, async () => {}), {} as never, 'u', 'مرحبا يا شباب');
+    expect(acted).toBe(false);
+    expect(disconnect).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when protection is disabled', async () => {
+    vi.mocked(getCachedGuildConfig).mockResolvedValue({
+      protection: { enabled: false, voice_moderation: true, custom_words: ['بادوورد'], log_channel_id: null },
+    } as never);
+    const disconnect = vi.fn(async () => {});
+    const acted = await handleTranscriptModeration(guildWithMember(disconnect, async () => {}), {} as never, 'u', 'انت بادوورد');
+    expect(acted).toBe(false);
+    expect(disconnect).not.toHaveBeenCalled();
   });
 });
