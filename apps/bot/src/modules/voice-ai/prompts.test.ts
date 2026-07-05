@@ -11,4 +11,10 @@ describe('buildSystemPrompt', () => {
     const all = (['gulf', 'syrian', 'egyptian', 'msa'] as const).map((d) => buildSystemPrompt(d, 'x'));
     expect(new Set(all).size).toBe(4);
   });
+  it('comedic option changes the prompt', () => {
+    const base = buildSystemPrompt('gulf', 'X');
+    const funny = buildSystemPrompt('gulf', 'X', { comedic: true });
+    expect(funny).not.toBe(base);
+    expect(funny).toMatch(/كوميدي|مضحك|نكت/);
+  });
 });
