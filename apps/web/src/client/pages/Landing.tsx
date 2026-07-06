@@ -160,6 +160,22 @@ export function Landing() {
           </div>
         </div>
       </section>
+
+      <footer className="border-t border-white/10 px-6 py-8">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 text-sm text-slate-500">
+          <span>
+            © 2026 <span className="font-semibold text-slate-400">{t('brand.name')}</span>
+          </span>
+          <div className="flex gap-6">
+            <a href="/terms" className="transition hover:text-cyan-300">
+              {t('footer.terms')}
+            </a>
+            <a href="/privacy" className="transition hover:text-cyan-300">
+              {t('footer.privacy')}
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

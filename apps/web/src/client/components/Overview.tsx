@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { GettingStarted } from './GettingStarted.js';
 
 interface Usage {
   listen_seconds: number;
@@ -35,6 +36,7 @@ export function Overview({ guildId }: { guildId: string }) {
 
   return (
     <div>
+      <GettingStarted guildId={guildId} />
       {usage.data && (
         <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
           <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_day} />
