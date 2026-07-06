@@ -129,7 +129,7 @@ export function Landing() {
             <h3 className="mb-1 text-2xl font-bold text-cyan-300">{t('pricing.free.title')}</h3>
             <p className="mb-6 text-sm text-slate-400">{t('pricing.free.tagline')}</p>
             <ul className="grid gap-3 text-sm text-slate-300">
-              {(['voice', 'protection', 'welcome', 'stats', 'botProfile', 'limits'] as const).map((key) => (
+              {(['protection', 'welcome', 'botProfile'] as const).map((key) => (
                 <li key={key} className="flex items-start gap-2">
                   <span className="mt-0.5 text-cyan-400">✓</span>
                   <span>{t(`pricing.free.${key}`)}</span>
@@ -149,7 +149,7 @@ export function Landing() {
               </div>
               <p className="mb-6 text-sm text-slate-400">{t('pricing.premium.tagline')}</p>
               <ul className="grid gap-3 text-sm text-slate-300">
-                {(['everything', 'listen', 'ai'] as const).map((key) => (
+                {(['everything', 'voice', 'stats', 'limits'] as const).map((key) => (
                   <li key={key} className="flex items-start gap-2">
                     <span className="mt-0.5 text-amber-300">★</span>
                     <span>{t(`pricing.premium.${key}`)}</span>
