@@ -44,14 +44,23 @@ export function Landing() {
         </button>
       </header>
 
-      <section className="relative overflow-hidden px-6 pb-12 pt-16">
-        <div className="pointer-events-none absolute -start-24 -top-24 h-80 w-80 rounded-full bg-indigo-600/30 blur-3xl" />
-        <div className="pointer-events-none absolute -end-16 top-10 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
+      <section className="relative overflow-hidden px-6 pb-16 pt-10 md:pt-14">
+        {/* fantastical backdrop: starfields, drifting auroras, neon floor */}
+        <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+          <div className="hero-stars absolute inset-0" />
+          <div className="hero-stars-2 absolute inset-0" />
+          <div className="hero-aurora absolute -start-32 -top-40 h-[30rem] w-[30rem] rounded-full bg-indigo-600/35 blur-3xl" />
+          <div className="hero-aurora-slow absolute -end-24 -top-10 h-[26rem] w-[26rem] rounded-full bg-cyan-500/25 blur-3xl" />
+          <div className="hero-aurora absolute -bottom-32 left-1/2 h-[22rem] w-[40rem] -translate-x-1/2 rounded-full bg-fuchsia-600/20 blur-3xl" />
+          <div className="hero-grid absolute inset-x-[-10%] bottom-0 h-72" />
+        </div>
 
-        <div className="relative mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-2">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-6 md:grid-cols-[1fr_auto] md:gap-2">
           <div className="text-center md:text-start">
-            <h1 className="mb-4 text-4xl font-extrabold leading-tight md:text-5xl">{t('landing.title')}</h1>
-            <p className="mb-8 text-lg text-slate-400">{t('landing.tagline')}</p>
+            <h1 className="hero-title mb-4 text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl">
+              {t('landing.title')}
+            </h1>
+            <p className="mb-8 text-lg text-slate-400 md:text-xl">{t('landing.tagline')}</p>
             <div className="flex flex-wrap justify-center gap-4 md:justify-start">
               <a
                 href={meta.data?.inviteUrl ?? '#'}
@@ -71,8 +80,31 @@ export function Landing() {
             </div>
           </div>
 
-          <div className="mx-auto flex w-[260px] justify-center sm:w-[320px] md:w-[380px]">
-            <HomeImage className="w-full" />
+          {/* holographic stage: spinning rings + light beam + particles behind a much larger robot */}
+          <div className="relative mx-auto w-[320px] sm:w-[420px] md:w-[480px] lg:w-[560px]">
+            <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+              {/* vertical light beam rising behind the robot */}
+              <div
+                className="absolute bottom-[4%] left-1/2 h-[92%] w-[68%] -translate-x-1/2 bg-gradient-to-t from-cyan-400/25 via-indigo-500/10 to-transparent blur-2xl"
+                style={{ clipPath: 'polygon(18% 100%, 82% 100%, 62% 0%, 38% 0%)' }}
+              />
+              {/* platform glow */}
+              <div className="absolute bottom-[-2%] left-1/2 h-[14%] w-[80%] -translate-x-1/2 rounded-[50%] bg-cyan-400/25 blur-2xl" />
+              {/* spinning hologram rings (outer element positions, inner element spins) */}
+              <div className="absolute bottom-[-16%] left-1/2 aspect-square w-[105%] -translate-x-1/2">
+                <div className="hero-ring h-full w-full border-2 border-cyan-400/40 shadow-[0_0_24px_rgba(34,211,238,0.35)] [border-style:dashed]" />
+              </div>
+              <div className="absolute bottom-[-12%] left-1/2 aspect-square w-[82%] -translate-x-1/2">
+                <div className="hero-ring-rev h-full w-full border border-indigo-400/50 shadow-[0_0_18px_rgba(99,102,241,0.4)]" />
+              </div>
+              {/* floating spark particles */}
+              <span className="hero-particle absolute start-[8%] top-[30%] h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.9)]" />
+              <span className="hero-particle absolute end-[6%] top-[46%] h-1.5 w-1.5 rounded-full bg-indigo-300 shadow-[0_0_8px_rgba(129,140,248,0.9)] [animation-delay:-1.6s]" />
+              <span className="hero-particle absolute start-[16%] top-[68%] h-1.5 w-1.5 rounded-full bg-fuchsia-300 shadow-[0_0_8px_rgba(232,121,249,0.9)] [animation-delay:-3.1s]" />
+              <span className="hero-particle absolute end-[14%] top-[16%] h-2 w-2 rounded-full bg-violet-300 shadow-[0_0_10px_rgba(196,181,253,0.9)] [animation-delay:-2.2s]" />
+              <span className="hero-particle absolute end-[24%] top-[74%] h-1 w-1 rounded-full bg-cyan-200 shadow-[0_0_6px_rgba(165,243,252,0.9)] [animation-delay:-0.8s]" />
+            </div>
+            <HomeImage className="relative z-10 w-full" />
           </div>
         </div>
       </section>
