@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb, updateGuildConfig } from '@gamebot/db';
 import type { Client, Message } from 'discord.js';
-import { shouldModerate, editNeedsRescan, logSnippet, moderateMessage, registerTextProtection } from './text-mod.js';
+import {
+  shouldModerate, editNeedsRescan, logSnippet, moderateMessage, registerTextProtection,
+  registerStrike, clearStrikes, timeoutMsForStrike,
+} from './text-mod.js';
 import { clearConfigCache } from '../../lib/config-cache.js';
 
 let mongod: MongoMemoryServer;
@@ -47,16 +50,17 @@ function fakeMessage(guildId: string, content: string, logChannel?: { send: Retu
   const warn = { delete: vi.fn(async () => {}) };
   const channel = { send: vi.fn(async () => warn), isTextBased: () => true };
   const channels = new Map<string, unknown>(logChannel ? [['log1', logChannel]] : []);
+  const timeout = vi.fn(async () => {});
   return {
     guild: { id: guildId, channels: { cache: channels } },
     author: { id: 'u9', bot: false },
-    member: { permissions: { has: () => false }, roles: { cache: new Map() } },
+    member: { permissions: { has: () => false }, roles: { cache: new Map() }, timeout },
     content,
     channel,
     channelId: 'chan1',
     delete: vi.fn(async () => {}),
     partial: false,
-  } as unknown as Message & { delete: ReturnType<typeof vi.fn> };
+  } as unknown as Message & { delete: ReturnType<typeof vi.fn>; member: { timeout: ReturnType<typeof vi.fn> } };
 }
 
 describe('logSnippet', () => {
@@ -66,6 +70,56 @@ describe('logSnippet', () => {
     const long = 'x'.repeat(200);
     expect(logSnippet(long)).toBe(`||${'x'.repeat(180)}…||`);
     expect(logSnippet('|||')).toBe('');
+  });
+});
+
+describe('strike escalation', () => {
+  it('counts strikes within the window and resets after it', () => {
+    clearStrikes();
+    expect(registerStrike('g:u', 0)).toBe(1);
+    expect(registerStrike('g:u', 60_000)).toBe(2);
+    expect(registerStrike('g:u', 61 * 60_000)).toBe(1); // window expired → fresh count
+    expect(registerStrike('g:other', 0)).toBe(1); // counted per guild:user
+  });
+
+  it('maps strike counts to escalating timeouts', () => {
+    expect(timeoutMsForStrike(1)).toBeNull();
+    expect(timeoutMsForStrike(2)).toBe(5 * 60 * 1000);
+    expect(timeoutMsForStrike(3)).toBe(60 * 60 * 1000);
+    expect(timeoutMsForStrike(7)).toBe(60 * 60 * 1000);
+  });
+
+  it('times out a repeat offender when text_timeout is enabled', async () => {
+    clearStrikes();
+    clearConfigCache();
+    await updateGuildConfig('gTO', {
+      protection: { enabled: true, text_protection: true, text_timeout: true, custom_words: ['بادوورد'] },
+    });
+
+    const first = fakeMessage('gTO', 'فيه بادوورد');
+    await moderateMessage(first);
+    expect(first.member.timeout).not.toHaveBeenCalled(); // first offense: delete only
+
+    const second = fakeMessage('gTO', 'بادوورد مرة ثانية');
+    await moderateMessage(second);
+    expect(second.member.timeout).toHaveBeenCalledWith(5 * 60 * 1000, expect.stringContaining('text protection'));
+
+    const third = fakeMessage('gTO', 'بادوورد ثالثة');
+    await moderateMessage(third);
+    expect(third.member.timeout).toHaveBeenCalledWith(60 * 60 * 1000, expect.any(String));
+  });
+
+  it('never times out when the setting is off', async () => {
+    clearStrikes();
+    clearConfigCache();
+    await updateGuildConfig('gTOoff', {
+      protection: { enabled: true, text_protection: true, text_timeout: false, custom_words: ['بادوورد'] },
+    });
+    for (let i = 0; i < 3; i++) {
+      const msg = fakeMessage('gTOoff', `بادوورد ${i}`);
+      await moderateMessage(msg);
+      expect(msg.member.timeout).not.toHaveBeenCalled();
+    }
   });
 });
 

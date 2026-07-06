@@ -39,7 +39,7 @@ describe('api routes', () => {
     const { app } = setup();
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
-    expect(res.body.inviteUrl).toContain('permissions=288361488');
+    expect(res.body.inviteUrl).toContain('permissions=1099799989264');
     expect(typeof res.body.guilds).toBe('number');
 
     await recordBotHeartbeat(6);

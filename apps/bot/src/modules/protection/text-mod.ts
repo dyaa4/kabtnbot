@@ -28,6 +28,32 @@ export function logSnippet(content: string): string {
   return short.length > 0 ? `||${short}||` : '';
 }
 
+// Escalation: strikes per guild:user within a rolling window (in-memory, like
+// the voice moderation warning state — resets on restart, which is acceptable).
+const STRIKE_WINDOW_MS = 60 * 60 * 1000;
+const strikes = new Map<string, { count: number; firstAt: number }>();
+
+export function registerStrike(key: string, nowMs: number = Date.now()): number {
+  const current = strikes.get(key);
+  if (!current || nowMs - current.firstAt > STRIKE_WINDOW_MS) {
+    strikes.set(key, { count: 1, firstAt: nowMs });
+    return 1;
+  }
+  current.count += 1;
+  return current.count;
+}
+
+export function clearStrikes(): void {
+  strikes.clear();
+}
+
+/** 1st offense: delete only. 2nd within the hour: 5 min timeout. 3rd+: 1 hour. */
+export function timeoutMsForStrike(count: number): number | null {
+  if (count === 2) return 5 * 60 * 1000;
+  if (count >= 3) return 60 * 60 * 1000;
+  return null;
+}
+
 export async function moderateMessage(msg: Message): Promise<void> {
   if (!msg.guild || msg.author.bot || !msg.member) return;
   const config = await getCachedGuildConfig(msg.guild.id);
@@ -41,9 +67,23 @@ export async function moderateMessage(msg: Message): Promise<void> {
   if (!verdict.blocked) return;
 
   await msg.delete().catch(() => {});
-  const warn = await (msg.channel as TextChannel)
-    .send(`<@${msg.author.id}> رسالتك حُذفت (${verdict.reason}). ممنوع الروابط المشبوهة/السكام.`)
-    .catch(() => null);
+
+  // Repeat offenders within the hour get escalating timeouts (opt-in setting;
+  // requires the Moderate Members permission and role hierarchy).
+  const strikeCount = registerStrike(`${msg.guild.id}:${msg.author.id}`);
+  const timeoutMs = config.protection.text_timeout ? timeoutMsForStrike(strikeCount) : null;
+  let timedOut = false;
+  if (timeoutMs) {
+    timedOut = await (msg.member as GuildMember)
+      .timeout(timeoutMs, `text protection: ${verdict.reason}`)
+      .then(() => true)
+      .catch(() => false);
+  }
+
+  const notice = timedOut
+    ? `<@${msg.author.id}> رسالتك حُذفت (${verdict.reason}) وتم إسكاتك مؤقتاً ${Math.round(timeoutMs! / 60000)} دقيقة بسبب التكرار.`
+    : `<@${msg.author.id}> رسالتك حُذفت (${verdict.reason}). ممنوع الروابط المشبوهة/السكام.`;
+  const warn = await (msg.channel as TextChannel).send(notice).catch(() => null);
   if (warn) setTimeout(() => void warn.delete().catch(() => {}), 5000);
 
   if (config.protection.log_channel_id) {
@@ -51,7 +91,8 @@ export async function moderateMessage(msg: Message): Promise<void> {
     if (log?.isTextBased()) {
       const snippet = logSnippet(msg.content);
       const lines = [
-        `🛡️ حذف رسالة من <@${msg.author.id}> في <#${msg.channelId}> — السبب: ${verdict.reason}`,
+        `🛡️ حذف رسالة من <@${msg.author.id}> في <#${msg.channelId}> — السبب: ${verdict.reason}` +
+          (timedOut ? ` — ⏳ إسكات ${Math.round(timeoutMs! / 60000)} دقيقة (مخالفة رقم ${strikeCount})` : ''),
         ...(snippet ? [snippet] : []),
       ];
       await (log as TextChannel)

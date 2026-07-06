@@ -90,6 +90,8 @@
   "protection.voiceModeration.hint": "Spoken warning on the first offensive word in voice, automatic kick from the room on repeat within the same hour.",
   "protection.textProtection": "Text protection",
   "protection.textProtection.hint": "Automatically deletes messages containing suspicious/scam links or blocked words — edited messages included. Admins are exempt.",
+  "protection.textTimeout": "Timeout repeat offenders",
+  "protection.textTimeout.hint": "For repeated violations within an hour: second offense = 5-minute timeout, third = one hour. Requires Moderate Members and the bot's role above the member's role.",
   "protection.customWords": "Custom blocked words (one per line or comma-separated)",
   "protection.customWords.hint": "Any message containing one of these words is deleted immediately with a temporary notice to the author.",
   "protection.allowedDomains": "Allowed link domains (one per line or comma-separated)",

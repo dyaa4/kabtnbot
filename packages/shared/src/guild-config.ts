@@ -20,6 +20,7 @@ export const GuildConfigSchema = z.object({
       enabled: z.boolean().default(false),
       voice_moderation: z.boolean().default(true),
       text_protection: z.boolean().default(false),
+      text_timeout: z.boolean().default(false),
       custom_words: z.array(z.string()).max(200).default([]),
       allowed_domains: z.array(z.string()).max(200).default([]),
       log_channel_id: z.string().nullable().default(null),

@@ -33,6 +33,7 @@ const ConfigPatch = z
         enabled: z.boolean().optional(),
         voice_moderation: z.boolean().optional(),
         text_protection: z.boolean().optional(),
+        text_timeout: z.boolean().optional(),
         custom_words: z.array(z.string().min(1).max(60)).max(200).optional(),
         allowed_domains: z.array(z.string().min(3).max(120)).max(200).optional(),
         log_channel_id: z.string().nullable().optional(),
@@ -64,9 +65,9 @@ export function apiRouter(rest: DiscordRest): Router {
     const status = await getBotStatus().catch(() => null);
     res.json({
       clientId: config.DISCORD_CLIENT_ID,
-      // 288361488 = previous permission set (19926032) + Manage Roles
-      // (268435456) for the auto-role-on-join feature.
-      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=288361488`,
+      // 1099799989264 = base set (19926032) + Manage Roles (268435456, auto
+      // role) + Moderate Members (1099511627776, text-protection timeouts).
+      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=1099799989264`,
       guilds: status?.guild_count ?? 0,
     });
   });

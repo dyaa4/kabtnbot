@@ -19,6 +19,7 @@ const ProtectionForm = z.object({
   enabled: z.boolean(),
   voice_moderation: z.boolean(),
   text_protection: z.boolean(),
+  text_timeout: z.boolean(),
   custom_words: z.string(),
   allowed_domains: z.string(),
   log_channel_id: z.string(),
@@ -31,6 +32,7 @@ interface GuildConfigResp {
     enabled: boolean;
     voice_moderation: boolean;
     text_protection: boolean;
+    text_timeout: boolean;
     custom_words: string[];
     allowed_domains: string[];
     log_channel_id: string | null;
@@ -60,6 +62,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         enabled: cfg.data.protection.enabled,
         voice_moderation: cfg.data.protection.voice_moderation,
         text_protection: cfg.data.protection.text_protection,
+        text_timeout: cfg.data.protection.text_timeout,
         custom_words: cfg.data.protection.custom_words.join('\n'),
         allowed_domains: cfg.data.protection.allowed_domains.join('\n'),
         log_channel_id: cfg.data.protection.log_channel_id ?? '',
@@ -77,6 +80,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         enabled: v.enabled,
         voice_moderation: v.voice_moderation,
         text_protection: v.text_protection,
+        text_timeout: v.text_timeout,
         custom_words: splitList(v.custom_words),
         allowed_domains: splitList(v.allowed_domains),
         log_channel_id: logChannelId === '' ? null : logChannelId,
@@ -108,6 +112,11 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
           <span>{t('protection.textProtection')}</span>
         </label>
         <p className="mb-4 ms-6 text-xs text-slate-500">{t('protection.textProtection.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
+          <input type="checkbox" {...form.register('text_timeout')} />
+          <span>{t('protection.textTimeout')}</span>
+        </label>
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('protection.textTimeout.hint')}</p>
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.customWords')}</span>
           <textarea
