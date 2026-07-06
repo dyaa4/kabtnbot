@@ -1,4 +1,5 @@
 import express, { type Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from '@gamebot/db';
 import type { DiscordRest } from '../discord-rest.js';
 import { requireGuildAccess } from '../guild-access.js';
@@ -11,8 +12,11 @@ const rawImage = express.raw({ type: () => true, limit: MAX_ASSET_BYTES });
 
 export function registerAssetRoutes(router: Router, rest: DiscordRest): void {
   const guard = requireGuildAccess(rest);
+  // Each upload writes up to 8 MB into Mongo — bound the write rate per client.
+  // Created per registration so each app instance gets its own counter store.
+  const uploadLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false });
 
-  router.put('/guilds/:guildId/assets/welcome-banner', guard, rawImage, async (req, res, next) => {
+  router.put('/guilds/:guildId/assets/welcome-banner', uploadLimiter, guard, rawImage, async (req, res, next) => {
     try {
       const body = req.body as unknown;
       if (!Buffer.isBuffer(body) || body.length === 0) {

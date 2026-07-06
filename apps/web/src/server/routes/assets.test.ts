@@ -68,6 +68,24 @@ describe('welcome-banner asset routes', () => {
     expect(res.body.error.code).toBe('UNSUPPORTED_TYPE');
   });
 
+  it('rate limits excessive banner uploads with 429', async () => {
+    const { app, cookie } = setup();
+    for (let i = 0; i < 30; i++) {
+      const res = await request(app)
+        .put('/api/guilds/g1/assets/welcome-banner')
+        .set('Cookie', cookie)
+        .set('Content-Type', 'image/png')
+        .send(PNG);
+      expect(res.status).toBe(200);
+    }
+    const blocked = await request(app)
+      .put('/api/guilds/g1/assets/welcome-banner')
+      .set('Cookie', cookie)
+      .set('Content-Type', 'image/png')
+      .send(PNG);
+    expect(blocked.status).toBe(429);
+  });
+
   it('rejects decompression bombs (huge pixel dimensions in a small file)', async () => {
     const { app, cookie } = setup();
     const bomb = pngHeader(20000, 20000); // 33-byte file claiming 400 MP

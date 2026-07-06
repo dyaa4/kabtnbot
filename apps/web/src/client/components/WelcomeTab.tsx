@@ -116,6 +116,15 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const bannerSrc = banner.data ?? cfg.data?.welcome.banner_url ?? null;
   const hasBanner = bannerSrc !== null;
 
+  // Revoke the previous banner object URL once a new one replaces it, so
+  // repeated uploads don't accumulate image blobs in memory.
+  const prevBannerUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prev = prevBannerUrlRef.current;
+    if (prev && prev !== banner.data) URL.revokeObjectURL(prev);
+    prevBannerUrlRef.current = banner.data ?? null;
+  }, [banner.data]);
+
   // React attaches onWheel passively, so preventDefault (needed to stop the page
   // from scrolling while resizing) requires a native non-passive listener.
   useEffect(() => {

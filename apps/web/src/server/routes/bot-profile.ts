@@ -1,4 +1,5 @@
 import express, { type Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import type { BotMember, DiscordRest } from '../discord-rest.js';
 import { DiscordApiError } from '../discord-rest.js';
@@ -31,6 +32,10 @@ const rawImage = express.raw({ type: () => true, limit: AVATAR_MAX_BYTES });
 
 export function registerBotProfileRoutes(router: Router, rest: DiscordRest): void {
   const guard = requireGuildAccess(rest);
+  // Discord rate-limits bot profile edits harshly (especially the global-avatar
+  // fallback), so keep our own cap well below what a UI user would ever need.
+  // Created per registration so each app instance gets its own counter store.
+  const profileLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false });
 
   router.get('/guilds/:guildId/bot-profile', guard, async (req, res, next) => {
     try {
@@ -49,7 +54,7 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
     }
   });
 
-  router.patch('/guilds/:guildId/bot-profile', guard, async (req, res, next) => {
+  router.patch('/guilds/:guildId/bot-profile', profileLimiter, guard, async (req, res, next) => {
     try {
       const parsed = NicknamePatch.safeParse(req.body);
       if (!parsed.success) {
@@ -67,7 +72,7 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
     }
   });
 
-  router.put('/guilds/:guildId/bot-profile/avatar', guard, rawImage, async (req, res, next) => {
+  router.put('/guilds/:guildId/bot-profile/avatar', profileLimiter, guard, rawImage, async (req, res, next) => {
     try {
       const body = req.body as unknown;
       if (!Buffer.isBuffer(body) || body.length === 0) {

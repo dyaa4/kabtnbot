@@ -26,13 +26,19 @@ const channels = [
   { id: '456', name: 'welcome' },
 ];
 
-function stubFetch(config: ReturnType<typeof configWith>) {
+function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolean } = {}) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
       if (url.includes('/assets/welcome-banner')) {
         if (init?.method === 'PUT') return new Response(JSON.stringify({ ok: true, content_type: 'image/png' }), { status: 200 });
         if (init?.method === 'DELETE') return new Response(JSON.stringify({ ok: true }), { status: 200 });
+        if (opts.asset) {
+          return new Response(new Blob([new Uint8Array([1, 2, 3])]), {
+            status: 200,
+            headers: { 'Content-Type': 'image/png' },
+          });
+        }
         return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
       }
       if (init?.method === 'PATCH') {
@@ -52,6 +58,10 @@ function stubFetch(config: ReturnType<typeof configWith>) {
 
 beforeEach(() => {
   vi.unstubAllGlobals();
+  // jsdom has no object-URL support; the component uses it for the banner preview.
+  let n = 0;
+  URL.createObjectURL = vi.fn(() => `blob:mock-${++n}`);
+  URL.revokeObjectURL = vi.fn();
 });
 
 function renderTab() {
@@ -113,6 +123,20 @@ describe('WelcomeTab', () => {
       expect(body.welcome.avatar_y).toBe(0.4);
       expect(body.welcome.avatar_size).toBe(0.27);
       expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
+    });
+  });
+
+  it('revokes the previous banner object URL after a re-upload', async () => {
+    stubFetch(configWith(null), { asset: true });
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ });
+
+    const file = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47])], 'banner.png', { type: 'image/png' });
+    await user.upload(screen.getByTestId('banner-file-input'), file);
+
+    await waitFor(() => {
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-1');
     });
   });
 
