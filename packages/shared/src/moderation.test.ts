@@ -63,6 +63,14 @@ describe('matchesProfanity', () => {
     expect(matchesProfanity('هذا بالخرا', [])).toBe(true); // ب+ال+خرا
     expect(matchesProfanity('قلت للحمار', [])).toBe(true); // لل+حمار
   });
+  it('prefix matching skips two-letter roots — gaming words like بوكس/فكس stay clean', () => {
+    expect(matchesProfanity('ضربته بوكس قوي', [])).toBe(false); // بو+كس ≠ profanity
+    expect(matchesProfanity('سوي فكس للسيرفر', [])).toBe(false); // ف+كس ≠ profanity
+    expect(matchesProfanity('اعطيه وكس؟ لا', [])).toBe(false); // و+كس
+    // the clitic-suffix path on short roots is unaffected
+    expect(matchesProfanity('يا كسك', [])).toBe(true);
+    expect(matchesProfanity('انت كس', [])).toBe(true);
+  });
   it('custom words match as substrings anywhere in the text (admin opted in)', () => {
     // inside another word / written together
     expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(true);

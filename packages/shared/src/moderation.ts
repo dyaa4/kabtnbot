@@ -58,7 +58,11 @@ function bodyOf(nw: string): string {
 }
 
 function boundaryHit(normalizedText: string, nw: string): boolean {
-  return new RegExp(`(^|[^\\p{L}])${AR_PREFIXES}${bodyOf(nw)}(?:${AR_SUFFIXES})?([^\\p{L}]|$)`, 'u').test(
+  // Attached-prefix matching only for roots of 3+ letters: two-letter roots
+  // (كس، زب) would otherwise swallow innocent gaming words like بوكس (punch)
+  // and فكس (fix) — the exact false positives that voice moderation kicks on.
+  const prefixes = nw.length >= 3 ? AR_PREFIXES : '';
+  return new RegExp(`(^|[^\\p{L}])${prefixes}${bodyOf(nw)}(?:${AR_SUFFIXES})?([^\\p{L}]|$)`, 'u').test(
     ` ${normalizedText} `,
   );
 }
