@@ -149,7 +149,7 @@ export function Landing() {
               </div>
               <p className="mb-6 text-sm text-slate-400">{t('pricing.premium.tagline')}</p>
               <ul className="grid gap-3 text-sm text-slate-300">
-                {(['everything', 'voice', 'stats', 'limits'] as const).map((key) => (
+                {(['everything', 'voice', 'stats', 'voicelog', 'limits'] as const).map((key) => (
                   <li key={key} className="flex items-start gap-2">
                     <span className="mt-0.5 text-amber-300">★</span>
                     <span>{t(`pricing.premium.${key}`)}</span>

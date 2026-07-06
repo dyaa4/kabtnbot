@@ -25,6 +25,7 @@
   "pricing.premium.everything": "Everything in the free plan",
   "pricing.premium.voice": "Smart voice assistant in four Arabic dialects with voice admin commands",
   "pricing.premium.stats": "Activity dashboard: messages, voice minutes and member growth",
+  "pricing.premium.voicelog": "Voice presence log: who's in voice right now and the last 7 days of sessions",
   "pricing.premium.limits": "60 voice-listening minutes and 50 AI questions per day — expandable",
   "nav.logout": "Logout",
   "lang.switch": "عربي",
