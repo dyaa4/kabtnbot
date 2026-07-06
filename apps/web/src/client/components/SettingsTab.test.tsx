@@ -28,6 +28,9 @@ beforeEach(() => {
       if (url.endsWith('/roles')) {
         return new Response(JSON.stringify([{ id: '123456', name: 'Admins' }]), { status: 200 });
       }
+      if (url.endsWith('/voice-channels')) {
+        return new Response(JSON.stringify([{ id: 'v1', name: 'Gaming' }, { id: 'v2', name: 'Chill' }]), { status: 200 });
+      }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
   );
@@ -83,6 +86,21 @@ describe('SettingsTab', () => {
       const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
       expect(patchCalls).toHaveLength(1);
       expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).voice.personality_enabled).toBe(true);
+    });
+  });
+
+  it('toggling an allowed voice channel PATCHes voice.allowed_channel_ids', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+    const gaming = await screen.findByLabelText(/🔊 Gaming/);
+    await user.click(gaming);
+    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[0]);
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
+      expect(body.voice.allowed_channel_ids).toEqual(['v1']);
     });
   });
 

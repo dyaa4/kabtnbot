@@ -22,6 +22,7 @@ export interface DiscordRest {
   listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
   listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   listRoles(guildId: string): Promise<{ id: string; name: string }[]>;
+  listVoiceChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
@@ -134,6 +135,16 @@ export function createDiscordRest(): DiscordRest {
       if (!channels) return [];
       // Discord channel types: 0 = text, 5 = announcement — both accept messages.
       return channels.filter((c) => c.type === 0 || c.type === 5).map((c) => ({ id: c.id, name: c.name }));
+    },
+    async listVoiceChannels(guildId) {
+      const channels = await discordJson<{ id: string; name: string; type: number }[]>(
+        `${API}/guilds/${guildId}/channels`,
+        { headers: bot },
+        true,
+      );
+      if (!channels) return [];
+      // Discord channel types: 2 = voice, 13 = stage.
+      return channels.filter((c) => c.type === 2 || c.type === 13).map((c) => ({ id: c.id, name: c.name }));
     },
     async listRoles(guildId) {
       const roles = await discordJson<{ id: string; name: string; position: number; managed: boolean }[]>(

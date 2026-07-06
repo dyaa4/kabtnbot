@@ -108,6 +108,14 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  router.get('/guilds/:guildId/voice-channels', guard, async (req, res, next) => {
+    try {
+      res.json(await rest.listVoiceChannels(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get('/guilds/:guildId/roles', guard, async (req, res, next) => {
     try {
       res.json(await rest.listRoles(req.params.guildId));

@@ -142,6 +142,15 @@ describe('api routes', () => {
     expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
   });
 
+  it('lists voice channels; denies non-managed guild', async () => {
+    const { app, cookie, rest } = setup();
+    rest.voiceChannels.set('g1', [{ id: 'v1', name: 'Gaming' }]);
+    const res = await request(app).get('/api/guilds/g1/voice-channels').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: 'v1', name: 'Gaming' }]);
+    expect((await request(app).get('/api/guilds/gX/voice-channels').set('Cookie', cookie)).status).toBe(403);
+  });
+
   it('lists roles by name; denies non-managed guild', async () => {
     const { app, cookie, rest } = setup();
     rest.roles.set('g1', [

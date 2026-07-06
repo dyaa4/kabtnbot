@@ -47,14 +47,25 @@ export function SettingsTab({ guildId }: { guildId: string }) {
 
   const voice = useForm<VoiceValues>({ resolver: zodResolver(VoiceForm) });
   const [adminRoleId, setAdminRoleId] = useState('');
+  const [allowedVoiceIds, setAllowedVoiceIds] = useState<string[]>([]);
+
+  const voiceChannels = useQuery({
+    queryKey: ['voice-channels', guildId],
+    queryFn: () => api<{ id: string; name: string }[]>(`/api/guilds/${guildId}/voice-channels`),
+  });
 
   useEffect(() => {
     if (cfg.data) {
       voice.reset(cfg.data.voice);
       setAdminRoleId(cfg.data.admin_role_id ?? '');
+      setAllowedVoiceIds(cfg.data.voice.allowed_channel_ids);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.data]);
+
+  const toggleVoiceChannel = (id: string) => {
+    setAllowedVoiceIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
 
   if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
 
@@ -66,7 +77,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
 
       <form
         className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
-        onSubmit={voice.handleSubmit((v) => patch.mutate({ voice: v }))}
+        onSubmit={voice.handleSubmit((v) => patch.mutate({ voice: { ...v, allowed_channel_ids: allowedVoiceIds } }))}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('settings.voice')}</h3>
         <label className="mb-1 flex items-center gap-2">
@@ -101,6 +112,22 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           <span>{t('settings.personality')}</span>
         </label>
         <p className="mb-4 ms-6 text-xs text-slate-500">{t('settings.personality.hint')}</p>
+
+        <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.allowedChannels')}</span>
+        <div className="mb-1 grid gap-1 rounded-xl border border-white/10 bg-slate-950/40 p-3">
+          {voiceChannels.data?.length === 0 && <span className="text-xs text-slate-500">{t('settings.voice.noVoiceChannels')}</span>}
+          {voiceChannels.data?.map((c) => (
+            <label key={c.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={allowedVoiceIds.includes(c.id)}
+                onChange={() => toggleVoiceChannel(c.id)}
+              />
+              <span>🔊 {c.name}</span>
+            </label>
+          ))}
+        </div>
+        <p className="mb-4 text-xs text-slate-500">{t('settings.voice.allowedChannels.hint')}</p>
         <p data-testid="voice-error" className="mb-2 text-sm text-red-400">
           {voiceError ?? ''}
         </p>
