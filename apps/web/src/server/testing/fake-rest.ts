@@ -21,9 +21,11 @@ export class FakeDiscordRest implements DiscordRest {
   supportsGuildAvatar = true;
   forbidNickname = false;
   globalAvatar: string | null = null;
+  // Access token that exchangeCode issues for any OAuth code (override per scenario).
+  exchangeToken = 'at-123';
 
   async exchangeCode(_code: string) {
-    return { access_token: 'at-123' };
+    return { access_token: this.exchangeToken };
   }
   async getMe(accessToken: string) {
     if (this.revokedTokens.has(accessToken)) throw new DiscordAuthError();

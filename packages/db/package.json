@@ -13,7 +13,8 @@
     "build": "tsc",
     "test": "vitest run",
     "backup": "tsx src/backup-cli.ts export",
-    "restore": "tsx src/backup-cli.ts import"
+    "restore": "tsx src/backup-cli.ts import",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@gamebot/shared": "workspace:*",
