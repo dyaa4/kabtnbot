@@ -11,7 +11,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "vitest run"
+    "test": "vitest run",
+    "backup": "tsx src/backup-cli.ts export",
+    "restore": "tsx src/backup-cli.ts import"
   },
   "dependencies": {
     "@gamebot/shared": "workspace:*",
@@ -19,7 +21,9 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.0",
+    "dotenv": "^16.4.7",
     "mongodb-memory-server": "^10.1.0",
+    "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^2.1.0"
   }

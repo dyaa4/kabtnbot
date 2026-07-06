@@ -8,7 +8,9 @@
     "test": "pnpm -r --if-present test",
     "dev": "pnpm --filter @gamebot/bot dev",
     "dev:web": "pnpm --filter @gamebot/web dev",
-    "deploy:commands": "pnpm --filter @gamebot/bot deploy:commands"
+    "deploy:commands": "pnpm --filter @gamebot/bot deploy:commands",
+    "backup": "pnpm --filter @gamebot/db backup",
+    "restore": "pnpm --filter @gamebot/db restore"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
