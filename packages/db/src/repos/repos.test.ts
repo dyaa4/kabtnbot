@@ -4,6 +4,7 @@ import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-config-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
+import { recordBotHeartbeat, getBotStatus, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -69,6 +70,21 @@ describe('guild-asset-repo', () => {
     await expect(
       putGuildAsset('gBig', 'welcome_banner', 'image/png', Buffer.alloc(MAX_ASSET_BYTES + 1)),
     ).rejects.toThrow();
+  });
+});
+
+describe('bot-status-repo', () => {
+  it('reports offline with no heartbeat, online after one, offline once stale', async () => {
+    expect((await getBotStatus()).online).toBe(false);
+
+    await recordBotHeartbeat(7);
+    const fresh = await getBotStatus();
+    expect(fresh.online).toBe(true);
+    expect(fresh.guild_count).toBe(7);
+    expect(fresh.last_seen).toBeTruthy();
+
+    const later = new Date(Date.now() + BOT_OFFLINE_AFTER_MS + 1000);
+    expect((await getBotStatus(later)).online).toBe(false);
   });
 });
 

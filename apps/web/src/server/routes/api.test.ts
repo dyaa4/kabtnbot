@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDb, disconnectDb, getGuildConfig } from '@gamebot/db';
+import { connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
@@ -44,6 +44,19 @@ describe('api routes', () => {
     expect((await request(app).get('/api/me')).status).toBe(401);
     const ok = await request(app).get('/api/me').set('Cookie', cookie);
     expect(ok.body).toEqual({ uid: 'u1', uname: 'x', avatar: null });
+  });
+
+  it('reports bot status (offline without heartbeat, online after one)', async () => {
+    const { app, cookie } = setup();
+    expect((await request(app).get('/api/status')).status).toBe(401); // session required
+
+    const before = await request(app).get('/api/status').set('Cookie', cookie);
+    expect(before.status).toBe(200);
+    expect(before.body.online).toBe(false);
+
+    await recordBotHeartbeat(3);
+    const after = await request(app).get('/api/status').set('Cookie', cookie);
+    expect(after.body).toMatchObject({ online: true, guild_count: 3 });
   });
 
   it('lists eligible guilds', async () => {

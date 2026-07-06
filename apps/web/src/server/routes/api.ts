@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig, getUsage,
-  memberSnapshots, topActive, activityDaily,
+  memberSnapshots, topActive, activityDaily, getBotStatus,
 } from '@gamebot/db';
 import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -69,6 +69,14 @@ export function apiRouter(rest: DiscordRest): Router {
   router.get('/me', (_req, res) => {
     const s = res.locals.session as Session;
     res.json({ uid: s.uid, uname: s.uname, avatar: s.avatar });
+  });
+
+  router.get('/status', async (_req, res, next) => {
+    try {
+      res.json(await getBotStatus());
+    } catch (err) {
+      next(err);
+    }
   });
 
   router.get('/guilds', async (_req, res, next) => {

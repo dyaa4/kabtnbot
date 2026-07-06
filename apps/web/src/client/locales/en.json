@@ -82,6 +82,8 @@
   "botProfile.globalNote": "Discord applied the image to the bot's global profile (all servers)",
   "botProfile.noPermission": "The bot lacks the Change Nickname permission in this server",
   "botProfile.uploadFailed": "Upload failed — use a PNG, JPEG or GIF image up to 8 MB",
+  "bot.online": "Bot online",
+  "bot.offline": "Bot offline",
   "error.generic": "Something went wrong, try again",
   "loading": "Loading…"
 }

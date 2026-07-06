@@ -9,6 +9,36 @@ interface Me {
   avatar: string | null;
 }
 
+interface BotStatus {
+  online: boolean;
+  last_seen: string | null;
+  guild_count: number;
+}
+
+function BotStatusBadge() {
+  const { t } = useI18n();
+  const status = useQuery({
+    queryKey: ['bot-status'],
+    queryFn: () => api<BotStatus>('/api/status'),
+    refetchInterval: 60_000,
+    retry: false,
+  });
+  if (!status.data) return null;
+  const online = status.data.online;
+  return (
+    <span
+      data-testid="bot-status"
+      title={status.data.last_seen ?? ''}
+      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+        online ? 'border-emerald-500/30 bg-emerald-900/30 text-emerald-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
+      }`}
+    >
+      <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-emerald-400' : 'bg-red-400'}`} />
+      {online ? t('bot.online') : t('bot.offline')}
+    </span>
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
@@ -24,6 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
+          <BotStatusBadge />
           <button
             className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}

@@ -67,6 +67,22 @@ const activityDailySchema = new Schema<ActivityDailyDoc>({
 activityDailySchema.index({ guild_id: 1, user_id: 1, date: 1 }, { unique: true });
 activityDailySchema.index({ guild_id: 1, date: 1 });
 
+export interface BotStatusDoc {
+  key: string; // singleton: 'bot'
+  last_seen: Date;
+  guild_count: number;
+}
+
+const botStatusSchema = new Schema<BotStatusDoc>({
+  key: { type: String, required: true, unique: true },
+  last_seen: { type: Date, required: true },
+  guild_count: { type: Number, default: 0 },
+});
+
+export const BotStatusModel =
+  (mongoose.models.BotStatus as mongoose.Model<BotStatusDoc>) ??
+  mongoose.model<BotStatusDoc>('BotStatus', botStatusSchema);
+
 export type GuildAssetKind = 'welcome_banner';
 
 export interface GuildAssetDoc {
