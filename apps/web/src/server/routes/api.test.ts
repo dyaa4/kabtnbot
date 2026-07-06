@@ -39,7 +39,7 @@ describe('api routes', () => {
     const { app } = setup();
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
-    expect(res.body.inviteUrl).toContain('permissions=1099799989264');
+    expect(res.body.inviteUrl).toContain('permissions=1099799997456');
     expect(typeof res.body.guilds).toBe('number');
 
     await recordBotHeartbeat(6);
@@ -114,6 +114,46 @@ describe('api routes', () => {
     expect(patch.status).toBe(200);
     expect(patch.body.protection.enabled).toBe(true);
     expect((await getGuildConfig('g1')).protection.enabled).toBe(true);
+  });
+
+  it('lists the guild custom emojis', async () => {
+    const { app, cookie, rest } = setup();
+    rest.emojis.set('g1', [{ id: 'e1', name: 'pepe', animated: false }]);
+    const res = await request(app).get('/api/guilds/g1/emojis').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([{ id: 'e1', name: 'pepe', animated: false }]);
+  });
+
+  it('accepts welcome messages up to 2000 characters and rejects longer ones', async () => {
+    const { app, cookie } = setup();
+    const ok = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ welcome: { message: 'م'.repeat(2000) } });
+    expect(ok.status).toBe(200);
+
+    const tooLong = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ welcome: { message: 'م'.repeat(2001) } });
+    expect(tooLong.status).toBe(400);
+  });
+
+  it('patches the bot language and rejects unsupported values', async () => {
+    const { app, cookie } = setup();
+    const ok = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ language: 'de' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.language).toBe('de');
+    expect((await getGuildConfig('g1')).language).toBe('de');
+
+    const bad = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ language: 'xx' });
+    expect(bad.status).toBe(400);
   });
 
   it('rejects welcome.avatar_x out of range with 400', async () => {

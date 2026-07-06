@@ -4,6 +4,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
+import { ToastProvider } from './Toast.js';
 import { WelcomeTab } from './WelcomeTab.js';
 
 function configWith(bannerUrl: string | null) {
@@ -59,6 +60,9 @@ function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolea
       if (url.endsWith('/channels')) {
         return new Response(JSON.stringify(channels), { status: 200 });
       }
+      if (url.endsWith('/emojis')) {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
       if (url.endsWith('/api/me')) {
         return new Response(JSON.stringify({ uid: 'u1', uname: 'Tester', avatar: null }), { status: 200 });
       }
@@ -82,9 +86,11 @@ function renderTab() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <I18nProvider>
-      <QueryClientProvider client={qc}>
-        <WelcomeTab guildId="g1" />
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={qc}>
+          <WelcomeTab guildId="g1" />
+        </QueryClientProvider>
+      </ToastProvider>
     </I18nProvider>,
   );
 }
@@ -177,6 +183,21 @@ describe('WelcomeTab', () => {
       expect(patchCalls).toHaveLength(1);
       expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).welcome.auto_role_id).toBe('r1');
     });
+  });
+
+  it('caps the welcome and farewell messages at 2000 characters and shows a live counter', async () => {
+    stubFetch(configWith(null));
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('button', { name: /ارفع صورة البانر|Upload a banner image/ });
+
+    const msg = screen.getByLabelText<HTMLTextAreaElement>(/رسالة الترحيب|Welcome message/);
+    expect(msg.maxLength).toBe(2000);
+    expect(screen.getByText(`${msg.value.length}/2000`)).toBeTruthy();
+
+    await user.click(screen.getByLabelText(/رسائل الوداع|Farewell messages/));
+    const farewell = await screen.findByLabelText<HTMLTextAreaElement>(/رسالة الوداع|Farewell message/);
+    expect(farewell.maxLength).toBe(2000);
   });
 
   it('shows a red error banner when saving fails', async () => {

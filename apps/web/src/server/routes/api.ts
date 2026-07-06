@@ -5,7 +5,7 @@ import {
   memberSnapshots, topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
 } from '@gamebot/db';
-import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
+import { DIALECTS, LANGUAGES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -18,6 +18,7 @@ import { registerBotProfileRoutes } from './bot-profile.js';
 const ConfigPatch = z
   .object({
     admin_role_id: z.string().nullable().optional(),
+    language: z.enum(LANGUAGES).optional(),
     voice: z
       .object({
         enabled: z.boolean().optional(),
@@ -44,11 +45,11 @@ const ConfigPatch = z
       .object({
         enabled: z.boolean().optional(),
         channel_id: z.string().nullable().optional(),
-        message: z.string().max(500).optional(),
+        message: z.string().max(2000).optional(),
         banner_url: z.string().url().nullable().optional(),
         auto_role_id: z.string().nullable().optional(),
         farewell_enabled: z.boolean().optional(),
-        farewell_message: z.string().max(500).optional(),
+        farewell_message: z.string().max(2000).optional(),
         avatar_x: z.number().min(0).max(1).optional(),
         avatar_y: z.number().min(0).max(1).optional(),
         avatar_size: z.number().min(0.05).max(0.6).optional(),
@@ -74,9 +75,10 @@ export function apiRouter(rest: DiscordRest): Router {
     const status = await getBotStatus().catch(() => null);
     res.json({
       clientId: config.DISCORD_CLIENT_ID,
-      // 1099799989264 = base set (19926032) + Manage Roles (268435456, auto
-      // role) + Moderate Members (1099511627776, text-protection timeouts).
-      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=1099799989264`,
+      // 1099799997456 = base set (19926032) + Manage Messages (8192, text-protection
+      // deletions) + Manage Roles (268435456, auto role) + Moderate Members
+      // (1099511627776, text-protection timeouts).
+      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=1099799997456`,
       guilds: status?.guild_count ?? 0,
     });
   });
@@ -133,6 +135,14 @@ export function apiRouter(rest: DiscordRest): Router {
   router.get('/guilds/:guildId/roles', guard, async (req, res, next) => {
     try {
       res.json(await rest.listRoles(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/guilds/:guildId/emojis', guard, async (req, res, next) => {
+    try {
+      res.json(await rest.listEmojis(req.params.guildId));
     } catch (err) {
       next(err);
     }

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api.js';
+import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { ChannelSelect } from './ChannelSelect.js';
+import { MessageEditor } from './MessageEditor.js';
 import { RoleSelect } from './RoleSelect.js';
-import { SaveStatus } from './SaveStatus.js';
+import { SaveBar } from './SaveBar.js';
+import { useToast } from './Toast.js';
 
 interface GuildConfigResp {
   welcome: {
@@ -40,6 +42,9 @@ interface Pos {
 }
 
 const DEFAULT_POS: Pos = { x: 0.5, y: 0.4, size: 0.25 };
+// Mirrors the server-side z.string().max(2000) on welcome/farewell messages
+// (2000 = Discord's per-message hard limit).
+const MSG_MAX = 2000;
 const SIZE_MIN = 0.05;
 const SIZE_MAX = 0.6;
 
@@ -55,7 +60,7 @@ function round(n: number): number {
 export function WelcomeTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
   const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
   // The logged-in admin stands in for the joining member in the preview.
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
@@ -75,9 +80,12 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const patch = useMutation({
     mutationFn: (body: object) => api(`/api/guilds/${guildId}/config`, { method: 'PATCH', body: JSON.stringify(body) }),
     onSuccess: () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success(t('settings.saved'));
       void qc.invalidateQueries({ queryKey: ['config', guildId] });
+    },
+    onError: (err) => {
+      const detail = err instanceof ApiError && err.message ? ` (${err.message})` : '';
+      toast.error(`${t('error.generic')}${detail}`);
     },
   });
 
@@ -103,6 +111,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       if (!res.ok) throw new Error(`delete ${res.status}`);
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ['banner', guildId] }),
+    onError: () => toast.error(t('error.generic')),
   });
 
   const [enabled, setEnabled] = useState(false);
@@ -258,8 +267,6 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="grid gap-8">
-      <SaveStatus saved={saved} error={patch.error ?? removeBanner.error} />
-
       <form
         className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
         onSubmit={onSubmit}
@@ -284,15 +291,15 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('welcome.autoRole.hint')}</p>
 
-        <label className="mb-1 block">
-          <span className="mb-1 block text-sm text-slate-400">{t('welcome.message')}</span>
-          <textarea
-            className="h-24 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-          />
-        </label>
-        <p className="mb-4 text-xs text-slate-500">{t('welcome.message.hint')}</p>
+        <MessageEditor
+          label={t('welcome.message')}
+          hint={t('welcome.message.hint')}
+          value={message}
+          onChange={setMessage}
+          maxLength={MSG_MAX}
+          sampleUser={me.data?.uname}
+          guildId={guildId}
+        />
 
         <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
@@ -307,15 +314,16 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         <p className="mb-3 ms-6 text-xs text-slate-500">{t('welcome.farewell.hint')}</p>
         {farewellEnabled && (
           <>
-            <label className="mb-1 block">
-              <span className="mb-1 block text-sm text-slate-400">{t('welcome.farewellMessage')}</span>
-              <textarea
-                className="h-16 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-                value={farewellMessage}
-                onChange={(e) => setFarewellMessage(e.target.value)}
-              />
-            </label>
-            <p className="mb-4 text-xs text-slate-500">{t('welcome.farewellMessage.hint')}</p>
+            <MessageEditor
+              label={t('welcome.farewellMessage')}
+              hint={t('welcome.farewellMessage.hint')}
+              value={farewellMessage}
+              onChange={setFarewellMessage}
+              maxLength={MSG_MAX}
+              rows={3}
+              sampleUser={me.data?.uname}
+              guildId={guildId}
+            />
           </>
         )}
 
@@ -446,12 +454,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
 
         {upload.isError && <p className="mb-3 text-sm text-red-400">{t('welcome.uploadFailed')}</p>}
 
-        <button
-          className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
-          type="submit"
-        >
-          {t('settings.save')}
-        </button>
+        <SaveBar saving={patch.isPending} />
       </form>
     </div>
   );

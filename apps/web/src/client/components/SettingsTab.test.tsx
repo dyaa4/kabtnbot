@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
+import { ToastProvider } from './Toast.js';
 import { SettingsTab } from './SettingsTab.js';
 
 const config = {
@@ -43,9 +44,11 @@ function renderTab() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <I18nProvider>
-      <QueryClientProvider client={qc}>
-        <SettingsTab guildId="g1" />
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={qc}>
+          <SettingsTab guildId="g1" />
+        </QueryClientProvider>
+      </ToastProvider>
     </I18nProvider>,
   );
 }
@@ -114,11 +117,58 @@ describe('SettingsTab', () => {
     const roleSelect = await screen.findByLabelText(/الرول الإداري|Admin role/);
     await screen.findByRole('option', { name: '@Admins' }); // roles loaded
     await user.selectOptions(roleSelect, '123456');
-    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[1]);
+    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[0]); // single sticky save bar
     await waitFor(() => {
       const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
       expect(patchCalls).toHaveLength(1);
       expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).admin_role_id).toBe('123456');
     });
+  });
+
+  it('offers all six bot languages with native names and saves the pick via PATCH', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+
+    const select = screen.getByLabelText(/لغة رسائل البوت|Bot message language/);
+    for (const name of ['العربية', 'English', 'Deutsch', 'Türkçe', 'Français', 'Русский']) {
+      expect(screen.getAllByRole('option', { name }).length).toBeGreaterThanOrEqual(1);
+    }
+
+    await user.selectOptions(select, 'de');
+    await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[0]);
+
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).language).toBe('de');
+    });
+  });
+
+  it('save button is disabled until something changes, then saves everything at once', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+
+    const save = screen.getAllByRole('button', { name: /حفظ|Save/ })[0] as HTMLButtonElement;
+    expect(save.disabled).toBe(true); // nothing changed yet
+    expect(screen.getByText(/كل التغييرات محفوظة|All changes saved/)).toBeTruthy();
+
+    await user.click(screen.getByLabelText(/الشخصية الكوميدية|Comedic personality/));
+    expect(save.disabled).toBe(false);
+    expect(screen.getByText(/لديك تغييرات غير محفوظة|You have unsaved changes/)).toBeTruthy();
+
+    await user.click(save);
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');
+      expect(patchCalls).toHaveLength(1);
+      const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
+      // one combined PATCH carries every section
+      expect(body.voice.personality_enabled).toBe(true);
+      expect(body.language).toBe('ar');
+      expect(body.admin_role_id).toBeNull();
+      expect(body.summary).toEqual({ enabled: false, channel_id: null });
+    });
+    expect(await screen.findByTestId('toast-success')).toBeTruthy();
   });
 });

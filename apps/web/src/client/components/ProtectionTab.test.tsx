@@ -4,6 +4,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
+import { ToastProvider } from './Toast.js';
 import { ProtectionTab } from './ProtectionTab.js';
 
 const config = {
@@ -45,9 +46,11 @@ function renderTab() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <I18nProvider>
-      <QueryClientProvider client={qc}>
-        <ProtectionTab guildId="g1" />
-      </QueryClientProvider>
+      <ToastProvider>
+        <QueryClientProvider client={qc}>
+          <ProtectionTab guildId="g1" />
+        </QueryClientProvider>
+      </ToastProvider>
     </I18nProvider>,
   );
 }
@@ -73,6 +76,7 @@ describe('ProtectionTab', () => {
       const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
       expect(body.protection.enabled).toBe(true);
     });
+    expect(await screen.findByTestId('toast-success')).toBeTruthy(); // success toast pops
   });
 
   it('lists text channels by name and PATCHes the selected channel id', async () => {

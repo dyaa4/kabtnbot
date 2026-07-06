@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '../api.js';
+import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { ChannelSelect } from './ChannelSelect.js';
-import { SaveStatus } from './SaveStatus.js';
+import { SaveBar } from './SaveBar.js';
+import { useToast } from './Toast.js';
 
 function splitList(raw: string): string[] {
   return raw
@@ -42,15 +43,18 @@ interface GuildConfigResp {
 export function ProtectionTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
   const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
 
   const patch = useMutation({
     mutationFn: (body: object) => api(`/api/guilds/${guildId}/config`, { method: 'PATCH', body: JSON.stringify(body) }),
     onSuccess: () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
+      toast.success(t('settings.saved'));
       void qc.invalidateQueries({ queryKey: ['config', guildId] });
+    },
+    onError: (err) => {
+      const detail = err instanceof ApiError && err.message ? ` (${err.message})` : '';
+      toast.error(`${t('error.generic')}${detail}`);
     },
   });
 
@@ -90,8 +94,6 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="grid gap-8">
-      <SaveStatus saved={saved} error={patch.error} />
-
       <form
         className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
         onSubmit={form.handleSubmit(onSubmit)}
@@ -138,16 +140,11 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
           <ChannelSelect
             guildId={guildId}
             value={form.watch('log_channel_id') ?? ''}
-            onChange={(id) => form.setValue('log_channel_id', id)}
+            onChange={(id) => form.setValue('log_channel_id', id, { shouldDirty: true })}
           />
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('protection.logChannelId.hint')}</p>
-        <button
-          className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
-          type="submit"
-        >
-          {t('settings.save')}
-        </button>
+        <SaveBar dirty={form.formState.isDirty} saving={patch.isPending} />
       </form>
     </div>
   );

@@ -23,6 +23,7 @@ export interface DiscordRest {
   listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   listRoles(guildId: string): Promise<{ id: string; name: string }[]>;
   listVoiceChannels(guildId: string): Promise<{ id: string; name: string }[]>;
+  listEmojis(guildId: string): Promise<{ id: string; name: string; animated: boolean }[]>;
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
@@ -159,6 +160,18 @@ export function createDiscordRest(): DiscordRest {
         .filter((r) => r.id !== guildId && !r.managed)
         .sort((a, b) => b.position - a.position)
         .map((r) => ({ id: r.id, name: r.name }));
+    },
+    async listEmojis(guildId) {
+      const emojis = await discordJson<{ id: string; name: string; animated?: boolean; available?: boolean }[]>(
+        `${API}/guilds/${guildId}/emojis`,
+        { headers: bot },
+        true,
+      );
+      if (!emojis) return [];
+      // `available: false` = emoji lost (e.g. boost level dropped) — unusable in messages.
+      return emojis
+        .filter((e) => e.available !== false)
+        .map((e) => ({ id: e.id, name: e.name, animated: e.animated === true }));
     },
     async getGuildCounts(guildId) {
       return discordJson(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);
