@@ -6,11 +6,14 @@ import { onInteractionCreate } from './events/interactionCreate.js';
 import { registerActivityTracking } from './events/activity.js';
 import { registerTextProtection } from './modules/protection/text-mod.js';
 import { registerWelcome } from './events/guildMemberAdd.js';
+import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/resilience.js';
 
 async function main(): Promise<void> {
+  registerProcessSafetyNets();
   await connectDb(config.MONGODB_URI);
   console.log('[DB] Connected');
   const client = createClient();
+  registerClientErrorLogging(client);
   onReady(client);
   onInteractionCreate(client);
   registerActivityTracking(client);
