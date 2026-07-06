@@ -1,4 +1,4 @@
-import { connectDb } from '@gamebot/db';
+import { connectDb, disconnectDb, clearBotHeartbeat } from '@gamebot/db';
 import { config } from './config.js';
 import { createClient } from './client.js';
 import { onReady } from './events/ready.js';
@@ -16,6 +16,24 @@ async function main(): Promise<void> {
   registerActivityTracking(client);
   registerTextProtection(client);
   registerWelcome(client);
+
+  // Graceful shutdown: clear the heartbeat so the dashboard shows offline
+  // immediately (instead of after the 90s staleness window), then close the
+  // Discord session and the DB connection cleanly.
+  let shuttingDown = false;
+  const shutdown = async (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    console.log(`[Shutdown] ${signal}`);
+    await clearBotHeartbeat().catch(() => {});
+    await client.destroy().catch(() => {});
+    await disconnectDb().catch(() => {});
+    process.exit(0);
+  };
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGBREAK'] as const) {
+    process.on(signal, () => void shutdown(signal));
+  }
+
   await client.login(config.DISCORD_TOKEN);
 }
 

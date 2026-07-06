@@ -25,6 +25,9 @@ export const S = {
   welcomeDisabledNote: '⚠️ الترحيب معطّل حالياً — فعّله من لوحة التحكم أو /settings.',
   welcomeChannelNote: '📢 قناة الترحيب: {channel}',
   welcomeNoChannelNote: '⚠️ ما تم تحديد قناة ترحيب بعد — اخترها من لوحة التحكم.',
+  welcomeChannelMissing: '🚨 قناة الترحيب المحددة غير موجودة أو ليست قناة نصية — اخترها من جديد.',
+  welcomeChannelNoSend: '🚨 البوت لا يملك صلاحية إرسال الرسائل في قناة الترحيب — لن تصل أي رسالة ترحيب!',
+  welcomeChannelNoAttach: '⚠️ البوت لا يملك صلاحية إرفاق الملفات في قناة الترحيب — سيصل النص بدون صورة الترحيب.',
 } as const;
 
 export function fmt(template: string, vars: Record<string, string | number>): string {

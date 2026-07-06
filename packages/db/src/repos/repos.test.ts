@@ -4,7 +4,7 @@ import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-config-repo.js';
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
-import { recordBotHeartbeat, getBotStatus, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
+import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
 import { getKv, setKv } from './kv-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -96,6 +96,13 @@ describe('bot-status-repo', () => {
 
     const later = new Date(Date.now() + BOT_OFFLINE_AFTER_MS + 1000);
     expect((await getBotStatus(later)).online).toBe(false);
+  });
+
+  it('clearBotHeartbeat flips status to offline immediately', async () => {
+    await recordBotHeartbeat(4);
+    expect((await getBotStatus()).online).toBe(true);
+    await clearBotHeartbeat();
+    expect((await getBotStatus()).online).toBe(false);
   });
 });
 

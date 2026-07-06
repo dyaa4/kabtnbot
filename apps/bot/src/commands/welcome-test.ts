@@ -4,6 +4,13 @@ import type { Command } from './index.js';
 import { S, fmt } from '../lib/strings.js';
 import { isGuildAdmin } from '../lib/permissions.js';
 import { buildWelcomeMessage } from '../lib/welcome-message.js';
+import { welcomeChannelIssue, type ChannelLike } from '../lib/welcome-diagnostics.js';
+
+const ISSUE_TEXT = {
+  missing: S.welcomeChannelMissing,
+  cannot_send: S.welcomeChannelNoSend,
+  cannot_attach: S.welcomeChannelNoAttach,
+} as const;
 
 export const welcomeTestCommand: Command = {
   data: new SlashCommandBuilder()
@@ -24,12 +31,18 @@ export const welcomeTestCommand: Command = {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const { content, files } = await buildWelcomeMessage(interaction.member as GuildMember, config);
 
-    const status = [
+    const lines = [
       config.welcome.enabled ? S.welcomeEnabledNote : S.welcomeDisabledNote,
       config.welcome.channel_id
         ? fmt(S.welcomeChannelNote, { channel: `<#${config.welcome.channel_id}>` })
         : S.welcomeNoChannelNote,
-    ].join('\n');
+    ];
+    if (config.welcome.channel_id && interaction.guild) {
+      const channel = interaction.guild.channels.cache.get(config.welcome.channel_id);
+      const issue = welcomeChannelIssue(channel as ChannelLike | undefined, interaction.guild.members.me);
+      if (issue) lines.push(ISSUE_TEXT[issue]);
+    }
+    const status = lines.join('\n');
 
     await interaction.editReply({ content: `${content}\n\n${status}`, files });
   },

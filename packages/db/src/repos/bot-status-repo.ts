@@ -18,6 +18,11 @@ export async function recordBotHeartbeat(guildCount: number): Promise<void> {
   );
 }
 
+/** Called on graceful shutdown so the dashboard flips to offline immediately. */
+export async function clearBotHeartbeat(): Promise<void> {
+  await BotStatusModel.deleteOne({ key: 'bot' });
+}
+
 export async function getBotStatus(now: Date = new Date()): Promise<BotStatus> {
   const doc = (await BotStatusModel.findOne({ key: 'bot' }).lean()) as BotStatusDoc | null;
   if (!doc) return { online: false, last_seen: null, guild_count: 0 };
