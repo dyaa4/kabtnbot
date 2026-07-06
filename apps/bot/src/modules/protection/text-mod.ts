@@ -2,8 +2,17 @@ import { type Client, type GuildMember, type Message, type PartialMessage, type 
 import { scanMessage } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
-import { t, fmt } from '../../lib/strings.js';
+import { t, fmt, type BotStrings } from '../../lib/strings.js';
 import type { GuildConfig } from '@gamebot/shared';
+
+// scanMessage reasons are internal enum tokens — map them to localized labels
+// so LTR tokens never land inside RTL notice/log text (bidi jumble).
+const REASON_KEY = {
+  word: 'reasonWord',
+  scam: 'reasonScam',
+  invite: 'reasonInvite',
+  shortener: 'reasonShortener',
+} as const satisfies Record<string, keyof BotStrings>;
 
 export function shouldModerate(config: GuildConfig, isAdmin: boolean): boolean {
   return config.protection.enabled && config.protection.text_protection && !isAdmin;
@@ -82,13 +91,14 @@ export async function moderateMessage(msg: Message): Promise<void> {
   }
 
   const strings = t(config.language);
+  const reasonLabel = strings[REASON_KEY[verdict.reason!]];
   const notice = timedOut
     ? fmt(strings.textDeletedTimeout, {
         user: `<@${msg.author.id}>`,
-        reason: verdict.reason!,
+        reason: reasonLabel,
         minutes: Math.round(timeoutMs! / 60000),
       })
-    : fmt(strings.textDeleted, { user: `<@${msg.author.id}>`, reason: verdict.reason! });
+    : fmt(strings.textDeleted, { user: `<@${msg.author.id}>`, reason: reasonLabel });
   const warn = await (msg.channel as TextChannel).send(notice).catch(() => null);
   if (warn) setTimeout(() => void warn.delete().catch(() => {}), 5000);
 
@@ -100,7 +110,7 @@ export async function moderateMessage(msg: Message): Promise<void> {
         fmt(strings.textLogDeleted, {
           user: `<@${msg.author.id}>`,
           channel: `<#${msg.channelId}>`,
-          reason: verdict.reason!,
+          reason: reasonLabel,
         }) +
           (timedOut
             ? fmt(strings.textLogTimeoutSuffix, { minutes: Math.round(timeoutMs! / 60000), strike: strikeCount })

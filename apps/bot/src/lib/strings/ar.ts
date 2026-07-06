@@ -53,7 +53,12 @@ export const ar = {
   defaultWelcome: 'أهلاً {user} في {server}! 🎮',
   defaultFarewell: 'وداعاً {user} 👋',
   unknownMember: '؟',
-  // text protection
+  // text protection — localized reason labels (raw enum tokens like "word"
+  // inside RTL text trigger bidi reordering and read as jumbled)
+  reasonWord: 'كلمة محظورة',
+  reasonScam: 'احتيال/سكام',
+  reasonInvite: 'رابط دعوة خارجي',
+  reasonShortener: 'رابط مختصر',
   textDeleted: '{user} رسالتك حُذفت ({reason}). ممنوع الروابط المشبوهة/السكام.',
   textDeletedTimeout: '{user} رسالتك حُذفت ({reason}) وتم إسكاتك مؤقتاً {minutes} دقيقة بسبب التكرار.',
   textLogDeleted: '🛡️ حذف رسالة من {user} في {channel} — السبب: {reason}',

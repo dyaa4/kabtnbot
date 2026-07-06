@@ -124,6 +124,19 @@ describe('strike escalation', () => {
 });
 
 describe('moderateMessage — guild language', () => {
+  it('localizes the deletion reason instead of leaking the raw enum (bidi jumble)', async () => {
+    clearStrikes();
+    clearConfigCache();
+    await updateGuildConfig('gAr', {
+      protection: { enabled: true, text_protection: true, custom_words: ['بادوورد'] },
+    });
+    const msg = fakeMessage('gAr', 'فيه بادوورد');
+    await moderateMessage(msg);
+    const sent = (msg.channel.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(sent).toContain('كلمة محظورة'); // Arabic reason label
+    expect(sent).not.toContain('word'); // raw LTR enum token must not appear in RTL text
+  });
+
   it('sends the deletion notice in the configured guild language', async () => {
     clearStrikes();
     clearConfigCache();
