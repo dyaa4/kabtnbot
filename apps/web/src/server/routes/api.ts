@@ -44,6 +44,7 @@ const ConfigPatch = z
         channel_id: z.string().nullable().optional(),
         message: z.string().max(500).optional(),
         banner_url: z.string().url().nullable().optional(),
+        auto_role_id: z.string().nullable().optional(),
         avatar_x: z.number().min(0).max(1).optional(),
         avatar_y: z.number().min(0).max(1).optional(),
         avatar_size: z.number().min(0.05).max(0.6).optional(),
@@ -62,7 +63,9 @@ export function apiRouter(rest: DiscordRest): Router {
     const status = await getBotStatus().catch(() => null);
     res.json({
       clientId: config.DISCORD_CLIENT_ID,
-      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=19926032`,
+      // 288361488 = previous permission set (19926032) + Manage Roles
+      // (268435456) for the auto-role-on-join feature.
+      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=288361488`,
       guilds: status?.guild_count ?? 0,
     });
   });
@@ -131,11 +134,14 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid patch');
         return;
       }
-      // The admin role grants bot-admin rights — only accept roles that
-      // actually exist in this guild.
-      if (typeof parsed.data.admin_role_id === 'string') {
+      // Role ids grant rights (admin role) or get assigned to members
+      // (auto role) — only accept roles that actually exist in this guild.
+      const roleIdsToCheck = [parsed.data.admin_role_id, parsed.data.welcome?.auto_role_id].filter(
+        (id): id is string => typeof id === 'string',
+      );
+      if (roleIdsToCheck.length > 0) {
         const roles = await rest.listRoles(req.params.guildId);
-        if (!roles.some((r) => r.id === parsed.data.admin_role_id)) {
+        if (!roleIdsToCheck.every((id) => roles.some((r) => r.id === id))) {
           apiError(res, 400, 'VALIDATION', 'Unknown role for this guild');
           return;
         }

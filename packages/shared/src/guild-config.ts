@@ -31,6 +31,7 @@ export const GuildConfigSchema = z.object({
       channel_id: z.string().nullable().default(null),
       message: z.string().max(500).default('أهلاً {user} في {server}! 🎮'),
       banner_url: z.string().url().nullable().default(null),
+      auto_role_id: z.string().nullable().default(null),
       avatar_x: z.number().min(0).max(1).default(0.5),
       avatar_y: z.number().min(0).max(1).default(0.4),
       avatar_size: z.number().min(0.05).max(0.6).default(0.25),

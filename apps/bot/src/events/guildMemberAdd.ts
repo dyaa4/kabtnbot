@@ -6,6 +6,15 @@ export function registerWelcome(client: Client): void {
   client.on('guildMemberAdd', async (member) => {
     try {
       const config = await getGuildConfigRead(member.guild.id);
+
+      // Auto role is independent of welcome messages. Fails (logged) when the
+      // bot lacks Manage Roles or its role sits below the target role.
+      if (config.welcome.auto_role_id) {
+        await member.roles
+          .add(config.welcome.auto_role_id)
+          .catch((err) => console.error('[welcome] auto-role:', err));
+      }
+
       if (!config.welcome.enabled || !config.welcome.channel_id) return;
       const channel = member.guild.channels.cache.get(config.welcome.channel_id);
       if (!channel?.isTextBased()) return;

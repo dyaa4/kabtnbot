@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { ChannelSelect } from './ChannelSelect.js';
+import { RoleSelect } from './RoleSelect.js';
 import { SaveStatus } from './SaveStatus.js';
 
 interface GuildConfigResp {
@@ -11,6 +12,7 @@ interface GuildConfigResp {
     channel_id: string | null;
     message: string;
     banner_url: string | null; // legacy URL banners keep working as a preview/render fallback
+    auto_role_id: string | null;
     avatar_x: number;
     avatar_y: number;
     avatar_size: number;
@@ -103,6 +105,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
 
   const [enabled, setEnabled] = useState(false);
   const [channelId, setChannelId] = useState('');
+  const [autoRoleId, setAutoRoleId] = useState('');
   const [message, setMessage] = useState('');
   const [showName, setShowName] = useState(true);
   const [pos, setPos] = useState<Pos>(DEFAULT_POS);
@@ -120,6 +123,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       const w = cfg.data.welcome;
       setEnabled(w.enabled);
       setChannelId(w.channel_id ?? '');
+      setAutoRoleId(w.auto_role_id ?? '');
       setMessage(w.message);
       setShowName(w.show_name);
       setPos({ x: w.avatar_x, y: w.avatar_y, size: w.avatar_size });
@@ -234,6 +238,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       welcome: {
         enabled,
         channel_id: trimmedChannel === '' ? null : trimmedChannel,
+        auto_role_id: autoRoleId === '' ? null : autoRoleId,
         message,
         avatar_x: pos.x,
         avatar_y: pos.y,
@@ -264,6 +269,12 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
           <ChannelSelect guildId={guildId} value={channelId} onChange={setChannelId} />
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('welcome.channelId.hint')}</p>
+
+        <label className="mb-1 block">
+          <span className="mb-1 block text-sm text-slate-400">{t('welcome.autoRole')}</span>
+          <RoleSelect guildId={guildId} value={autoRoleId} onChange={setAutoRoleId} />
+        </label>
+        <p className="mb-4 text-xs text-slate-500">{t('welcome.autoRole.hint')}</p>
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('welcome.message')}</span>

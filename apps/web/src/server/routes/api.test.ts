@@ -36,7 +36,7 @@ describe('api routes', () => {
     const { app } = setup();
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
-    expect(res.body.inviteUrl).toContain('permissions=19926032');
+    expect(res.body.inviteUrl).toContain('permissions=288361488');
     expect(typeof res.body.guilds).toBe('number');
 
     await recordBotHeartbeat(6);
@@ -189,6 +189,19 @@ describe('api routes', () => {
       .send({ admin_role_id: null });
     expect(cleared.status).toBe(200);
     expect(cleared.body.admin_role_id).toBeNull();
+
+    const badAutoRole = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ welcome: { auto_role_id: 'r-nope' } });
+    expect(badAutoRole.status).toBe(400);
+
+    const okAutoRole = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ welcome: { auto_role_id: 'r1' } });
+    expect(okAutoRole.status).toBe(200);
+    expect(okAutoRole.body.welcome.auto_role_id).toBe('r1');
   });
 
   it('lists text channels by name; denies non-managed guild', async () => {

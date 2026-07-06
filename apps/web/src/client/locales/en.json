@@ -91,6 +91,8 @@
   "welcome.enabled.hint": "Automatically sends a welcome message whenever a new member joins the server.",
   "welcome.channelId": "Welcome channel",
   "welcome.channelId.hint": "The channel where welcome messages are posted.",
+  "welcome.autoRole": "Auto role for new members",
+  "welcome.autoRole.hint": "Granted automatically to every new member on join — works even when welcome messages are disabled. Requires Manage Roles and the bot's role above this role.",
   "welcome.message": "Welcome message",
   "welcome.message.hint": "Use {user}, {server} and {count} as placeholders for the member, server name and member count",
   "welcome.showName": "Show member name on the banner",

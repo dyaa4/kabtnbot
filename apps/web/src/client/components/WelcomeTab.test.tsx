@@ -13,6 +13,7 @@ function configWith(bannerUrl: string | null) {
       channel_id: '123',
       message: 'أهلاً {user} في {server}! أنت العضو رقم {count}',
       banner_url: bannerUrl,
+      auto_role_id: null,
       avatar_x: 0.5,
       avatar_y: 0.4,
       avatar_size: 0.25,
@@ -58,6 +59,9 @@ function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolea
       }
       if (url.endsWith('/api/me')) {
         return new Response(JSON.stringify({ uid: 'u1', uname: 'Tester', avatar: null }), { status: 200 });
+      }
+      if (url.endsWith('/roles')) {
+        return new Response(JSON.stringify([{ id: 'r1', name: 'Member' }]), { status: 200 });
       }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
@@ -131,6 +135,23 @@ describe('WelcomeTab', () => {
       expect(body.welcome.avatar_y).toBe(0.4);
       expect(body.welcome.avatar_size).toBe(0.27);
       expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
+    });
+  });
+
+  it('saves the auto role picked from the dropdown', async () => {
+    stubFetch(configWith(null));
+    const user = userEvent.setup();
+    renderTab();
+    const roleSelect = await screen.findByLabelText(/رول تلقائي|Auto role/);
+    await screen.findByRole('option', { name: '@Member' });
+    await user.selectOptions(roleSelect, 'r1');
+    await user.click(screen.getByRole('button', { name: /حفظ|Save/ }));
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === 'PATCH',
+      );
+      expect(patchCalls).toHaveLength(1);
+      expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).welcome.auto_role_id).toBe('r1');
     });
   });
 
