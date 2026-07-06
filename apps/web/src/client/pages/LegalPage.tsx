@@ -15,7 +15,8 @@ export interface LegalContent {
  *  object per language, picked by the active UI language. */
 export function LegalPage({ content }: { content: Record<'ar' | 'en', LegalContent> }) {
   const { lang, setLang } = useI18n();
-  const c = content[lang];
+  // Long-form legal text exists only in Arabic and English — other UI languages read the English version.
+  const c = content[lang === 'ar' ? 'ar' : 'en'];
 
   return (
     <div className="min-h-screen px-6 py-10">

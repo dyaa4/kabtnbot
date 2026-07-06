@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { LangSwitcher } from './LangSwitcher.js';
 
 interface Me {
   uid: string;
@@ -40,7 +41,7 @@ function BotStatusBadge() {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { t, lang, setLang } = useI18n();
+  const { t } = useI18n();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
 
   return (
@@ -55,12 +56,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="flex items-center gap-4">
           <BotStatusBadge />
-          <button
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10"
-            onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          >
-            {t('lang.switch')}
-          </button>
+          <LangSwitcher />
           {me.data && (
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-300">{me.data.uname}</span>
