@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { createCanvas, loadImage } from '@napi-rs/canvas';
-import { formatWelcome, renderWelcomeImage } from './welcome-image.js';
+import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
+import { formatWelcome, renderWelcomeImage, WELCOME_FONT_FAMILY } from './welcome-image.js';
 
 describe('formatWelcome', () => {
   it('substitutes user mention, server and count', () => {
@@ -34,6 +34,36 @@ describe('renderWelcomeImage', () => {
     expect(out.length).toBeGreaterThan(0);
     const withName = await renderWelcomeImage({ banner, avatar, name: 'اسم طويل جداً', x: 0.5, y: 0.98, size: 0.3 });
     expect(withName.length).toBeGreaterThan(0);
+  });
+
+  it('registers the bundled Arabic font (slim servers ship no fonts)', () => {
+    expect(GlobalFonts.families.some((f) => f.family === WELCOME_FONT_FAMILY)).toBe(true);
+  });
+
+  it('actually draws the Arabic member name — bright pixels below the avatar', async () => {
+    // All-black banner and avatar: any bright pixel in the name band must be text.
+    const blackBanner = pngOf(400, 200, '#000000');
+    const blackAvatar = pngOf(64, 64, '#000000');
+    const out = await renderWelcomeImage({
+      banner: blackBanner,
+      avatar: blackAvatar,
+      name: 'مرحبا يا كابتن',
+      x: 0.5,
+      y: 0.3,
+      size: 0.25,
+    });
+    const img = await loadImage(out);
+    const c = createCanvas(img.width, img.height);
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    // Baseline ≈ cy + r + 0.28d = 60 + 50 + 28 = 138; scan the band around it.
+    // The white fill is (255,255,255); the cyan ring fails the red channel check.
+    const data = ctx.getImageData(100, 118, 200, 40).data;
+    let bright = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 200 && data[i + 1] > 200 && data[i + 2] > 200) bright++;
+    }
+    expect(bright).toBeGreaterThan(20);
   });
 
   it('rejects banners with oversized dimensions', async () => {

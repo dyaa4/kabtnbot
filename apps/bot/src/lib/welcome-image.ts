@@ -1,4 +1,17 @@
-import { createCanvas, loadImage } from '@napi-rs/canvas';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
+
+// @napi-rs/canvas ships no fonts and slim server images have none installed —
+// without a bundled font, Arabic member names render as empty boxes. Cairo
+// (SIL OFL, see apps/bot/assets/OFL.txt) is registered once at module load.
+// Same relative depth from src/lib and dist/lib.
+const FONT_PATH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../assets/Cairo-Variable.ttf');
+export const WELCOME_FONT_FAMILY = 'Cairo Kabtn';
+if (existsSync(FONT_PATH)) {
+  GlobalFonts.registerFromPath(FONT_PATH, WELCOME_FONT_FAMILY);
+}
 
 export function formatWelcome(template: string, vars: { user: string; server: string; count: number }): string {
   return template
@@ -58,7 +71,7 @@ export async function renderWelcomeImage(opts: {
     const fontSize = Math.round(d * 0.22);
     // Keep the baseline on-canvas even when the avatar sits near the bottom edge.
     const textY = Math.min(cy + r + Math.round(d * 0.28), H - Math.round(fontSize * 0.25));
-    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.font = `bold ${fontSize}px "${WELCOME_FONT_FAMILY}", sans-serif`;
     ctx.textAlign = 'center';
     // Dark halo behind the white name so it stays readable on light banners.
     ctx.lineJoin = 'round';
