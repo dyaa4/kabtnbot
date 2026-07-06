@@ -121,10 +121,43 @@ export function Landing() {
         <FeatureCard title={t('landing.feature.activity.title')} body={t('landing.feature.activity.body')} />
       </section>
 
-      <section className="mx-auto max-w-3xl px-6 pb-24 text-center">
-        <div className="rounded-2xl border border-amber-700/40 bg-amber-950/20 p-8 backdrop-blur-md">
-          <h2 className="mb-2 text-2xl font-bold text-amber-300">{t('landing.premium.title')}</h2>
-          <p className="text-slate-400">{t('landing.premium.body')}</p>
+      <section className="mx-auto max-w-4xl px-6 pb-24">
+        <h2 className="mb-8 text-center text-3xl font-extrabold">{t('pricing.title')}</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Free plan */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+            <h3 className="mb-1 text-2xl font-bold text-cyan-300">{t('pricing.free.title')}</h3>
+            <p className="mb-6 text-sm text-slate-400">{t('pricing.free.tagline')}</p>
+            <ul className="grid gap-3 text-sm text-slate-300">
+              {(['voice', 'protection', 'welcome', 'stats', 'botProfile', 'limits'] as const).map((key) => (
+                <li key={key} className="flex items-start gap-2">
+                  <span className="mt-0.5 text-cyan-400">✓</span>
+                  <span>{t(`pricing.free.${key}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Premium plan — highlighted, coming soon */}
+          <div className="rounded-2xl bg-gradient-to-br from-indigo-500/60 via-violet-500/60 to-amber-400/60 p-[1.5px] shadow-[0_0_40px_-10px_rgba(139,92,246,0.6)]">
+            <div className="h-full rounded-2xl bg-slate-950/90 p-8 backdrop-blur-md">
+              <div className="mb-1 flex items-center gap-3">
+                <h3 className="text-2xl font-bold text-amber-300">{t('pricing.premium.title')}</h3>
+                <span className="rounded-full border border-amber-500/40 bg-amber-950/40 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                  {t('pricing.premium.badge')}
+                </span>
+              </div>
+              <p className="mb-6 text-sm text-slate-400">{t('pricing.premium.tagline')}</p>
+              <ul className="grid gap-3 text-sm text-slate-300">
+                {(['everything', 'listen', 'ai'] as const).map((key) => (
+                  <li key={key} className="flex items-start gap-2">
+                    <span className="mt-0.5 text-amber-300">★</span>
+                    <span>{t(`pricing.premium.${key}`)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
     </div>
