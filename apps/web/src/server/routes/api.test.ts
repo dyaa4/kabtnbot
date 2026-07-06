@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat } from '@gamebot/db';
+import { connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
@@ -32,11 +32,16 @@ function setup() {
 describe('api routes', () => {
   beforeEach(() => clearAccessCache());
 
-  it('meta is public and contains invite url', async () => {
+  it('meta is public and contains invite url and guild count', async () => {
     const { app } = setup();
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
     expect(res.body.inviteUrl).toContain('permissions=19926032');
+    expect(typeof res.body.guilds).toBe('number');
+
+    await recordBotHeartbeat(6);
+    const after = await request(app).get('/api/meta');
+    expect(after.body.guilds).toBe(6);
   });
 
   it('me requires session', async () => {
@@ -48,6 +53,7 @@ describe('api routes', () => {
 
   it('reports bot status (offline without heartbeat, online after one)', async () => {
     const { app, cookie } = setup();
+    await clearBotHeartbeat(); // earlier tests may have recorded one
     expect((await request(app).get('/api/status')).status).toBe(401); // session required
 
     const before = await request(app).get('/api/status').set('Cookie', cookie);

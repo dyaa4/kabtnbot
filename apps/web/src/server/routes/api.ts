@@ -57,10 +57,13 @@ const ConfigPatch = z
 export function apiRouter(rest: DiscordRest): Router {
   const router = Router();
 
-  router.get('/meta', (_req, res) => {
+  router.get('/meta', async (_req, res) => {
+    // Guild count for the landing-page social proof; harmless if unavailable.
+    const status = await getBotStatus().catch(() => null);
     res.json({
       clientId: config.DISCORD_CLIENT_ID,
       inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=19926032`,
+      guilds: status?.guild_count ?? 0,
     });
   });
 

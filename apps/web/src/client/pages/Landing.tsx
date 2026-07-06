@@ -6,6 +6,7 @@ import { HomeImage } from '../components/HomeImage.js';
 interface Meta {
   clientId: string;
   inviteUrl: string;
+  guilds?: number;
 }
 
 function DiscordIcon({ className = '' }: { className?: string }) {
@@ -60,7 +61,12 @@ export function Landing() {
             <h1 className="hero-title mb-4 text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl">
               {t('landing.title')}
             </h1>
-            <p className="mb-8 text-lg text-slate-400 md:text-xl">{t('landing.tagline')}</p>
+            <p className="mb-4 text-lg text-slate-400 md:text-xl">{t('landing.tagline')}</p>
+            {(meta.data?.guilds ?? 0) >= 3 && (
+              <p className="mb-6 text-sm font-semibold text-cyan-300/90">
+                {t('landing.social').replace('{count}', String(meta.data?.guilds))}
+              </p>
+            )}
             <div className="flex flex-wrap justify-center gap-4 md:justify-start">
               <a
                 href={meta.data?.inviteUrl ?? '#'}
