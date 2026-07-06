@@ -5,6 +5,7 @@ import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-c
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
+import { getKv, setKv } from './kv-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -70,6 +71,16 @@ describe('guild-asset-repo', () => {
     await expect(
       putGuildAsset('gBig', 'welcome_banner', 'image/png', Buffer.alloc(MAX_ASSET_BYTES + 1)),
     ).rejects.toThrow();
+  });
+});
+
+describe('kv-repo', () => {
+  it('returns null for unknown keys and round-trips values', async () => {
+    expect(await getKv('nope')).toBeNull();
+    await setKv('k1', 'v1');
+    expect(await getKv('k1')).toBe('v1');
+    await setKv('k1', 'v2'); // overwrite
+    expect(await getKv('k1')).toBe('v2');
   });
 });
 

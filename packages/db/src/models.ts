@@ -67,6 +67,18 @@ const activityDailySchema = new Schema<ActivityDailyDoc>({
 activityDailySchema.index({ guild_id: 1, user_id: 1, date: 1 }, { unique: true });
 activityDailySchema.index({ guild_id: 1, date: 1 });
 
+export interface KvDoc {
+  key: string;
+  value: string;
+}
+
+const kvSchema = new Schema<KvDoc>({
+  key: { type: String, required: true, unique: true },
+  value: { type: String, required: true },
+});
+
+export const KvModel = (mongoose.models.Kv as mongoose.Model<KvDoc>) ?? mongoose.model<KvDoc>('Kv', kvSchema);
+
 export interface BotStatusDoc {
   key: string; // singleton: 'bot'
   last_seen: Date;
