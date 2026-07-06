@@ -14,6 +14,8 @@ function configWith(bannerUrl: string | null) {
       message: 'أهلاً {user} في {server}! أنت العضو رقم {count}',
       banner_url: bannerUrl,
       auto_role_id: null,
+      farewell_enabled: false,
+      farewell_message: 'وداعاً {user} 👋',
       avatar_x: 0.5,
       avatar_y: 0.4,
       avatar_size: 0.25,
@@ -135,6 +137,28 @@ describe('WelcomeTab', () => {
       expect(body.welcome.avatar_y).toBe(0.4);
       expect(body.welcome.avatar_size).toBe(0.27);
       expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
+    });
+  });
+
+  it('enabling farewell reveals the message field and saves both', async () => {
+    stubFetch(configWith(null));
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('button', { name: /ارفع صورة البانر|Upload a banner image/ });
+
+    expect(screen.queryByLabelText(/رسالة الوداع|Farewell message/)).toBeNull(); // hidden while off
+    await user.click(screen.getByLabelText(/رسائل الوداع|Farewell messages/));
+    expect(await screen.findByLabelText(/رسالة الوداع|Farewell message/)).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /حفظ|Save/ }));
+    await waitFor(() => {
+      const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c) => (c[1] as RequestInit)?.method === 'PATCH',
+      );
+      expect(patchCalls).toHaveLength(1);
+      const body = JSON.parse((patchCalls[0][1] as RequestInit).body as string);
+      expect(body.welcome.farewell_enabled).toBe(true);
+      expect(body.welcome.farewell_message).toContain('{user}');
     });
   });
 

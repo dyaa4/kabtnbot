@@ -47,6 +47,8 @@ const ConfigPatch = z
         message: z.string().max(500).optional(),
         banner_url: z.string().url().nullable().optional(),
         auto_role_id: z.string().nullable().optional(),
+        farewell_enabled: z.boolean().optional(),
+        farewell_message: z.string().max(500).optional(),
         avatar_x: z.number().min(0).max(1).optional(),
         avatar_y: z.number().min(0).max(1).optional(),
         avatar_size: z.number().min(0.05).max(0.6).optional(),

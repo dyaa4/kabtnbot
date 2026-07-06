@@ -1,6 +1,7 @@
 import type { Client, TextChannel } from 'discord.js';
 import { getGuildConfigRead } from '@gamebot/db';
 import { buildWelcomeMessage } from '../lib/welcome-message.js';
+import { formatWelcome } from '../lib/welcome-image.js';
 
 export function registerWelcome(client: Client): void {
   client.on('guildMemberAdd', async (member) => {
@@ -23,6 +24,25 @@ export function registerWelcome(client: Client): void {
       await (channel as TextChannel).send({ content, files }).catch(() => {});
     } catch (err) {
       console.error('[welcome]', err);
+    }
+  });
+
+  client.on('guildMemberRemove', async (member) => {
+    try {
+      const config = await getGuildConfigRead(member.guild.id);
+      if (!config.welcome.farewell_enabled || !config.welcome.channel_id) return;
+      const channel = member.guild.channels.cache.get(config.welcome.channel_id);
+      if (!channel?.isTextBased()) return;
+
+      // Mentions don't resolve for departed users — use the plain username.
+      const content = formatWelcome(config.welcome.farewell_message, {
+        user: member.user?.username ?? '؟',
+        server: member.guild.name,
+        count: member.guild.memberCount,
+      });
+      await (channel as TextChannel).send({ content }).catch(() => {});
+    } catch (err) {
+      console.error('[farewell]', err);
     }
   });
 }

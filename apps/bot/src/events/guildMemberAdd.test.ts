@@ -31,6 +31,37 @@ function capture() {
   return handlers;
 }
 
+describe('guildMemberRemove — farewell', () => {
+  function fakeLeaver(guildId: string) {
+    const channel = { isTextBased: () => true, send: vi.fn(async () => ({})) };
+    return {
+      member: {
+        user: { username: 'أبو فهد' },
+        guild: { id: guildId, name: 'ARAB', memberCount: 4, channels: { cache: new Map([['ch1', channel]]) } },
+      },
+      channel,
+    };
+  }
+
+  it('posts the farewell with the departing username when enabled', async () => {
+    await updateGuildConfig('gFW', {
+      welcome: { farewell_enabled: true, channel_id: 'ch1', farewell_message: 'وداعاً {user} — بقينا {count}' },
+    });
+    const handlers = capture();
+    const { member, channel } = fakeLeaver('gFW');
+    await handlers.guildMemberRemove(member as never);
+    expect(channel.send).toHaveBeenCalledWith({ content: 'وداعاً أبو فهد — بقينا 4' });
+  });
+
+  it('stays silent when farewell is disabled', async () => {
+    await updateGuildConfig('gFWoff', { welcome: { farewell_enabled: false, channel_id: 'ch1' } });
+    const handlers = capture();
+    const { member, channel } = fakeLeaver('gFWoff');
+    await handlers.guildMemberRemove(member as never);
+    expect(channel.send).not.toHaveBeenCalled();
+  });
+});
+
 describe('guildMemberAdd — auto role', () => {
   it('assigns the configured role on join, even with welcome messages disabled', async () => {
     await updateGuildConfig('gAR', { welcome: { auto_role_id: 'r9', enabled: false } });

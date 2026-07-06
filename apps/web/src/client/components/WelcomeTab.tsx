@@ -13,6 +13,8 @@ interface GuildConfigResp {
     message: string;
     banner_url: string | null; // legacy URL banners keep working as a preview/render fallback
     auto_role_id: string | null;
+    farewell_enabled: boolean;
+    farewell_message: string;
     avatar_x: number;
     avatar_y: number;
     avatar_size: number;
@@ -106,6 +108,8 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const [enabled, setEnabled] = useState(false);
   const [channelId, setChannelId] = useState('');
   const [autoRoleId, setAutoRoleId] = useState('');
+  const [farewellEnabled, setFarewellEnabled] = useState(false);
+  const [farewellMessage, setFarewellMessage] = useState('');
   const [message, setMessage] = useState('');
   const [showName, setShowName] = useState(true);
   const [pos, setPos] = useState<Pos>(DEFAULT_POS);
@@ -124,6 +128,8 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       setEnabled(w.enabled);
       setChannelId(w.channel_id ?? '');
       setAutoRoleId(w.auto_role_id ?? '');
+      setFarewellEnabled(w.farewell_enabled);
+      setFarewellMessage(w.farewell_message);
       setMessage(w.message);
       setShowName(w.show_name);
       setPos({ x: w.avatar_x, y: w.avatar_y, size: w.avatar_size });
@@ -239,6 +245,8 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         enabled,
         channel_id: trimmedChannel === '' ? null : trimmedChannel,
         auto_role_id: autoRoleId === '' ? null : autoRoleId,
+        farewell_enabled: farewellEnabled,
+        farewell_message: farewellMessage,
         message,
         avatar_x: pos.x,
         avatar_y: pos.y,
@@ -291,6 +299,25 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
           <span>{t('welcome.showName')}</span>
         </label>
         <p className="mb-4 ms-6 text-xs text-slate-500">{t('welcome.showName.hint')}</p>
+
+        <label className="mb-1 flex items-center gap-2">
+          <input type="checkbox" checked={farewellEnabled} onChange={(e) => setFarewellEnabled(e.target.checked)} />
+          <span>{t('welcome.farewell')}</span>
+        </label>
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('welcome.farewell.hint')}</p>
+        {farewellEnabled && (
+          <>
+            <label className="mb-1 block">
+              <span className="mb-1 block text-sm text-slate-400">{t('welcome.farewellMessage')}</span>
+              <textarea
+                className="h-16 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+                value={farewellMessage}
+                onChange={(e) => setFarewellMessage(e.target.value)}
+              />
+            </label>
+            <p className="mb-4 text-xs text-slate-500">{t('welcome.farewellMessage.hint')}</p>
+          </>
+        )}
 
         <input
           ref={fileRef}
