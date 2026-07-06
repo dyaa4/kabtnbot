@@ -51,6 +51,9 @@ function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolea
       if (url.endsWith('/channels')) {
         return new Response(JSON.stringify(channels), { status: 200 });
       }
+      if (url.endsWith('/api/me')) {
+        return new Response(JSON.stringify({ uid: 'u1', uname: 'Tester', avatar: null }), { status: 200 });
+      }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
   );
@@ -124,6 +127,20 @@ describe('WelcomeTab', () => {
       expect(body.welcome.avatar_size).toBe(0.27);
       expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
     });
+  });
+
+  it('shows the admin avatar and name inside the preview circle (WYSIWYG)', async () => {
+    stubFetch(configWith('https://example.com/banner.png'));
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('slider', { name: /مقبض الصورة الرمزية|Avatar position handle/ });
+
+    expect(await screen.findByTestId('preview-avatar')).toBeTruthy();
+    expect(await screen.findByText('Tester')).toBeTruthy();
+
+    // hiding the member name removes it from the preview too
+    await user.click(screen.getByLabelText(/إظهار اسم العضو|Show member name/));
+    expect(screen.queryByText('Tester')).toBeNull();
   });
 
   it('revokes the previous banner object URL after a re-upload', async () => {

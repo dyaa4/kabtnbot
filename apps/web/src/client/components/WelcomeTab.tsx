@@ -17,6 +17,17 @@ interface GuildConfigResp {
   };
 }
 
+interface Me {
+  uid: string;
+  uname: string;
+  avatar: string | null;
+}
+
+function avatarUrlOf(me: Me | undefined): string {
+  if (me?.avatar) return `https://cdn.discordapp.com/avatars/${me.uid}/${me.avatar}.png?size=128`;
+  return 'https://cdn.discordapp.com/embed/avatars/0.png';
+}
+
 interface Pos {
   x: number;
   y: number;
@@ -41,6 +52,8 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const qc = useQueryClient();
   const [saved, setSaved] = useState(false);
   const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
+  // The logged-in admin stands in for the joining member in the preview.
+  const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
 
   // Uploaded banner bytes, exposed as an object URL for the preview; null = none uploaded.
   const banner = useQuery({
@@ -338,8 +351,29 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
                   width: `${pos.size * 100}%`,
                   aspectRatio: '1 / 1',
                   transform: 'translate(-50%, -50%)',
+                  containerType: 'size',
                 }}
               >
+                {/* WYSIWYG stand-in: the admin's own avatar + name, mirroring the render */}
+                <img
+                  src={avatarUrlOf(me.data)}
+                  alt=""
+                  data-testid="preview-avatar"
+                  className="pointer-events-none h-full w-full select-none rounded-full object-cover"
+                  draggable={false}
+                />
+                {showName && me.data?.uname && (
+                  <span
+                    className="pointer-events-none absolute left-1/2 -translate-x-1/2 whitespace-nowrap font-bold text-white"
+                    style={{
+                      top: 'calc(100% + 8cqw)',
+                      fontSize: '22cqw',
+                      textShadow: '0 0 4px rgba(0,0,0,0.9), 0 1px 2px rgba(0,0,0,0.9)',
+                    }}
+                  >
+                    {me.data.uname}
+                  </span>
+                )}
                 <div
                   role="slider"
                   aria-label={t('welcome.resizeGrip')}
