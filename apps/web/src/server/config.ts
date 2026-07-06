@@ -14,6 +14,8 @@ const Env = z.object({
   SESSION_SECRET: z.string().min(32),
   WEB_PORT: z.coerce.number().default(3000),
   WEB_BASE_URL: z.string().default('http://localhost:3000'),
+  // Optional Discord webhook that receives bot offline/recovery alerts.
+  ALERT_WEBHOOK_URL: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
