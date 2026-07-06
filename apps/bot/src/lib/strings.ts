@@ -20,6 +20,11 @@ export const S = {
   // settings
   settingsSaved: '✅ انحفظ الإعداد.',
   settingsTitle: '⚙️ إعدادات السيرفر',
+  // welcome preview
+  welcomeEnabledNote: '✅ الترحيب مفعّل.',
+  welcomeDisabledNote: '⚠️ الترحيب معطّل حالياً — فعّله من لوحة التحكم أو /settings.',
+  welcomeChannelNote: '📢 قناة الترحيب: {channel}',
+  welcomeNoChannelNote: '⚠️ ما تم تحديد قناة ترحيب بعد — اخترها من لوحة التحكم.',
 } as const;
 
 export function fmt(template: string, vars: Record<string, string | number>): string {
