@@ -2,6 +2,7 @@ import { type Client, type GuildMember, type Message, type PartialMessage, type 
 import { scanMessage } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
+import { t, fmt } from '../../lib/strings.js';
 import type { GuildConfig } from '@gamebot/shared';
 
 export function shouldModerate(config: GuildConfig, isAdmin: boolean): boolean {
@@ -80,9 +81,14 @@ export async function moderateMessage(msg: Message): Promise<void> {
       .catch(() => false);
   }
 
+  const strings = t(config.language);
   const notice = timedOut
-    ? `<@${msg.author.id}> رسالتك حُذفت (${verdict.reason}) وتم إسكاتك مؤقتاً ${Math.round(timeoutMs! / 60000)} دقيقة بسبب التكرار.`
-    : `<@${msg.author.id}> رسالتك حُذفت (${verdict.reason}). ممنوع الروابط المشبوهة/السكام.`;
+    ? fmt(strings.textDeletedTimeout, {
+        user: `<@${msg.author.id}>`,
+        reason: verdict.reason!,
+        minutes: Math.round(timeoutMs! / 60000),
+      })
+    : fmt(strings.textDeleted, { user: `<@${msg.author.id}>`, reason: verdict.reason! });
   const warn = await (msg.channel as TextChannel).send(notice).catch(() => null);
   if (warn) setTimeout(() => void warn.delete().catch(() => {}), 5000);
 
@@ -91,8 +97,14 @@ export async function moderateMessage(msg: Message): Promise<void> {
     if (log?.isTextBased()) {
       const snippet = logSnippet(msg.content);
       const lines = [
-        `🛡️ حذف رسالة من <@${msg.author.id}> في <#${msg.channelId}> — السبب: ${verdict.reason}` +
-          (timedOut ? ` — ⏳ إسكات ${Math.round(timeoutMs! / 60000)} دقيقة (مخالفة رقم ${strikeCount})` : ''),
+        fmt(strings.textLogDeleted, {
+          user: `<@${msg.author.id}>`,
+          channel: `<#${msg.channelId}>`,
+          reason: verdict.reason!,
+        }) +
+          (timedOut
+            ? fmt(strings.textLogTimeoutSuffix, { minutes: Math.round(timeoutMs! / 60000), strike: strikeCount })
+            : ''),
         ...(snippet ? [snippet] : []),
       ];
       await (log as TextChannel)

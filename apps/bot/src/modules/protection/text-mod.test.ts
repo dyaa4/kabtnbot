@@ -123,6 +123,21 @@ describe('strike escalation', () => {
   });
 });
 
+describe('moderateMessage — guild language', () => {
+  it('sends the deletion notice in the configured guild language', async () => {
+    clearStrikes();
+    clearConfigCache();
+    await updateGuildConfig('gDe', {
+      language: 'de',
+      protection: { enabled: true, text_protection: true, custom_words: ['بادوورد'] },
+    });
+    const msg = fakeMessage('gDe', 'فيه بادوورد');
+    await moderateMessage(msg);
+    const sent = (msg.channel.send as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(sent).toContain('gelöscht'); // German notice, not the Arabic default
+  });
+});
+
 describe('moderateMessage — log channel', () => {
   it('logs channel, snippet and suppresses pings in the log message', async () => {
     clearConfigCache();

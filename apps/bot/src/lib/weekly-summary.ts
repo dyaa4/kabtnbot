@@ -1,5 +1,7 @@
 import type { Client, TextChannel } from 'discord.js';
 import { getGuildConfigRead, getKv, setKv, topActive, activityDaily } from '@gamebot/db';
+import type { Language } from '@gamebot/shared';
+import { t, fmt } from './strings.js';
 
 /**
  * Weekly activity recap, posted once every Friday evening (>= 18:00 UTC) into
@@ -25,17 +27,24 @@ export function buildWeeklySummary(
   serverName: string,
   totals: { messages: number; voiceMinutes: number },
   top: TopEntry[],
+  lang: Language = 'ar',
 ): string {
+  const strings = t(lang);
   const medals = ['🥇', '🥈', '🥉'];
   const lines = [
-    `📊 **ملخص الأسبوع — ${serverName}**`,
-    `💬 الرسائل: **${totals.messages}** • 🎙️ دقائق الصوت: **${totals.voiceMinutes}**`,
+    fmt(strings.summaryTitle, { server: serverName }),
+    fmt(strings.summaryTotals, { messages: totals.messages, voiceMinutes: totals.voiceMinutes }),
   ];
   if (top.length > 0) {
-    lines.push('', 'الأكثر نشاطاً هذا الأسبوع:');
+    lines.push('', strings.summaryTopHeader);
     top.forEach((entry, i) => {
       lines.push(
-        `${medals[i] ?? '•'} <@${entry.user_id}> — ${entry.messages} رسالة، ${Math.round(entry.voice_seconds / 60)} دقيقة صوت`,
+        fmt(strings.summaryTopLine, {
+          medal: medals[i] ?? '•',
+          user: `<@${entry.user_id}>`,
+          messages: entry.messages,
+          voiceMinutes: Math.round(entry.voice_seconds / 60),
+        }),
       );
     });
   }
@@ -62,7 +71,7 @@ export async function runSummarySweep(client: Client, now: Date = new Date()): P
         messages: daily.reduce((sum, r) => sum + r.messages, 0),
         voiceMinutes: Math.round(daily.reduce((sum, r) => sum + r.voice_seconds, 0) / 60),
       };
-      const content = buildWeeklySummary(guild.name, totals, top);
+      const content = buildWeeklySummary(guild.name, totals, top, config.language);
       await (channel as TextChannel).send({ content, allowedMentions: { parse: [] } }).catch(() => {});
       await setKv(kvKey, dateKey);
     } catch (err) {

@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, MessageFlags, type GuildMember } from 'discord.js';
 import { getGuildConfig } from '@gamebot/db';
 import type { Command } from './index.js';
-import { S, fmt } from '../lib/strings.js';
+import { S, t, fmt } from '../lib/strings.js';
 import { joinGuildVoice, leaveGuildVoice, playSpeech, getSession } from '../modules/voice-ai/sessions.js';
 
 async function requireVoiceContext(interaction: Parameters<Command['execute']>[0]) {
@@ -11,7 +11,7 @@ async function requireVoiceContext(interaction: Parameters<Command['execute']>[0
   }
   const config = await getGuildConfig(interaction.guildId);
   if (!config.voice.enabled) {
-    await interaction.reply({ content: S.voiceDisabled, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: t(config.language).voiceDisabled, flags: MessageFlags.Ephemeral });
     return null;
   }
   return config;
@@ -22,13 +22,14 @@ export const joinCommand: Command = {
   async execute(interaction) {
     const config = await requireVoiceContext(interaction);
     if (!config) return;
+    const strings = t(config.language);
     const channel = (interaction.member as GuildMember).voice.channel;
     if (!channel) {
-      await interaction.reply({ content: S.notInVoiceChannel, flags: MessageFlags.Ephemeral });
+      await interaction.reply({ content: strings.notInVoiceChannel, flags: MessageFlags.Ephemeral });
       return;
     }
     if (config.voice.allowed_channel_ids.length > 0 && !config.voice.allowed_channel_ids.includes(channel.id)) {
-      await interaction.reply({ content: S.channelNotAllowed, flags: MessageFlags.Ephemeral });
+      await interaction.reply({ content: strings.channelNotAllowed, flags: MessageFlags.Ephemeral });
       return;
     }
     await interaction.deferReply();
@@ -36,7 +37,7 @@ export const joinCommand: Command = {
     const { startListening } = await import('../modules/voice-ai/listen.js');
     const listening = await startListening(session, interaction.guild!);
     await interaction.editReply(
-      listening ? fmt(S.joinedVoice, { wake: config.voice.wake_word }) : S.listenQuotaExhausted,
+      listening ? fmt(strings.joinedVoice, { wake: config.voice.wake_word }) : strings.listenQuotaExhausted,
     );
   },
 };
@@ -61,8 +62,9 @@ export const speakCommand: Command = {
   async execute(interaction) {
     const config = await requireVoiceContext(interaction);
     if (!config) return;
+    const strings = t(config.language);
     if (!getSession(interaction.guildId!)) {
-      await interaction.reply({ content: S.notConnected, flags: MessageFlags.Ephemeral });
+      await interaction.reply({ content: strings.notConnected, flags: MessageFlags.Ephemeral });
       return;
     }
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -70,7 +72,7 @@ export const speakCommand: Command = {
       await playSpeech(interaction.guildId!, interaction.options.getString('text', true));
       await interaction.editReply('🔊');
     } catch {
-      await interaction.editReply(S.ttsFailed);
+      await interaction.editReply(strings.ttsFailed);
     }
   },
 };

@@ -3,8 +3,14 @@ import { z } from 'zod';
 export const DIALECTS = ['gulf', 'syrian', 'egyptian', 'msa'] as const;
 export type Dialect = (typeof DIALECTS)[number];
 
+// Bot system-message languages. The voice assistant itself stays Arabic
+// (dialects above) — this only drives moderation notices, welcome/farewell
+// defaults, command replies and the weekly summary.
+export const LANGUAGES = ['ar', 'en', 'de', 'tr', 'fr', 'ru'] as const;
+export type Language = (typeof LANGUAGES)[number];
+
 export const GuildConfigSchema = z.object({
-  language: z.literal('ar').default('ar'),
+  language: z.enum(LANGUAGES).default('ar'),
   admin_role_id: z.string().nullable().default(null),
   voice: z
     .object({
@@ -30,11 +36,14 @@ export const GuildConfigSchema = z.object({
     .object({
       enabled: z.boolean().default(false),
       channel_id: z.string().nullable().default(null),
-      message: z.string().max(500).default('أهلاً {user} في {server}! 🎮'),
+      // '' = use the localized default template at send time (see bot strings).
+      // 2000 = Discord's hard per-message limit; the bot truncates after
+      // placeholder expansion as a safety net.
+      message: z.string().max(2000).default(''),
       banner_url: z.string().url().nullable().default(null),
       auto_role_id: z.string().nullable().default(null),
       farewell_enabled: z.boolean().default(false),
-      farewell_message: z.string().max(500).default('وداعاً {user} 👋'),
+      farewell_message: z.string().max(2000).default(''),
       avatar_x: z.number().min(0).max(1).default(0.5),
       avatar_y: z.number().min(0).max(1).default(0.4),
       avatar_size: z.number().min(0.05).max(0.6).default(0.25),

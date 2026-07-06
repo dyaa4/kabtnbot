@@ -2,6 +2,7 @@ import type { Client, TextChannel } from 'discord.js';
 import { getGuildConfigRead } from '@gamebot/db';
 import { buildWelcomeMessage } from '../lib/welcome-message.js';
 import { formatWelcome } from '../lib/welcome-image.js';
+import { t } from '../lib/strings.js';
 
 export function registerWelcome(client: Client): void {
   client.on('guildMemberAdd', async (member) => {
@@ -34,12 +35,14 @@ export function registerWelcome(client: Client): void {
       const channel = member.guild.channels.cache.get(config.welcome.channel_id);
       if (!channel?.isTextBased()) return;
 
+      const strings = t(config.language);
       // Mentions don't resolve for departed users — use the plain username.
-      const content = formatWelcome(config.welcome.farewell_message, {
-        user: member.user?.username ?? '؟',
+      // slice: placeholder expansion must not push past Discord's 2000-char limit.
+      const content = formatWelcome(config.welcome.farewell_message || strings.defaultFarewell, {
+        user: member.user?.username ?? strings.unknownMember,
         server: member.guild.name,
         count: member.guild.memberCount,
-      });
+      }).slice(0, 2000);
       await (channel as TextChannel).send({ content }).catch(() => {});
     } catch (err) {
       console.error('[farewell]', err);

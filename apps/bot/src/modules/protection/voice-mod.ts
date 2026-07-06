@@ -1,6 +1,7 @@
 import type { Guild, TextChannel } from 'discord.js';
 import { matchesProfanity } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { t, fmt } from '../../lib/strings.js';
 import { playSpeech, type VoiceSession } from '../voice-ai/sessions.js';
 
 /**
@@ -63,10 +64,12 @@ export async function handleTranscriptModeration(
     console.error('[Mod] disconnect failed (role hierarchy / Move Members perm):', (e as Error)?.message ?? e);
   }
 
+  const strings = t(config.language);
   const notice = kicked
-    ? `🚫 تم إخراج <@${userId}> من الصوت بسبب ألفاظ غير لائقة.`
-    : `⚠️ رصدت ألفاظاً من <@${userId}> لكن تعذّر إخراجه — تأكد أن رتبة البوت أعلى من رتبته ولديه صلاحية «نقل الأعضاء».`;
+    ? fmt(strings.voiceKickedNotice, { user: `<@${userId}>` })
+    : fmt(strings.voiceKickFailedNotice, { user: `<@${userId}>` });
   await channel?.send(notice).catch((e) => console.error('[Mod] send failed (needs Send Messages perm?):', (e as Error)?.message ?? e));
+  // Spoken line stays Arabic on purpose: the voice assistant (TTS) is Arabic-only.
   if (kicked) await playSpeech(guild.id, `يا ${name}، تم إخراجك بسبب الألفاظ غير اللائقة.`).catch(() => {});
   return true;
 }

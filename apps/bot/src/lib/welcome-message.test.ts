@@ -38,6 +38,16 @@ describe('buildWelcomeMessage', () => {
     expect(payload.content).toBe('من الإعداد الممرر <@u1>');
   });
 
+  it('falls back to the localized default when no custom message is set', async () => {
+    await updateGuildConfig('gWDef', { language: 'de' }); // welcome.message stays '' (default)
+    const payload = await buildWelcomeMessage(fakeMember('gWDef'));
+    expect(payload.content).toBe('Willkommen <@u1> auf ARAB GAMERS! 🎮');
+
+    await updateGuildConfig('gWDefAr', {}); // default language ar
+    const arPayload = await buildWelcomeMessage(fakeMember('gWDefAr'));
+    expect(arPayload.content).toBe('أهلاً <@u1> في ARAB GAMERS! 🎮');
+  });
+
   it('degrades to text-only when the banner render fails (unreachable banner URL)', async () => {
     await updateGuildConfig('gW3', { welcome: { banner_url: 'https://invalid.invalid/banner.png' } });
     const payload = await buildWelcomeMessage(fakeMember('gW3'));

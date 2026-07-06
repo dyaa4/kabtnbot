@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { getGuildConfig } from '@gamebot/db';
 import type { Command } from './index.js';
-import { S } from '../lib/strings.js';
+import { S, t } from '../lib/strings.js';
 import { tryConsumeAiQuestion } from '../lib/quotas.js';
 import { getAIProvider } from '../modules/voice-ai/providers.js';
 import { buildSystemPrompt } from '../modules/voice-ai/prompts.js';
@@ -13,12 +13,13 @@ async function answer(interaction: Parameters<Command['execute']>[0], speakOut: 
     return;
   }
   const config = await getGuildConfig(interaction.guildId);
+  const strings = t(config.language);
   if (!config.voice.enabled && speakOut) {
-    await interaction.reply({ content: S.voiceDisabled, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: strings.voiceDisabled, flags: MessageFlags.Ephemeral });
     return;
   }
   if (!(await tryConsumeAiQuestion(interaction.guildId))) {
-    await interaction.reply({ content: S.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: strings.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
     return;
   }
   await interaction.deferReply();
@@ -29,10 +30,10 @@ async function answer(interaction: Parameters<Command['execute']>[0], speakOut: 
       username: interaction.user.displayName,
     });
   } catch {
-    await interaction.editReply(S.aiFailed);
+    await interaction.editReply(strings.aiFailed);
     return;
   }
-  await interaction.editReply(text || S.aiFailed);
+  await interaction.editReply(text || strings.aiFailed);
   if (speakOut && getSession(interaction.guildId)) {
     await playSpeech(interaction.guildId, text).catch(() => {});
   }

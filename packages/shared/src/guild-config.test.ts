@@ -1,7 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { GuildConfigSchema } from './guild-config.js';
+import { GuildConfigSchema, LANGUAGES } from './guild-config.js';
 
 describe('GuildConfigSchema', () => {
+  it('accepts every supported language and defaults to Arabic', () => {
+    expect(GuildConfigSchema.parse({}).language).toBe('ar');
+    for (const lang of LANGUAGES) {
+      expect(GuildConfigSchema.parse({ language: lang }).language).toBe(lang);
+    }
+    expect(() => GuildConfigSchema.parse({ language: 'xx' })).toThrow();
+  });
+
+  it('defaults welcome/farewell messages to empty (= use localized default at send time)', () => {
+    const c = GuildConfigSchema.parse({});
+    expect(c.welcome.message).toBe('');
+    expect(c.welcome.farewell_message).toBe('');
+  });
+
   it('has the pivoted default shape', () => {
     const c = GuildConfigSchema.parse({});
     expect(c.admin_role_id).toBeNull();
@@ -11,6 +25,7 @@ describe('GuildConfigSchema', () => {
       enabled: false,
       voice_moderation: true,
       text_protection: false,
+      text_timeout: false,
       custom_words: [],
       allowed_domains: [],
       log_channel_id: null,
@@ -18,8 +33,11 @@ describe('GuildConfigSchema', () => {
     expect(c.welcome).toEqual({
       enabled: false,
       channel_id: null,
-      message: 'أهلاً {user} في {server}! 🎮',
+      message: '',
       banner_url: null,
+      auto_role_id: null,
+      farewell_enabled: false,
+      farewell_message: '',
       avatar_x: 0.5,
       avatar_y: 0.4,
       avatar_size: 0.25,

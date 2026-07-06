@@ -1,12 +1,17 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChannelType, type GuildMember } from 'discord.js';
 import { getGuildConfig, updateGuildConfig } from '@gamebot/db';
-import { DIALECTS } from '@gamebot/shared';
+import { DIALECTS, LANGUAGES } from '@gamebot/shared';
 import type { Command } from './index.js';
-import { S } from '../lib/strings.js';
+import { S, t, fmt, type BotStrings } from '../lib/strings.js';
 import { isGuildAdmin } from '../lib/permissions.js';
 
-const DIALECT_LABELS: Record<string, string> = {
-  gulf: 'خليجية', syrian: 'سورية', egyptian: 'مصرية', msa: 'فصحى',
+const DIALECT_KEY: Record<string, keyof BotStrings> = {
+  gulf: 'dialectGulf', syrian: 'dialectSyrian', egyptian: 'dialectEgyptian', msa: 'dialectMsa',
+};
+
+// Native names — identical in every dictionary, so they live here once.
+export const LANGUAGE_LABELS: Record<(typeof LANGUAGES)[number], string> = {
+  ar: 'العربية', en: 'English', de: 'Deutsch', tr: 'Türkçe', fr: 'Français', ru: 'Русский',
 };
 
 export const settingsCommand: Command = {
@@ -16,13 +21,25 @@ export const settingsCommand: Command = {
     .addSubcommand((sc) => sc.setName('view').setDescription('عرض الإعدادات الحالية'))
     .addSubcommand((sc) =>
       sc
+        .setName('language')
+        .setDescription('لغة رسائل البوت في هذا السيرفر / Bot message language')
+        .addStringOption((o) =>
+          o
+            .setName('language')
+            .setDescription('اللغة / Language')
+            .setRequired(true)
+            .addChoices(...LANGUAGES.map((l) => ({ name: LANGUAGE_LABELS[l], value: l }))),
+        ),
+    )
+    .addSubcommand((sc) =>
+      sc
         .setName('voice')
         .setDescription('إعدادات المساعد الصوتي')
         .addBooleanOption((o) => o.setName('enabled').setDescription('تفعيل/تعطيل الصوتي'))
         .addStringOption((o) => o.setName('wake_word').setDescription('كلمة التنبيه').setMinLength(2).setMaxLength(30))
         .addStringOption((o) =>
           o.setName('dialect').setDescription('اللهجة').addChoices(
-            ...DIALECTS.map((d) => ({ name: DIALECT_LABELS[d], value: d })),
+            ...DIALECTS.map((d) => ({ name: { gulf: 'خليجية', syrian: 'سورية', egyptian: 'مصرية', msa: 'فصحى' }[d]!, value: d })),
           ),
         )
         .addChannelOption((o) =>
@@ -38,8 +55,9 @@ export const settingsCommand: Command = {
       return;
     }
     const config = await getGuildConfig(interaction.guildId);
+    const strings = t(config.language);
     if (!isGuildAdmin(interaction.member as GuildMember, config.admin_role_id)) {
-      await interaction.reply({ content: S.notAdmin, flags: MessageFlags.Ephemeral });
+      await interaction.reply({ content: strings.notAdmin, flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -47,31 +65,46 @@ export const settingsCommand: Command = {
 
     if (sub === 'view') {
       const embed = new EmbedBuilder()
-        .setTitle(S.settingsTitle)
+        .setTitle(strings.settingsTitle)
         .addFields(
           {
-            name: '🎙️ الصوتي',
+            name: strings.settingsFieldVoice,
             value: [
-              `مفعل: ${config.voice.enabled ? 'نعم' : 'لا'}`,
-              `كلمة التنبيه: ${config.voice.wake_word}`,
-              `اللهجة: ${DIALECT_LABELS[config.voice.dialect]}`,
-              `الشخصية الكوميدية: ${config.voice.personality_enabled ? 'نعم' : 'لا'}`,
+              `${strings.labelEnabled}: ${config.voice.enabled ? strings.yes : strings.no}`,
+              `${strings.labelWakeWord}: ${config.voice.wake_word}`,
+              `${strings.labelDialect}: ${strings[DIALECT_KEY[config.voice.dialect]]}`,
+              `${strings.labelPersonality}: ${config.voice.personality_enabled ? strings.yes : strings.no}`,
             ].join('\n'),
           },
           {
-            name: '🛡️ الحماية والترحيب',
+            name: strings.settingsFieldProtectionWelcome,
             value: [
-              `الحماية: ${config.protection.enabled ? 'مفعّلة' : 'معطّلة'}`,
-              `الترحيب: ${config.welcome.enabled ? 'مفعّل' : 'معطّل'}`,
+              `${strings.labelProtection}: ${config.protection.enabled ? strings.on : strings.off}`,
+              `${strings.labelWelcome}: ${config.welcome.enabled ? strings.on : strings.off}`,
+              `${strings.labelLanguage}: ${LANGUAGE_LABELS[config.language]}`,
             ].join('\n'),
           },
           {
-            name: '⏳ الحصص اليومية',
-            value: `استماع: ${config.quotas.listen_minutes_per_day} دقيقة • أسئلة AI: ${config.quotas.ai_questions_per_day}`,
+            name: strings.settingsFieldQuotas,
+            value: fmt(strings.settingsQuotasLine, {
+              listen: config.quotas.listen_minutes_per_day,
+              ai: config.quotas.ai_questions_per_day,
+            }),
           },
         )
         .setColor(0x64748b);
       await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    if (sub === 'language') {
+      const language = interaction.options.getString('language', true);
+      await updateGuildConfig(interaction.guildId, { language });
+      // Confirm in the NEW language so the admin sees the switch took effect.
+      await interaction.reply({
+        content: t(language as (typeof LANGUAGES)[number]).settingsSaved,
+        flags: MessageFlags.Ephemeral,
+      });
       return;
     }
 
@@ -97,6 +130,6 @@ export const settingsCommand: Command = {
       if (adminRole !== null) patch.admin_role_id = adminRole.id;
     }
     await updateGuildConfig(interaction.guildId, patch);
-    await interaction.reply({ content: S.settingsSaved, flags: MessageFlags.Ephemeral });
+    await interaction.reply({ content: strings.settingsSaved, flags: MessageFlags.Ephemeral });
   },
 };
