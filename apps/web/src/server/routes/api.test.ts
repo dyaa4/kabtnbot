@@ -142,6 +142,46 @@ describe('api routes', () => {
     expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
   });
 
+  it('lists roles by name; denies non-managed guild', async () => {
+    const { app, cookie, rest } = setup();
+    rest.roles.set('g1', [
+      { id: 'r1', name: 'Admins' },
+      { id: 'r2', name: 'Mods' },
+    ]);
+    const res = await request(app).get('/api/guilds/g1/roles').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([
+      { id: 'r1', name: 'Admins' },
+      { id: 'r2', name: 'Mods' },
+    ]);
+    expect((await request(app).get('/api/guilds/gX/roles').set('Cookie', cookie)).status).toBe(403);
+  });
+
+  it('accepts admin_role_id only for roles that exist in the guild', async () => {
+    const { app, cookie, rest } = setup();
+    rest.roles.set('g1', [{ id: 'r1', name: 'Admins' }]);
+
+    const unknown = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ admin_role_id: 'r-nonexistent' });
+    expect(unknown.status).toBe(400);
+
+    const ok = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ admin_role_id: 'r1' });
+    expect(ok.status).toBe(200);
+    expect(ok.body.admin_role_id).toBe('r1');
+
+    const cleared = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ admin_role_id: null });
+    expect(cleared.status).toBe(200);
+    expect(cleared.body.admin_role_id).toBeNull();
+  });
+
   it('lists text channels by name; denies non-managed guild', async () => {
     const { app, cookie, rest } = setup();
     rest.textChannels.set('g1', [

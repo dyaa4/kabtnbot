@@ -108,12 +108,29 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  router.get('/guilds/:guildId/roles', guard, async (req, res, next) => {
+    try {
+      res.json(await rest.listRoles(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.patch('/guilds/:guildId/config', guard, async (req, res, next) => {
     try {
       const parsed = ConfigPatch.safeParse(req.body);
       if (!parsed.success) {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid patch');
         return;
+      }
+      // The admin role grants bot-admin rights — only accept roles that
+      // actually exist in this guild.
+      if (typeof parsed.data.admin_role_id === 'string') {
+        const roles = await rest.listRoles(req.params.guildId);
+        if (!roles.some((r) => r.id === parsed.data.admin_role_id)) {
+          apiError(res, 400, 'VALIDATION', 'Unknown role for this guild');
+          return;
+        }
       }
       res.json(await updateGuildConfig(req.params.guildId, parsed.data));
     } catch (err) {

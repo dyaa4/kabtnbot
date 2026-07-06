@@ -25,6 +25,9 @@ beforeEach(() => {
           { status: 200 },
         );
       }
+      if (url.endsWith('/roles')) {
+        return new Response(JSON.stringify([{ id: '123456', name: 'Admins' }]), { status: 200 });
+      }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
   );
@@ -83,12 +86,13 @@ describe('SettingsTab', () => {
     });
   });
 
-  it('sends a top-level PATCH for the admin role field', async () => {
+  it('sends a top-level PATCH with the role picked from the dropdown', async () => {
     const user = userEvent.setup();
     renderTab();
     await screen.findByDisplayValue('يا بوت');
-    const roleInputs = screen.getAllByDisplayValue('');
-    await user.type(roleInputs[0], '123456');
+    const roleSelect = await screen.findByLabelText(/الرول الإداري|Admin role/);
+    await screen.findByRole('option', { name: '@Admins' }); // roles loaded
+    await user.selectOptions(roleSelect, '123456');
     await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[1]);
     await waitFor(() => {
       const patchCalls = (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PATCH');

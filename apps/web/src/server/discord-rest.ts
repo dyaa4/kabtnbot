@@ -21,6 +21,7 @@ export interface DiscordRest {
   getMember(guildId: string, userId: string): Promise<{ roles: string[] } | null>;
   listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
   listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
+  listRoles(guildId: string): Promise<{ id: string; name: string }[]>;
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
@@ -133,6 +134,20 @@ export function createDiscordRest(): DiscordRest {
       if (!channels) return [];
       // Discord channel types: 0 = text, 5 = announcement — both accept messages.
       return channels.filter((c) => c.type === 0 || c.type === 5).map((c) => ({ id: c.id, name: c.name }));
+    },
+    async listRoles(guildId) {
+      const roles = await discordJson<{ id: string; name: string; position: number; managed: boolean }[]>(
+        `${API}/guilds/${guildId}/roles`,
+        { headers: bot },
+        true,
+      );
+      if (!roles) return [];
+      // Drop @everyone (id === guildId) and managed bot/integration roles —
+      // neither can be handed to a human moderator.
+      return roles
+        .filter((r) => r.id !== guildId && !r.managed)
+        .sort((a, b) => b.position - a.position)
+        .map((r) => ({ id: r.id, name: r.name }));
     },
     async getGuildCounts(guildId) {
       return discordJson(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);
