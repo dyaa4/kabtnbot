@@ -67,6 +67,30 @@ const activityDailySchema = new Schema<ActivityDailyDoc>({
 activityDailySchema.index({ guild_id: 1, user_id: 1, date: 1 }, { unique: true });
 activityDailySchema.index({ guild_id: 1, date: 1 });
 
+export interface VoiceSessionDoc {
+  guild_id: string;
+  user_id: string;
+  channel_id: string;
+  joined_at: Date;
+  left_at: Date | null;
+  created_at: Date;
+}
+
+const voiceSessionSchema = new Schema<VoiceSessionDoc>({
+  guild_id: { type: String, required: true },
+  user_id: { type: String, required: true },
+  channel_id: { type: String, required: true },
+  joined_at: { type: Date, required: true },
+  left_at: { type: Date, default: null },
+  created_at: { type: Date, default: Date.now, expires: '90d' },
+});
+voiceSessionSchema.index({ guild_id: 1, joined_at: -1 });
+voiceSessionSchema.index({ guild_id: 1, user_id: 1, left_at: 1 });
+
+export const VoiceSessionModel =
+  (mongoose.models.VoiceSession as mongoose.Model<VoiceSessionDoc>) ??
+  mongoose.model<VoiceSessionDoc>('VoiceSession', voiceSessionSchema);
+
 export interface KvDoc {
   key: string;
   value: string;

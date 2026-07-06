@@ -6,6 +6,10 @@ import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
 import { getKv, setKv } from './kv-repo.js';
+import {
+  startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
+  activeVoiceSessions, listVoiceSessions,
+} from './voice-log-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -71,6 +75,45 @@ describe('guild-asset-repo', () => {
     await expect(
       putGuildAsset('gBig', 'welcome_banner', 'image/png', Buffer.alloc(MAX_ASSET_BYTES + 1)),
     ).rejects.toThrow();
+  });
+});
+
+describe('voice-log-repo', () => {
+  it('tracks join → leave with computed duration', async () => {
+    const t0 = new Date('2026-07-06T20:00:00Z');
+    const t1 = new Date('2026-07-06T21:30:00Z');
+    await startVoiceSession('gV', 'u1', 'c1', t0);
+    expect((await activeVoiceSessions('gV', t1))[0]).toMatchObject({ user_id: 'u1', channel_id: 'c1' });
+    await endVoiceSession('gV', 'u1', t1);
+    expect(await activeVoiceSessions('gV')).toHaveLength(0);
+    const [session] = await listVoiceSessions('gV', 7, 200, t1);
+    expect(session.seconds).toBe(90 * 60);
+    expect(session.left_at).not.toBeNull();
+  });
+
+  it('a new join closes any dangling open session (missed leave)', async () => {
+    await startVoiceSession('gV2', 'u1', 'c1');
+    await startVoiceSession('gV2', 'u1', 'c2'); // moved channels, leave event lost
+    const active = await activeVoiceSessions('gV2');
+    expect(active).toHaveLength(1);
+    expect(active[0].channel_id).toBe('c2');
+  });
+
+  it('closeAllOpenVoiceSessions ends everything (startup reconcile)', async () => {
+    await startVoiceSession('gV3', 'u1', 'c1');
+    await startVoiceSession('gV3', 'u2', 'c1');
+    await closeAllOpenVoiceSessions();
+    expect(await activeVoiceSessions('gV3')).toHaveLength(0);
+  });
+
+  it('listVoiceSessions respects the day window', async () => {
+    const old = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
+    await startVoiceSession('gV4', 'u1', 'c1', old);
+    await endVoiceSession('gV4', 'u1', new Date(old.getTime() + 60_000));
+    await startVoiceSession('gV4', 'u2', 'c1');
+    const recent = await listVoiceSessions('gV4', 7);
+    expect(recent).toHaveLength(1);
+    expect(recent[0].user_id).toBe('u2');
   });
 });
 

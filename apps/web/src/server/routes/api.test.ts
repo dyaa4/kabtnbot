@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat } from '@gamebot/db';
+import {
+  connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat,
+  startVoiceSession, endVoiceSession,
+} from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
@@ -217,6 +220,30 @@ describe('api routes', () => {
       { id: '222', name: 'logs' },
     ]);
     expect((await request(app).get('/api/guilds/gX/channels').set('Cookie', cookie)).status).toBe(403);
+  });
+
+  it('serves the voice log with resolved member and channel names', async () => {
+    const { app, cookie, rest } = setup();
+    rest.membersList.set('g1', [
+      { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
+    ]);
+    rest.voiceChannels.set('g1', [{ id: 'vc1', name: 'Gaming' }]);
+
+    await startVoiceSession('g1', 'u7', 'vc1', new Date(Date.now() - 120_000));
+    const activeRes = await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie);
+    expect(activeRes.status).toBe(200);
+    expect(activeRes.body.active).toHaveLength(1);
+    expect(activeRes.body.active[0]).toMatchObject({ name: 'أبو فهد', channel_name: 'Gaming' });
+    expect(activeRes.body.active[0].seconds).toBeGreaterThanOrEqual(119);
+
+    await endVoiceSession('g1', 'u7');
+    // stats caches are per-guild but voice-log data is read live from Mongo
+    const doneRes = await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie);
+    expect(doneRes.body.active).toHaveLength(0);
+    expect(doneRes.body.sessions).toHaveLength(1);
+    expect(doneRes.body.sessions[0].left_at).not.toBeNull();
+
+    expect((await request(app).get('/api/guilds/gX/voice-log').set('Cookie', cookie)).status).toBe(403);
   });
 
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {

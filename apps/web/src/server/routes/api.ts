@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig, getUsage,
   memberSnapshots, topActive, activityDaily, getBotStatus,
+  activeVoiceSessions, listVoiceSessions, type VoiceSession,
 } from '@gamebot/db';
 import { DIALECTS, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -313,6 +314,32 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
           voiceMinutes: Math.round(dailyRows.reduce((sum, r) => sum + r.voice_seconds, 0) / 60),
         },
       });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/guilds/:guildId/voice-log', guard, async (req, res, next) => {
+    try {
+      const guildId = req.params.guildId;
+      const [members, voiceChannels, active, sessions] = await Promise.all([
+        statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
+        statsCached(`vchannels:${guildId}`, () => rest.listVoiceChannels(guildId)),
+        activeVoiceSessions(guildId),
+        listVoiceSessions(guildId, 7, 200),
+      ]);
+      const nameById = new Map(members.map((m) => [m.id, m.username]));
+      const channelById = new Map(voiceChannels.map((c) => [c.id, c.name]));
+      const serialize = (s: VoiceSession) => ({
+        user_id: s.user_id,
+        name: nameById.get(s.user_id) ?? `#${s.user_id.slice(-4)}`,
+        channel_id: s.channel_id,
+        channel_name: channelById.get(s.channel_id) ?? s.channel_id,
+        joined_at: s.joined_at.toISOString(),
+        left_at: s.left_at ? s.left_at.toISOString() : null,
+        seconds: s.seconds,
+      });
+      res.json({ active: active.map(serialize), sessions: sessions.map(serialize) });
     } catch (err) {
       next(err);
     }

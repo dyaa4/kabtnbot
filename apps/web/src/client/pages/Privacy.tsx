@@ -9,6 +9,7 @@ const ar: LegalContent = {
       paragraphs: [
         'إعدادات السيرفر: معرف السيرفر وكل ما تضبطه في لوحة التحكم (كلمة التنبيه، قوائم الكلمات، قنوات الترحيب والسجل، الرول الإداري، وغيرها).',
         'عدادات النشاط: عدد الرسائل، عدد التفاعلات، ودقائق الصوت لكل عضو يومياً — أرقام فقط، ولا نخزّن نص أي رسالة في قاعدة بياناتنا.',
+        'سجل الحضور الصوتي: وقت دخول وخروج الأعضاء من الرومات الصوتية ومعرف الروم — بيانات وصفية فقط، دون أي تسجيل للصوت.',
         'الصور المرفوعة: بانر الترحيب وصورة البوت التي يرفعها مدير السيرفر تُخزَّن في قاعدة بياناتنا.',
         'عند تسجيل الدخول للوحة التحكم: معرفك في Discord واسم المستخدم والصورة الرمزية عبر Discord OAuth، وملف تعريف ارتباط واحد للجلسة.',
       ],
@@ -35,7 +36,7 @@ const ar: LegalContent = {
     {
       heading: '5. مدة الاحتفاظ',
       paragraphs: [
-        'عدادات الاستخدام اليومية: 90 يوماً. عدادات النشاط: 120 يوماً. لقطات عدد الأعضاء: 400 يوماً — تُحذف تلقائياً بعدها.',
+        'عدادات الاستخدام اليومية: 90 يوماً. عدادات النشاط: 120 يوماً. سجل الحضور الصوتي: 90 يوماً. لقطات عدد الأعضاء: 400 يوماً — تُحذف تلقائياً بعدها.',
         'الإعدادات والصور المرفوعة تبقى ما دام البوت مستخدماً، وتُحذف عند طلبك.',
       ],
     },
@@ -64,6 +65,7 @@ const en: LegalContent = {
       paragraphs: [
         'Server settings: the guild ID and everything you configure in the dashboard (wake word, word lists, welcome/log channels, admin role, and so on).',
         'Activity counters: per-member daily message counts, reaction counts and voice minutes — numbers only; we never store the text of any message in our database.',
+        'Voice presence log: when members join and leave voice channels and the channel ID — metadata only, no audio is ever recorded.',
         'Uploaded images: the welcome banner and bot avatar uploaded by a server admin are stored in our database.',
         'When you sign in to the dashboard: your Discord ID, username and avatar via Discord OAuth, plus a single session cookie.',
       ],
@@ -90,7 +92,7 @@ const en: LegalContent = {
     {
       heading: '5. Retention',
       paragraphs: [
-        'Daily usage counters: 90 days. Activity counters: 120 days. Member-count snapshots: 400 days — all deleted automatically afterwards.',
+        'Daily usage counters: 90 days. Activity counters: 120 days. Voice presence log: 90 days. Member-count snapshots: 400 days — all deleted automatically afterwards.',
         'Settings and uploaded images are kept while the bot is in use and deleted on request.',
       ],
     },

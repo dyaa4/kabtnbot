@@ -5,6 +5,7 @@ import { Overview } from '../components/Overview.js';
 import { ProtectionTab } from '../components/ProtectionTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
+import { VoiceLogTab } from '../components/VoiceLogTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
 
 export function GuildView() {
@@ -18,6 +19,7 @@ export function GuildView() {
     { to: 'protection', key: 'tabs.protection' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
+    { to: 'voice-log', key: 'tabs.voiceLog' },
   ];
 
   return (
@@ -46,6 +48,7 @@ export function GuildView() {
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
+        <Route path="voice-log" element={<VoiceLogTab guildId={guildId} />} />
       </Routes>
     </Layout>
   );
