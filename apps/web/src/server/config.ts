@@ -13,7 +13,9 @@ const Env = z.object({
   MONGODB_URI: z.string().min(1),
   SESSION_SECRET: z.string().min(32),
   WEB_PORT: z.coerce.number().default(3000),
-  WEB_BASE_URL: z.string().default('http://localhost:3000'),
+  // Strip trailing slashes so `${WEB_BASE_URL}/auth/callback` never produces a
+  // double slash — Discord requires the redirect_uri to match exactly.
+  WEB_BASE_URL: z.string().default('http://localhost:3000').transform((s) => s.replace(/\/+$/, '')),
   // Optional Discord webhook that receives bot offline/recovery alerts.
   ALERT_WEBHOOK_URL: z.string().optional().default(''),
 });

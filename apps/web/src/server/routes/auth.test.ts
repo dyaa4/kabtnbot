@@ -25,6 +25,12 @@ describe('auth routes', () => {
     expect(res.headers.location).toContain('discord.com/oauth2/authorize');
     expect(res.headers.location).toContain('state=');
     expect(setCookies(res).join(';')).toContain('gb_state=');
+
+    // redirect_uri must be well-formed — a double slash (from a trailing slash
+    // on WEB_BASE_URL) makes Discord reject it as an invalid redirect.
+    const redirect = new URL(res.headers.location).searchParams.get('redirect_uri');
+    expect(redirect).toBe('http://localhost:3000/auth/callback');
+    expect(redirect).not.toContain('//auth/callback');
   });
 
   it('callback rejects mismatched state', async () => {

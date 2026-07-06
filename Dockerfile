@@ -1,3 +1,4 @@
+# Discord bot service (Railway). The web dashboard runs from `Dockerfile.web`.
 # Track the latest Node 22 patch, not 22.12: the corepack bundled with
 # node:22.12-slim ships outdated npm signing keys and fails to provision pnpm
 # ("Cannot find matching keyid"). Newer 22.x images carry current keys.

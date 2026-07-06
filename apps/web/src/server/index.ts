@@ -9,8 +9,11 @@ async function main(): Promise<void> {
   console.log('[Web][DB] Connected');
   if (config.ALERT_WEBHOOK_URL) startStatusAlerts(config.ALERT_WEBHOOK_URL);
   const app = buildApp({ rest: createDiscordRest() });
-  app.listen(config.WEB_PORT, () => {
-    console.log(`[Web] Listening on ${config.WEB_BASE_URL} (port ${config.WEB_PORT})`);
+  // Railway (and most PaaS) inject a dynamic PORT the public domain routes to;
+  // fall back to WEB_PORT for local runs.
+  const port = Number(process.env.PORT) || config.WEB_PORT;
+  app.listen(port, () => {
+    console.log(`[Web] Listening on ${config.WEB_BASE_URL} (port ${port})`);
   });
 }
 
