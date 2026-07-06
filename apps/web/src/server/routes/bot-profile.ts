@@ -4,7 +4,7 @@ import type { BotMember, DiscordRest } from '../discord-rest.js';
 import { DiscordApiError } from '../discord-rest.js';
 import { requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
-import { sniffImageType } from '../image-sniff.js';
+import { sniffImageType, imageDimensions, imageTooLarge } from '../image-sniff.js';
 
 const NicknamePatch = z
   .object({
@@ -77,6 +77,11 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
       const type = sniffImageType(body);
       if (!type || type === 'image/webp') {
         apiError(res, 400, 'UNSUPPORTED_TYPE', 'Only PNG, JPEG, or GIF images are allowed');
+        return;
+      }
+      const dim = imageDimensions(body);
+      if (!dim || imageTooLarge(dim)) {
+        apiError(res, 400, 'IMAGE_TOO_LARGE', 'Image dimensions are too large (max 8000px per side)');
         return;
       }
       const dataUri = `data:${type};base64,${body.toString('base64')}`;

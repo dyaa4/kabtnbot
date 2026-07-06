@@ -27,6 +27,9 @@ export async function renderWelcomeImage(opts: {
   const banner = await loadImage(opts.banner);
   const W = banner.width;
   const H = banner.height;
+  // Uploaded assets are dimension-checked at upload time; this also covers
+  // legacy banner_url images. Caller falls back to a text-only welcome.
+  if (W > 8000 || H > 8000 || W * H > 32_000_000) throw new Error('banner dimensions too large');
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
   ctx.drawImage(banner, 0, 0, W, H);

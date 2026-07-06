@@ -21,3 +21,84 @@ export function sniffImageType(buf: Buffer): ImageContentType | null {
   }
   return null;
 }
+
+export interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Read the pixel dimensions from the image header WITHOUT decoding the image.
+ * Used to reject decompression bombs (a small file that decodes to a huge
+ * bitmap) before they are stored and later rendered by the bot.
+ * Returns null when the header cannot be parsed.
+ */
+export function imageDimensions(buf: Buffer): ImageDimensions | null {
+  const type = sniffImageType(buf);
+  if (type === 'image/png' && buf.length >= 24) {
+    // IHDR is always the first chunk: width/height big-endian at offsets 16/20.
+    return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
+  }
+  if (type === 'image/gif' && buf.length >= 10) {
+    return { width: buf.readUInt16LE(6), height: buf.readUInt16LE(8) };
+  }
+  if (type === 'image/jpeg') {
+    return jpegDimensions(buf);
+  }
+  if (type === 'image/webp') {
+    return webpDimensions(buf);
+  }
+  return null;
+}
+
+function jpegDimensions(buf: Buffer): ImageDimensions | null {
+  // Walk the marker segments until a start-of-frame marker (C0–CF except
+  // C4/C8/CC) which carries height/width right after the precision byte.
+  let off = 2;
+  while (off + 9 <= buf.length) {
+    if (buf[off] !== 0xff) return null;
+    const marker = buf[off + 1];
+    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd9)) {
+      off += 2;
+      continue;
+    }
+    const len = buf.readUInt16BE(off + 2);
+    if (len < 2) return null;
+    if (marker >= 0xc0 && marker <= 0xcf && marker !== 0xc4 && marker !== 0xc8 && marker !== 0xcc) {
+      if (off + 9 > buf.length) return null;
+      return { height: buf.readUInt16BE(off + 5), width: buf.readUInt16BE(off + 7) };
+    }
+    off += 2 + len;
+  }
+  return null;
+}
+
+function webpDimensions(buf: Buffer): ImageDimensions | null {
+  if (buf.length < 30) return null;
+  const chunk = buf.subarray(12, 16).toString('latin1');
+  if (chunk === 'VP8X') {
+    // 24-bit little-endian (width-1)/(height-1) at offsets 24/27.
+    const width = 1 + (buf[24] | (buf[25] << 8) | (buf[26] << 16));
+    const height = 1 + (buf[27] | (buf[28] << 8) | (buf[29] << 16));
+    return { width, height };
+  }
+  if (chunk === 'VP8 ') {
+    // Lossy bitstream: 3-byte frame tag, 3-byte start code 9D 01 2A, then 14-bit dims.
+    if (buf[23] !== 0x9d || buf[24] !== 0x01 || buf[25] !== 0x2a) return null;
+    return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+  }
+  if (chunk === 'VP8L') {
+    if (buf[20] !== 0x2f) return null;
+    const bits = buf.readUInt32LE(21);
+    return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >> 14) & 0x3fff) };
+  }
+  return null;
+}
+
+// 8K on a side / 32 MP total decodes to ≤128 MB RGBA — safe for the bot renderer.
+export const MAX_IMAGE_SIDE = 8000;
+export const MAX_IMAGE_PIXELS = 32_000_000;
+
+export function imageTooLarge(dim: ImageDimensions): boolean {
+  return dim.width > MAX_IMAGE_SIDE || dim.height > MAX_IMAGE_SIDE || dim.width * dim.height > MAX_IMAGE_PIXELS;
+}

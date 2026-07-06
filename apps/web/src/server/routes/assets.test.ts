@@ -7,6 +7,7 @@ import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
 import { encryptToken } from '../crypto.js';
 import { clearAccessCache } from '../guild-access.js';
+import { pngHeader } from '../testing/image-fixtures.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -19,7 +20,7 @@ afterAll(async () => {
 });
 
 const MANAGE = String(1 << 5);
-const PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+const PNG = pngHeader(400, 200);
 
 function setup() {
   clearAccessCache();
@@ -65,6 +66,26 @@ describe('welcome-banner asset routes', () => {
       .send(Buffer.from('not an image'));
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('UNSUPPORTED_TYPE');
+  });
+
+  it('rejects decompression bombs (huge pixel dimensions in a small file)', async () => {
+    const { app, cookie } = setup();
+    const bomb = pngHeader(20000, 20000); // 33-byte file claiming 400 MP
+    const res = await request(app)
+      .put('/api/guilds/g1/assets/welcome-banner')
+      .set('Cookie', cookie)
+      .set('Content-Type', 'image/png')
+      .send(bomb);
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('IMAGE_TOO_LARGE');
+
+    const avatarRes = await request(app)
+      .put('/api/guilds/g1/bot-profile/avatar')
+      .set('Cookie', cookie)
+      .set('Content-Type', 'image/png')
+      .send(bomb);
+    expect(avatarRes.status).toBe(400);
+    expect(avatarRes.body.error.code).toBe('IMAGE_TOO_LARGE');
   });
 
   it('rejects empty body and denies non-managed guilds', async () => {

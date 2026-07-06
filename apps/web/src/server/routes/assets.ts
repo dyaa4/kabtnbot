@@ -3,7 +3,7 @@ import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from 
 import type { DiscordRest } from '../discord-rest.js';
 import { requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
-import { sniffImageType } from '../image-sniff.js';
+import { sniffImageType, imageDimensions, imageTooLarge } from '../image-sniff.js';
 
 // Buffer any content type: browsers send the file's own MIME type and we trust
 // magic bytes, not the header. Size limit enforced here (413 mapped in app.ts).
@@ -22,6 +22,13 @@ export function registerAssetRoutes(router: Router, rest: DiscordRest): void {
       const type = sniffImageType(body);
       if (!type) {
         apiError(res, 400, 'UNSUPPORTED_TYPE', 'Only PNG, JPEG, GIF, or WebP images are allowed');
+        return;
+      }
+      // Reject decompression bombs before storing: the bot decodes this image
+      // on every member join.
+      const dim = imageDimensions(body);
+      if (!dim || imageTooLarge(dim)) {
+        apiError(res, 400, 'IMAGE_TOO_LARGE', 'Image dimensions are too large (max 8000px per side)');
         return;
       }
       await putGuildAsset(req.params.guildId, 'welcome_banner', type, body);

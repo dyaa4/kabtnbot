@@ -36,6 +36,13 @@ describe('renderWelcomeImage', () => {
     expect(withName.length).toBeGreaterThan(0);
   });
 
+  it('rejects banners with oversized dimensions', async () => {
+    const wide = pngOf(8001, 4, '#000000');
+    await expect(
+      renderWelcomeImage({ banner: wide, avatar, name: null, x: 0.5, y: 0.5, size: 0.25 }),
+    ).rejects.toThrow(/dimensions/);
+  });
+
   it('rejects non-https banner and avatar URLs', async () => {
     await expect(
       renderWelcomeImage({ banner: 'http://169.254.169.254/x.png', avatar, name: null, x: 0.5, y: 0.5, size: 0.25 }),
