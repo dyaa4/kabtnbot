@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb, updateGuildConfig } from '@gamebot/db';
 import type { Client, Message } from 'discord.js';
-import { shouldModerate, editNeedsRescan, moderateMessage, registerTextProtection } from './text-mod.js';
+import { shouldModerate, editNeedsRescan, logSnippet, moderateMessage, registerTextProtection } from './text-mod.js';
 import { clearConfigCache } from '../../lib/config-cache.js';
 
 let mongod: MongoMemoryServer;
@@ -43,19 +43,57 @@ describe('editNeedsRescan', () => {
   });
 });
 
-function fakeMessage(guildId: string, content: string) {
+function fakeMessage(guildId: string, content: string, logChannel?: { send: ReturnType<typeof vi.fn>; isTextBased: () => boolean }) {
   const warn = { delete: vi.fn(async () => {}) };
   const channel = { send: vi.fn(async () => warn), isTextBased: () => true };
+  const channels = new Map<string, unknown>(logChannel ? [['log1', logChannel]] : []);
   return {
-    guild: { id: guildId, channels: { cache: new Map() } },
+    guild: { id: guildId, channels: { cache: channels } },
     author: { id: 'u9', bot: false },
     member: { permissions: { has: () => false }, roles: { cache: new Map() } },
     content,
     channel,
+    channelId: 'chan1',
     delete: vi.fn(async () => {}),
     partial: false,
   } as unknown as Message & { delete: ReturnType<typeof vi.fn> };
 }
+
+describe('logSnippet', () => {
+  it('spoiler-wraps, strips pipes and truncates long content', () => {
+    expect(logSnippet('نص قصير')).toBe('||نص قصير||');
+    expect(logSnippet('a||b|c')).toBe('||abc||');
+    const long = 'x'.repeat(200);
+    expect(logSnippet(long)).toBe(`||${'x'.repeat(180)}…||`);
+    expect(logSnippet('|||')).toBe('');
+  });
+});
+
+describe('moderateMessage — log channel', () => {
+  it('logs channel, snippet and suppresses pings in the log message', async () => {
+    clearConfigCache();
+    await updateGuildConfig('gLog', {
+      protection: {
+        enabled: true,
+        text_protection: true,
+        custom_words: ['بادوورد'],
+        log_channel_id: 'log1',
+      },
+    });
+
+    const logChannel = { send: vi.fn(async () => ({})), isTextBased: () => true };
+    const msg = fakeMessage('gLog', 'اشتروا من هنا @everyone بادوورد', logChannel);
+    await moderateMessage(msg);
+
+    expect(msg.delete).toHaveBeenCalledTimes(1);
+    expect(logChannel.send).toHaveBeenCalledTimes(1);
+    const payload = logChannel.send.mock.calls[0][0] as { content: string; allowedMentions: { parse: string[] } };
+    expect(payload.content).toContain('<#chan1>'); // where it happened
+    expect(payload.content).toContain('||'); // spoiler-wrapped content
+    expect(payload.content).toContain('بادوورد');
+    expect(payload.allowedMentions).toEqual({ parse: [] }); // no pings from reposted content
+  });
+});
 
 describe('moderateMessage — edited messages', () => {
   it('deletes an edited message containing a blocked custom word', async () => {

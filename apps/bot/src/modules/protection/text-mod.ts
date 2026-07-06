@@ -17,6 +17,17 @@ export function editNeedsRescan(oldContent: string | null, newContent: string): 
   return oldContent === null || oldContent !== newContent;
 }
 
+/**
+ * Deleted content as it appears in the moderation log: spoiler-wrapped so mods
+ * opt in to reading it, pipes stripped (they would break the spoiler), and
+ * truncated so a wall of text can't flood the log channel.
+ */
+export function logSnippet(content: string): string {
+  const clean = content.replaceAll('|', '').trim();
+  const short = clean.length > 180 ? `${clean.slice(0, 180)}…` : clean;
+  return short.length > 0 ? `||${short}||` : '';
+}
+
 export async function moderateMessage(msg: Message): Promise<void> {
   if (!msg.guild || msg.author.bot || !msg.member) return;
   const config = await getCachedGuildConfig(msg.guild.id);
@@ -38,8 +49,14 @@ export async function moderateMessage(msg: Message): Promise<void> {
   if (config.protection.log_channel_id) {
     const log = msg.guild.channels.cache.get(config.protection.log_channel_id);
     if (log?.isTextBased()) {
+      const snippet = logSnippet(msg.content);
+      const lines = [
+        `🛡️ حذف رسالة من <@${msg.author.id}> في <#${msg.channelId}> — السبب: ${verdict.reason}`,
+        ...(snippet ? [snippet] : []),
+      ];
       await (log as TextChannel)
-        .send(`🛡️ حذف رسالة من <@${msg.author.id}> — السبب: ${verdict.reason}`)
+        // No pings: reposted content may contain @everyone/@user mentions.
+        .send({ content: lines.join('\n'), allowedMentions: { parse: [] } })
         .catch(() => {});
     }
   }
