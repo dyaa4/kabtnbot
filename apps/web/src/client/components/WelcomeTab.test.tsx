@@ -26,7 +26,7 @@ const channels = [
   { id: '456', name: 'welcome' },
 ];
 
-function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolean } = {}) {
+function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolean; failPatch?: boolean } = {}) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
@@ -42,6 +42,11 @@ function stubFetch(config: ReturnType<typeof configWith>, opts: { asset?: boolea
         return new Response(JSON.stringify({ error: { code: 'NOT_FOUND' } }), { status: 404 });
       }
       if (init?.method === 'PATCH') {
+        if (opts.failPatch) {
+          return new Response(JSON.stringify({ error: { code: 'VALIDATION', message: 'Invalid patch' } }), {
+            status: 400,
+          });
+        }
         const body = JSON.parse((init.body as string) ?? '{}');
         return new Response(
           JSON.stringify({ ...config, ...body, welcome: { ...config.welcome, ...(body.welcome ?? {}) } }),
@@ -127,6 +132,18 @@ describe('WelcomeTab', () => {
       expect(body.welcome.avatar_size).toBe(0.27);
       expect(body.welcome.banner_url).toBeUndefined(); // URL field no longer part of the UI
     });
+  });
+
+  it('shows a red error banner when saving fails', async () => {
+    stubFetch(configWith(null), { failPatch: true });
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByRole('button', { name: /ارفع صورة البانر|Upload a banner image/ });
+
+    await user.click(screen.getByRole('button', { name: /حفظ|Save/ }));
+
+    const err = await screen.findByTestId('save-error');
+    expect(err.textContent).toContain('Invalid patch');
   });
 
   it('shows the admin avatar and name inside the preview circle (WYSIWYG)', async () => {

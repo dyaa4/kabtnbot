@@ -7,6 +7,7 @@ import { DIALECTS } from '@gamebot/shared';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { BotProfileCard } from './BotProfileCard.js';
+import { SaveStatus } from './SaveStatus.js';
 
 const VoiceForm = z.object({
   enabled: z.boolean(),
@@ -69,11 +70,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="grid gap-8">
-      {saved && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-900/30 px-4 py-2 text-emerald-300 backdrop-blur-md">
-          {t('settings.saved')}
-        </div>
-      )}
+      <SaveStatus saved={saved} error={patch.error} />
 
       <form
         className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
