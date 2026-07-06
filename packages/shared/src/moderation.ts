@@ -46,16 +46,36 @@ function domainOf(token: string): string | null {
 // token boundary, so roots inside innocent words (مكسور، كسر، كسل) stay unmatched.
 const AR_SUFFIXES = 'ها|هم|هن|كم|كن|نا|ني|ه|ك|ي';
 
+// Arabic conjunction/preposition/article prefixes that attach to the front of a
+// word with no space (والكلب، بالخرا، للحمار). Up to two single-letter prefixes
+// plus an optional article covers the common stacks (و+ال، ب+ال، ل+ل …).
+const AR_PREFIXES = '(?:[وفبكل]{0,2}(?:ال)?)?';
+
+// Whisper renders a word-final ta-marbuta (ة, normalized to ه) as ه or ا
+// inconsistently, so let a trailing ه/ا in the entry match either ending.
+function bodyOf(nw: string): string {
+  return /[ها]$/.test(nw) ? `${escapeRe(nw.slice(0, -1))}[ها]` : escapeRe(nw);
+}
+
+function boundaryHit(normalizedText: string, nw: string): boolean {
+  return new RegExp(`(^|[^\\p{L}])${AR_PREFIXES}${bodyOf(nw)}(?:${AR_SUFFIXES})?([^\\p{L}]|$)`, 'u').test(
+    ` ${normalizedText} `,
+  );
+}
+
 export function matchesProfanity(text: string, customWords: string[]): boolean {
   const n = normalizeText(text);
-  const words = [...BUILTIN_PROFANITY, ...customWords.map((w) => w.toLowerCase())];
-  return words.some((w) => {
+  // Built-in entries stay boundary-anchored: substring matching would flag
+  // innocent same-root words (كس→مكسور, ass→class).
+  if (BUILTIN_PROFANITY.some((w) => boundaryHit(n, normalizeText(w)))) return true;
+  // Admin custom words match anywhere in the text (contains) — the admin chose
+  // them deliberately, and the dashboard promises containment. Single-character
+  // entries keep boundary matching so they can't blanket-match every word.
+  return customWords.some((w) => {
     const nw = normalizeText(w);
     if (!nw) return false;
-    // Whisper renders a word-final ta-marbuta (ة, normalized to ه) as ه or ا
-    // inconsistently, so let a trailing ه/ا in the entry match either ending.
-    const body = /[ها]$/.test(nw) ? `${escapeRe(nw.slice(0, -1))}[ها]` : escapeRe(nw);
-    return new RegExp(`(^|[^\\p{L}])${body}(?:${AR_SUFFIXES})?([^\\p{L}]|$)`, 'u').test(` ${n} `);
+    if (nw.length < 2) return boundaryHit(n, nw);
+    return new RegExp(bodyOf(nw), 'u').test(n);
   });
 }
 

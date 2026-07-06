@@ -51,13 +51,31 @@ describe('matchesProfanity', () => {
     expect(matchesProfanity('قطع زبه', ['زب'])).toBe(true);
     expect(matchesProfanity('روح يا كلبهم', [])).toBe(true); // built-in كلب + هم
   });
-  it('suffix matching does not turn innocent same-root words into matches', () => {
-    // a leading letter before the root fails the boundary (no prefix matching)
-    expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(false); // مكسور (broken)
-    // trailing letters that are not clitics keep the word clean
-    expect(matchesProfanity('كسر الكوب', ['كس'])).toBe(false); // كسر (to break)
-    expect(matchesProfanity('عندي كسل اليوم', ['كس'])).toBe(false); // كسل (laziness)
-    expect(matchesProfanity('جاء الزبون', ['زب'])).toBe(false); // زبون (customer)
+  it('built-in matching does not turn innocent same-root words into matches', () => {
+    // كس and زب are built-in entries; the boundary keeps same-root words clean
+    expect(matchesProfanity('هاتفي مكسور', [])).toBe(false); // مكسور (broken)
+    expect(matchesProfanity('كسر الكوب', [])).toBe(false); // كسر (to break)
+    expect(matchesProfanity('عندي كسل اليوم', [])).toBe(false); // كسل (laziness)
+    expect(matchesProfanity('جاء الزبون', [])).toBe(false); // زبون (customer)
+  });
+  it('matches built-in words behind attached Arabic prefixes (وال، بال، لل …)', () => {
+    expect(matchesProfanity('روح والكلب معك', [])).toBe(true); // و+ال+كلب
+    expect(matchesProfanity('هذا بالخرا', [])).toBe(true); // ب+ال+خرا
+    expect(matchesProfanity('قلت للحمار', [])).toBe(true); // لل+حمار
+  });
+  it('custom words match as substrings anywhere in the text (admin opted in)', () => {
+    // inside another word / written together
+    expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(true);
+    expect(matchesProfanity('he said fuckyou loudly', ['fuckyou'])).toBe(true);
+    expect(matchesProfanity('xxspamwordxx', ['spamword'])).toBe(true);
+    // normalization still applies to both sides
+    expect(matchesProfanity('قال حِمَآريات', ['حمار'])).toBe(true);
+    // clean text stays clean
+    expect(matchesProfanity('good game everyone', ['spamword'])).toBe(false);
+  });
+  it('single-character custom entries fall back to boundary matching', () => {
+    expect(matchesProfanity('باب مفتوح', ['ب'])).toBe(false); // no substring explosion
+    expect(matchesProfanity('قال ب صوت عالي', ['ب'])).toBe(true); // standalone token still matches
   });
   it('ships a bilingual built-in blocklist (no custom words needed)', () => {
     // representative English
