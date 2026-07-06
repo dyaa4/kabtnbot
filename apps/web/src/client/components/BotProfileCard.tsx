@@ -116,6 +116,7 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
           >
             {uploadAvatar.isPending ? t('botProfile.uploading') : t('botProfile.upload')}
           </button>
+          <p className="mt-1 text-xs text-slate-500">{t('botProfile.avatar.hint')}</p>
         </div>
       </div>
       {appliedGlobally && <p className="mb-3 text-sm text-amber-300">{t('botProfile.globalNote')}</p>}

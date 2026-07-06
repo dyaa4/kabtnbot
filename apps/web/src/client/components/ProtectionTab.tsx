@@ -93,33 +93,38 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('protection.title')}</h3>
-        <label className="mb-3 flex items-center gap-2">
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...form.register('enabled')} />
           <span>{t('protection.enabled')}</span>
         </label>
-        <label className="mb-3 flex items-center gap-2">
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('protection.enabled.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...form.register('voice_moderation')} />
           <span>{t('protection.voiceModeration')}</span>
         </label>
-        <label className="mb-4 flex items-center gap-2">
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('protection.voiceModeration.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...form.register('text_protection')} />
           <span>{t('protection.textProtection')}</span>
         </label>
-        <label className="mb-4 block">
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('protection.textProtection.hint')}</p>
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.customWords')}</span>
           <textarea
             className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
             {...form.register('custom_words')}
           />
         </label>
-        <label className="mb-4 block">
+        <p className="mb-4 text-xs text-slate-500">{t('protection.customWords.hint')}</p>
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.allowedDomains')}</span>
           <textarea
             className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
             {...form.register('allowed_domains')}
           />
         </label>
-        <label className="mb-4 block">
+        <p className="mb-4 text-xs text-slate-500">{t('protection.allowedDomains.hint')}</p>
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.logChannelId')}</span>
           <ChannelSelect
             guildId={guildId}
@@ -127,6 +132,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
             onChange={(id) => form.setValue('log_channel_id', id)}
           />
         </label>
+        <p className="mb-4 text-xs text-slate-500">{t('protection.logChannelId.hint')}</p>
         <button
           className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
           type="submit"

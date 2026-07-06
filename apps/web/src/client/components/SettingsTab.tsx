@@ -69,18 +69,20 @@ export function SettingsTab({ guildId }: { guildId: string }) {
         onSubmit={voice.handleSubmit((v) => patch.mutate({ voice: v }))}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('settings.voice')}</h3>
-        <label className="mb-3 flex items-center gap-2">
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...voice.register('enabled')} />
           <span>{t('settings.voice.enabled')}</span>
         </label>
-        <label className="mb-3 block">
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('settings.voice.enabled.hint')}</p>
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.wakeWord')}</span>
           <input
             className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
             {...voice.register('wake_word')}
           />
         </label>
-        <label className="mb-4 block">
+        <p className="mb-3 text-xs text-slate-500">{t('settings.voice.wakeWord.hint')}</p>
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
           <select
             className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
@@ -93,10 +95,12 @@ export function SettingsTab({ guildId }: { guildId: string }) {
             ))}
           </select>
         </label>
-        <label className="mb-4 flex items-center gap-2">
+        <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...voice.register('personality_enabled')} />
           <span>{t('settings.personality')}</span>
         </label>
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('settings.personality.hint')}</p>
         <p data-testid="voice-error" className="mb-2 text-sm text-red-400">
           {voiceError ?? ''}
         </p>

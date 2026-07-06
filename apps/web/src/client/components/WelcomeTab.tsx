@@ -253,15 +253,17 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       >
         <h3 className="mb-4 text-lg font-semibold">{t('welcome.title')}</h3>
 
-        <label className="mb-3 flex items-center gap-2">
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />
           <span>{t('welcome.enabled')}</span>
         </label>
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('welcome.enabled.hint')}</p>
 
-        <label className="mb-4 block">
+        <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('welcome.channelId')}</span>
           <ChannelSelect guildId={guildId} value={channelId} onChange={setChannelId} />
         </label>
+        <p className="mb-4 text-xs text-slate-500">{t('welcome.channelId.hint')}</p>
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('welcome.message')}</span>
@@ -273,10 +275,11 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('welcome.message.hint')}</p>
 
-        <label className="mb-4 flex items-center gap-2">
+        <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} />
           <span>{t('welcome.showName')}</span>
         </label>
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('welcome.showName.hint')}</p>
 
         <input
           ref={fileRef}
