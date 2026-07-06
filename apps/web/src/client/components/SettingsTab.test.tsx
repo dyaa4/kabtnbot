@@ -31,6 +31,9 @@ beforeEach(() => {
       if (url.endsWith('/voice-channels')) {
         return new Response(JSON.stringify([{ id: 'v1', name: 'Gaming' }, { id: 'v2', name: 'Chill' }]), { status: 200 });
       }
+      if (url.endsWith('/channels')) {
+        return new Response(JSON.stringify([{ id: 'c1', name: 'general' }]), { status: 200 });
+      }
       return new Response(JSON.stringify(config), { status: 200 });
     }),
   );

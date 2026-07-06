@@ -7,6 +7,7 @@ import { DIALECTS } from '@gamebot/shared';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { BotProfileCard } from './BotProfileCard.js';
+import { ChannelSelect } from './ChannelSelect.js';
 import { RoleSelect } from './RoleSelect.js';
 import { SaveStatus } from './SaveStatus.js';
 
@@ -28,6 +29,10 @@ interface GuildConfigResp {
     allowed_channel_ids: string[];
     personality_enabled: boolean;
   };
+  summary?: {
+    enabled: boolean;
+    channel_id: string | null;
+  };
 }
 
 export function SettingsTab({ guildId }: { guildId: string }) {
@@ -48,6 +53,8 @@ export function SettingsTab({ guildId }: { guildId: string }) {
   const voice = useForm<VoiceValues>({ resolver: zodResolver(VoiceForm) });
   const [adminRoleId, setAdminRoleId] = useState('');
   const [allowedVoiceIds, setAllowedVoiceIds] = useState<string[]>([]);
+  const [summaryEnabled, setSummaryEnabled] = useState(false);
+  const [summaryChannelId, setSummaryChannelId] = useState('');
 
   const voiceChannels = useQuery({
     queryKey: ['voice-channels', guildId],
@@ -59,6 +66,8 @@ export function SettingsTab({ guildId }: { guildId: string }) {
       voice.reset(cfg.data.voice);
       setAdminRoleId(cfg.data.admin_role_id ?? '');
       setAllowedVoiceIds(cfg.data.voice.allowed_channel_ids);
+      setSummaryEnabled(cfg.data.summary?.enabled ?? false);
+      setSummaryChannelId(cfg.data.summary?.channel_id ?? '');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.data]);
@@ -152,6 +161,38 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           <RoleSelect guildId={guildId} value={adminRoleId} onChange={setAdminRoleId} />
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('settings.adminRole.hint')}</p>
+        <button
+          className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
+          type="submit"
+        >
+          {t('settings.save')}
+        </button>
+      </form>
+
+      <form
+        className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md"
+        onSubmit={(e) => {
+          e.preventDefault();
+          patch.mutate({
+            summary: { enabled: summaryEnabled, channel_id: summaryChannelId === '' ? null : summaryChannelId },
+          });
+        }}
+      >
+        <h3 className="mb-4 text-lg font-semibold">{t('summary.title')}</h3>
+        <label className="mb-1 flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={summaryEnabled}
+            onChange={(e) => setSummaryEnabled(e.target.checked)}
+          />
+          <span>{t('summary.enabled')}</span>
+        </label>
+        <p className="mb-3 ms-6 text-xs text-slate-500">{t('summary.enabled.hint')}</p>
+        <label className="mb-1 block">
+          <span className="mb-1 block text-sm text-slate-400">{t('summary.channelId')}</span>
+          <ChannelSelect guildId={guildId} value={summaryChannelId} onChange={setSummaryChannelId} />
+        </label>
+        <p className="mb-4 text-xs text-slate-500">{t('summary.channelId.hint')}</p>
         <button
           className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
           type="submit"

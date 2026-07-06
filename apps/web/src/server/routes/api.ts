@@ -56,6 +56,13 @@ const ConfigPatch = z
       })
       .strict()
       .optional(),
+    summary: z
+      .object({
+        enabled: z.boolean().optional(),
+        channel_id: z.string().nullable().optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

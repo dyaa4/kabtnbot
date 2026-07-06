@@ -41,6 +41,12 @@ export const GuildConfigSchema = z.object({
       show_name: z.boolean().default(true),
     })
     .default({}),
+  summary: z
+    .object({
+      enabled: z.boolean().default(false),
+      channel_id: z.string().nullable().default(null),
+    })
+    .default({}),
   quotas: z
     .object({
       listen_minutes_per_day: z.number().int().positive().default(60),

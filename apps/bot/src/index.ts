@@ -7,6 +7,7 @@ import { registerActivityTracking } from './events/activity.js';
 import { registerTextProtection } from './modules/protection/text-mod.js';
 import { registerWelcome } from './events/guildMemberAdd.js';
 import { registerVoiceLog } from './events/voice-log.js';
+import { registerWeeklySummary } from './lib/weekly-summary.js';
 import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/resilience.js';
 
 async function main(): Promise<void> {
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
   registerTextProtection(client);
   registerWelcome(client);
   registerVoiceLog(client);
+  registerWeeklySummary(client);
 
   // Graceful shutdown: clear the heartbeat so the dashboard shows offline
   // immediately (instead of after the 90s staleness window), then close the
