@@ -90,6 +90,7 @@
   "stats.mostActive": "Most active",
   "stats.recentJoins": "Recently joined",
   "stats.fallbackHint": "Estimated from current members' join dates — accuracy improves daily once tracking is enabled",
+  "stats.growthHint": "Cumulative by current members' join dates (leavers not included) — spans the server's whole growth history",
   "stats.empty": "No data yet",
   "overview.listen": "Listening minutes today",
   "overview.ai": "AI questions today",

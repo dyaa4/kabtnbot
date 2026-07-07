@@ -70,14 +70,14 @@ describe('stats route', () => {
     expect(res.status).toBe(200);
   });
 
-  it('happy path with >=2 member snapshots: memberCount, joinedRecent order, totals, topActive', async () => {
+  it('growth curve is cumulative by join date; memberCount, joinedRecent order, totals, topActive', async () => {
     const { app, rest, cookie } = setup('gStats1');
     const m1JoinedAt = isoDaysAgo(1);
     rest.membersList.set('gStats1', [
       { id: 'm1', username: 'Alice', avatar: null, joined_at: m1JoinedAt },
       { id: 'm2', username: 'Bob', avatar: null, joined_at: isoDaysAgo(5) },
-      { id: 'm3', username: 'Carl', avatar: null, joined_at: isoDaysAgo(40) }, // outside 30d window
-      { id: 'a', username: 'Player_A', avatar: null, joined_at: isoDaysAgo(50) }, // old join; just in members list for name mapping
+      { id: 'm3', username: 'Carl', avatar: null, joined_at: isoDaysAgo(40) },
+      { id: 'a', username: 'Player_A', avatar: null, joined_at: isoDaysAgo(50) },
     ]);
     rest.guildCounts.set('gStats1', 250);
 
@@ -87,7 +87,7 @@ describe('stats route', () => {
     await addVoiceSeconds('gStats1', 'a', todayKey(), 120); // 2 minutes
     await recordMessage('gStats1', 'm1', todayKey());
 
-    // Two snapshots (>=2) so the growth chart uses 'snapshots', carried forward across gaps.
+    // Snapshots exist but the growth curve is built from join dates and must ignore them.
     await recordMemberSnapshot('gStats1', 190, dateKeyDaysAgo(5));
     await recordMemberSnapshot('gStats1', 200, todayKey());
 
@@ -97,12 +97,11 @@ describe('stats route', () => {
     expect(res.body.joinedRecent.map((j: { id: string }) => j.id)).toEqual(['m1', 'm2', 'm3', 'a']);
     expect(res.body.joinedRecent[0]).toEqual({ id: 'm1', username: 'Alice', avatar: null, joined_at: m1JoinedAt });
     expect(res.body.totals.newMembers).toBe(2); // m1, m2 within default 30d window; m3 outside
-    expect(res.body.memberSeriesSource).toBe('snapshots');
-    // Full 30-day window, carried forward: flat 190 up to the 5-days-ago snapshot, then 200 through today.
-    expect(res.body.memberSeries).toHaveLength(30);
-    expect(res.body.memberSeries[0].member_count).toBe(190);
-    expect(res.body.memberSeries.at(-2).member_count).toBe(190);
-    expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 200 });
+    expect(res.body).not.toHaveProperty('memberSeriesSource');
+    // Cumulative by join date (a→m3→m2→m1), then flat to today — snapshots (190/200) ignored.
+    expect(res.body.memberSeries[0]).toEqual({ date: dateKeyDaysAgo(50), member_count: 1 });
+    expect(res.body.memberSeries.map((p: { member_count: number }) => p.member_count)).toEqual([1, 2, 3, 4, 4]);
+    expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 4 });
     expect(res.body.totals.messages).toBe(3);
     expect(res.body.totals.voiceMinutes).toBe(2);
     expect(res.body.topActive[0].user_id).toBe('a');
@@ -110,38 +109,34 @@ describe('stats route', () => {
     expect(res.body.topActive.map((r: { user_id: string }) => r.user_id)).toContain('m1');
   });
 
-  it('single snapshot falls back to joined_fallback (not enough points for a trend)', async () => {
+  it('a single member yields a two-point curve: join day and today', async () => {
     const { app, rest, cookie } = setup('gStatsOneSnap');
     rest.membersList.set('gStatsOneSnap', [
       { id: 'm1', username: 'A', avatar: null, joined_at: isoDaysAgo(1) },
     ]);
-    await recordMemberSnapshot('gStatsOneSnap', 200, todayKey());
 
     const res = await request(app).get('/api/guilds/gStatsOneSnap/stats?days=7').set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.memberSeriesSource).toBe('joined_fallback');
-    expect(res.body.memberSeries).toHaveLength(7);
+    expect(res.body.memberSeries[0]).toEqual({ date: dateKeyDaysAgo(1), member_count: 1 });
+    expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 1 });
   });
 
-  it('happy path without snapshots: joined_fallback cumulative series spans the full window', async () => {
+  it('growth curve spans the full join history, independent of the day window', async () => {
     const { app, rest, cookie } = setup('gStats2');
     rest.membersList.set('gStats2', [
-      { id: 'm1', username: 'A', avatar: null, joined_at: isoDaysAgo(20) }, // within 30d window
-      { id: 'm2', username: 'B', avatar: null, joined_at: isoDaysAgo(10) }, // within 30d window
-      { id: 'm3', username: 'C', avatar: null, joined_at: isoDaysAgo(60) }, // outside window (baseline)
+      { id: 'm1', username: 'A', avatar: null, joined_at: isoDaysAgo(20) },
+      { id: 'm2', username: 'B', avatar: null, joined_at: isoDaysAgo(10) },
+      { id: 'm3', username: 'C', avatar: null, joined_at: isoDaysAgo(60) }, // beyond the 30d window, still shown
     ]);
     // no guildCounts set -> fallback to membersList length
 
     const res = await request(app).get('/api/guilds/gStats2/stats?days=30').set('Cookie', cookie);
     expect(res.status).toBe(200);
     expect(res.body.memberCount).toBe(3);
-    expect(res.body.memberSeriesSource).toBe('joined_fallback');
-    expect(res.body.memberSeries).toHaveLength(30); // full window, zero-gap days carried forward
-    expect(res.body.memberSeries[0].member_count).toBe(1); // baseline: m3 joined before the window
-    const day20 = res.body.memberSeries.find((d: { date: string }) => d.date === dateKeyDaysAgo(20));
-    expect(day20.member_count).toBe(2); // + m1
-    expect(res.body.memberSeries.at(-1).member_count).toBe(3); // + m2, carried to today
-    expect(res.body.totals.newMembers).toBe(2);
+    expect(res.body.memberSeries[0]).toEqual({ date: dateKeyDaysAgo(60), member_count: 1 }); // outside the 30d window
+    expect(res.body.memberSeries.map((p: { member_count: number }) => p.member_count)).toEqual([1, 2, 3, 3]);
+    expect(res.body.memberSeries.at(-1)).toEqual({ date: todayKey(), member_count: 3 });
+    expect(res.body.totals.newMembers).toBe(2); // newMembers stays windowed: m1, m2 within 30d
   });
 
   it('daily series span the full selected window with zero-fill on empty days', async () => {
@@ -171,7 +166,7 @@ describe('stats route', () => {
     expect(res.body.totals.messages).toBe(2);
   });
 
-  it('a member joined exactly on the boundary day (today-days+1) counts in the fallback series first day, not dropped', async () => {
+  it('newMembers counts a join on the window boundary day (today-days+1)', async () => {
     const { app, rest, cookie } = setup('gStatsBoundaryJoin');
     const days = 7;
     const boundaryIso = isoDaysAgo(days - 1);
@@ -182,27 +177,23 @@ describe('stats route', () => {
 
     const res = await request(app).get(`/api/guilds/gStatsBoundaryJoin/stats?days=${days}`).set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.memberSeriesSource).toBe('joined_fallback');
     expect(res.body.memberSeries[0].date).toBe(boundaryKey);
     expect(res.body.memberSeries[0].member_count).toBe(1);
     expect(res.body.totals.newMembers).toBe(1);
   });
 
-  it('a member joined exactly on the old (pre-fix) cutoff day today-days is treated as pre-window baseline, never silently dropped', async () => {
-    const { app, rest, cookie } = setup('gStatsPreFixCutoff');
+  it('a member who joined before the day window still appears in the full-history growth curve', async () => {
+    const { app, rest, cookie } = setup('gStatsPreWindowJoin');
     const days = 7;
-    // Under the old buggy cutoff (today-days), a join on this exact day was excluded from the
-    // baseline test AND fell on a date fillDays never visits -- vanishing from the series entirely.
-    const droppedJoinIso = isoDaysAgo(days);
-    rest.membersList.set('gStatsPreFixCutoff', [
-      { id: 'm1', username: 'A', avatar: null, joined_at: droppedJoinIso },
+    const oldJoinIso = isoDaysAgo(days + 30); // well before the 7-day window
+    rest.membersList.set('gStatsPreWindowJoin', [
+      { id: 'm1', username: 'A', avatar: null, joined_at: oldJoinIso },
     ]);
 
-    const res = await request(app).get(`/api/guilds/gStatsPreFixCutoff/stats?days=${days}`).set('Cookie', cookie);
+    const res = await request(app).get(`/api/guilds/gStatsPreWindowJoin/stats?days=${days}`).set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.memberSeriesSource).toBe('joined_fallback');
-    // Now correctly folded into the pre-window baseline: present from the first rendered day onward.
-    expect(res.body.memberSeries[0].member_count).toBe(1);
+    expect(res.body.memberSeries[0]).toEqual({ date: oldJoinIso.slice(0, 10), member_count: 1 });
     expect(res.body.memberSeries.at(-1).member_count).toBe(1);
+    expect(res.body.totals.newMembers).toBe(0); // joined before the window
   });
 });

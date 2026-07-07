@@ -27,7 +27,6 @@ interface StatsResp {
   memberCount: number | null;
   joinedRecent: JoinedMember[];
   memberSeries: SeriesPoint[];
-  memberSeriesSource: 'snapshots' | 'joined_fallback';
   messagesDaily: SeriesPoint[];
   voiceMinutesDaily: SeriesPoint[];
   topActive: ActivePlayer[];
@@ -106,6 +105,12 @@ export function StatsTab({ guildId }: { guildId: string }) {
   const mostActive = data?.topActive ?? [];
   const joinedRecent = data?.joinedRecent ?? [];
 
+  // The growth curve spans the whole server history, so its x-axis needs compact
+  // month/year ticks; the tooltip still shows the full date.
+  const locale = lang === 'ar' ? 'ar' : 'en-GB';
+  const fmtAxisDate = (d: string) => new Date(d).toLocaleDateString(locale, { month: 'short', year: '2-digit' });
+  const fmtFullDate = (d: string) => new Date(d).toLocaleDateString(locale);
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-wrap gap-2">
@@ -156,15 +161,22 @@ export function StatsTab({ guildId }: { guildId: string }) {
 
       <ChartCard
         title={t('stats.memberGrowth')}
-        hint={data?.memberSeriesSource === 'joined_fallback' ? t('stats.fallbackHint') : undefined}
-        empty={isAllZero(memberSeries.map((d) => d.member_count ?? 0))}
+        hint={t('stats.growthHint')}
+        empty={memberSeries.length === 0}
       >
         <ResponsiveContainer width="100%" height={220}>
           <LineChart data={memberSeries}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-            <Tooltip {...TOOLTIP_PROPS} />
+            <XAxis
+              dataKey="date"
+              tick={AXIS_TICK}
+              axisLine={false}
+              tickLine={false}
+              minTickGap={40}
+              tickFormatter={fmtAxisDate}
+            />
+            <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+            <Tooltip {...TOOLTIP_PROPS} labelFormatter={fmtFullDate} />
             <Line type="monotone" dataKey="member_count" stroke="#0891b2" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig, getUsage,
-  memberSnapshots, topActive, activityDaily, getBotStatus,
+  topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
 } from '@gamebot/db';
 import { DIALECTS, LANGUAGES, effectiveQuotas, todayKey } from '@gamebot/shared';
@@ -229,42 +229,35 @@ function fillSeries<T extends { date: string }>(days: number, series: T[], zeroF
   return fillDays(days).map((date) => byDate.get(date) ?? zeroFactory(date));
 }
 
-// Limitation (documented per spec): this fallback curve only reflects members still present
-// today (survivors) — members who joined and later left are invisible retroactively.
-function joinedFallbackSeries(members: DiscordMember[], days: number): { date: string; member_count: number }[] {
-  const cutoffKey = cutoffKeyFor(days);
+// Cumulative member-growth curve reconstructed from CURRENT members' join dates:
+// one point per distinct join-day carrying the running total, extended flat to
+// today. Spans the WHOLE server history (independent of the 7/30/90 selector), so
+// even a long-established, stable server sees a real growth curve immediately.
+// Limitation: survivors only — members who joined and later left are no longer in
+// Discord's data, so the curve never dips and slightly understates past peaks.
+function joinDateGrowthSeries(members: DiscordMember[]): { date: string; member_count: number }[] {
+  if (members.length === 0) return [];
   const sorted = [...members].sort((a, b) => a.joined_at.localeCompare(b.joined_at));
-  const perDayCounts = new Map<string, number>();
-  let baseline = 0;
+  const points: { date: string; member_count: number }[] = [];
+  let cumulative = 0;
   for (const m of sorted) {
-    const key = m.joined_at.slice(0, 10);
-    if (key < cutoffKey) {
-      baseline += 1;
-      continue;
-    }
-    perDayCounts.set(key, (perDayCounts.get(key) ?? 0) + 1);
+    cumulative += 1;
+    const day = m.joined_at.slice(0, 10);
+    const last = points[points.length - 1];
+    if (last && last.date === day) last.member_count = cumulative;
+    else points.push({ date: day, member_count: cumulative });
   }
-  let cumulative = baseline;
-  return fillDays(days).map((date) => {
-    cumulative += perDayCounts.get(date) ?? 0;
-    return { date, member_count: cumulative };
-  });
+  const today = dateKeyOf(new Date());
+  if (points[points.length - 1]?.date !== today) points.push({ date: today, member_count: cumulative });
+  return downsampleSeries(points, 365);
 }
 
-// Carries the last known snapshot count forward across every day in the window; days before the
-// earliest snapshot are back-filled with that earliest known value (no earlier data exists).
-function fillSnapshotSeries(
-  snapshots: { date: string; member_count: number }[],
-  days: number,
-): { date: string; member_count: number }[] {
-  const byDate = new Map(snapshots.map((s) => [s.date, s.member_count]));
-  const sorted = [...snapshots].sort((a, b) => a.date.localeCompare(b.date));
-  let last = sorted[0]?.member_count ?? 0;
-  return fillDays(days).map((date) => {
-    const known = byDate.get(date);
-    if (known !== undefined) last = known;
-    return { date, member_count: last };
-  });
+// Keep at most `max` points by dropping evenly spaced interior ones; the first and
+// last are always retained so the curve's origin and current total stay exact.
+function downsampleSeries<T>(series: T[], max: number): T[] {
+  if (series.length <= max) return series;
+  const step = (series.length - 1) / (max - 1);
+  return Array.from({ length: max }, (_, i) => series[Math.round(i * step)]);
 }
 
 function registerStatsRoutes(router: Router, rest: DiscordRest): void {
@@ -281,10 +274,9 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
       const guildId = req.params.guildId;
       const cutoffKey = cutoffKeyFor(days);
 
-      const [members, counts, snapshots, activeRows, dailyRows] = await Promise.all([
+      const [members, counts, activeRows, dailyRows] = await Promise.all([
         statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
         statsCached(`counts:${guildId}`, () => rest.getGuildCounts(guildId)),
-        memberSnapshots(guildId, days),
         topActive(guildId, days, 10),
         activityDaily(guildId, days),
       ]);
@@ -303,15 +295,9 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
       const newMembers = members.filter((m) => m.joined_at.slice(0, 10) >= cutoffKey).length;
 
-      let memberSeriesSource: 'snapshots' | 'joined_fallback';
-      let memberSeries: { date: string; member_count: number }[];
-      if (snapshots.length >= 2) {
-        memberSeriesSource = 'snapshots';
-        memberSeries = fillSnapshotSeries(snapshots, days);
-      } else {
-        memberSeriesSource = 'joined_fallback';
-        memberSeries = joinedFallbackSeries(members, days);
-      }
+      // Growth = cumulative curve from current members' join dates, full history,
+      // independent of the day selector (which still scopes the activity charts).
+      const memberSeries = joinDateGrowthSeries(members);
 
       const memberCount = counts?.approximate_member_count ?? (members.length > 0 ? members.length : null);
 
@@ -325,7 +311,6 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         memberCount,
         joinedRecent,
         memberSeries,
-        memberSeriesSource,
         messagesDaily,
         voiceMinutesDaily,
         topActive: topActiveWithNames,

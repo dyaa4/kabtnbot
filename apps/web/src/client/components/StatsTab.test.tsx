@@ -16,7 +16,6 @@ const statsResponse = {
     { date: '2026-06-30', member_count: 190 },
     { date: '2026-07-01', member_count: 200 },
   ],
-  memberSeriesSource: 'snapshots',
   messagesDaily: [
     { date: '2026-06-27', count: 0 },
     { date: '2026-06-28', count: 0 },

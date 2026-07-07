@@ -90,6 +90,7 @@
   "stats.mostActive": "Am aktivsten",
   "stats.recentJoins": "Zuletzt beigetreten",
   "stats.fallbackHint": "Geschätzt aus den Beitrittsdaten aktueller Mitglieder — die Genauigkeit verbessert sich täglich, sobald das Tracking aktiv ist",
+  "stats.growthHint": "Kumulativ nach Beitrittsdatum der aktuellen Mitglieder (Ausgetretene nicht enthalten) — zeigt die gesamte Wachstumshistorie",
   "stats.empty": "Noch keine Daten",
   "overview.listen": "Zuhör-Minuten heute",
   "overview.ai": "KI-Fragen heute",

@@ -90,6 +90,7 @@
   "stats.mostActive": "Les plus actifs",
   "stats.recentJoins": "Arrivés récemment",
   "stats.fallbackHint": "Estimé à partir des dates d'arrivée des membres actuels — la précision s'améliore chaque jour une fois le suivi activé",
+  "stats.growthHint": "Cumulé selon les dates d'arrivée des membres actuels (départs non inclus) — couvre tout l'historique de croissance",
   "stats.empty": "Pas encore de données",
   "overview.listen": "Minutes d'écoute aujourd'hui",
   "overview.ai": "Questions IA aujourd'hui",

@@ -90,6 +90,7 @@
   "stats.mostActive": "En aktifler",
   "stats.recentJoins": "Son katılanlar",
   "stats.fallbackHint": "Mevcut üyelerin katılım tarihlerinden tahmin edilir — takip etkinleştikçe doğruluk her gün artar",
+  "stats.growthHint": "Mevcut üyelerin katılım tarihlerine göre kümülatif (ayrılanlar hariç) — sunucunun tüm büyüme geçmişi",
   "stats.empty": "Henüz veri yok",
   "overview.listen": "Bugünkü dinleme dakikaları",
   "overview.ai": "Bugünkü yapay zekâ soruları",
