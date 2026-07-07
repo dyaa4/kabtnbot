@@ -34,6 +34,11 @@ export interface DiscordRest {
 
 const API = 'https://discord.com/api/v10';
 
+// Safety bound on paginated member fetches (20 pages of 1000). Covers the vast
+// majority of guilds; beyond it, the growth chart's daily snapshots (bot-side,
+// size-independent) remain the accurate source.
+const MAX_MEMBERS_FETCH = 20_000;
+
 export class DiscordAuthError extends Error {
   constructor() {
     super('DISCORD_AUTH_REVOKED');
@@ -117,15 +122,30 @@ export function createDiscordRest(): DiscordRest {
     async getMember(guildId, userId) {
       return discordJson(`${API}/guilds/${guildId}/members/${userId}`, { headers: bot }, true);
     },
-    async listMembers(guildId, limit = 1000) {
-      const capped = Math.min(limit, 1000);
-      const members = await discordJson<{ user: { id: string; username: string; avatar: string | null }; joined_at: string }[]>(
-        `${API}/guilds/${guildId}/members?limit=${capped}`,
-        { headers: bot },
-        true,
-      );
-      if (!members) return [];
-      return members.map((m) => ({ id: m.user.id, username: m.user.username, avatar: m.user.avatar, joined_at: m.joined_at }));
+    async listMembers(guildId, limit = MAX_MEMBERS_FETCH) {
+      // Discord returns members in ascending user-id order, max 1000 per page, so
+      // the NEWEST members sit on the LAST page. A single ?limit=1000 request only
+      // returns the OLDEST 1000 — on servers >1000 members that hides every recent
+      // join, which flatlines the growth chart and corrupts newMembers/joinedRecent.
+      // Paginate with ?after=<lastId> until a short page; `limit` bounds the total
+      // so an enormous guild can't spin unbounded.
+      const out: DiscordMember[] = [];
+      let after = '0';
+      while (out.length < limit) {
+        const page = await discordJson<{ user: { id: string; username: string; avatar: string | null }; joined_at: string }[]>(
+          `${API}/guilds/${guildId}/members?limit=1000&after=${after}`,
+          { headers: bot },
+          true,
+        );
+        if (!page || page.length === 0) break;
+        for (const m of page) out.push({ id: m.user.id, username: m.user.username, avatar: m.user.avatar, joined_at: m.joined_at });
+        if (page.length < 1000) break;
+        after = page[page.length - 1].user.id;
+      }
+      if (out.length >= limit) {
+        console.warn(`[discord-rest] listMembers(${guildId}) hit the ${limit} cap; members beyond it are omitted`);
+      }
+      return out;
     },
     async listTextChannels(guildId) {
       const channels = await discordJson<{ id: string; name: string; type: number }[]>(
