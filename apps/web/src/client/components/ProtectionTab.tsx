@@ -19,6 +19,7 @@ function splitList(raw: string): string[] {
 const ProtectionForm = z.object({
   enabled: z.boolean(),
   voice_moderation: z.boolean(),
+  voice_kick_immediately: z.boolean(),
   text_protection: z.boolean(),
   text_timeout: z.boolean(),
   custom_words: z.string(),
@@ -32,6 +33,7 @@ interface GuildConfigResp {
   protection: {
     enabled: boolean;
     voice_moderation: boolean;
+    voice_kick_immediately: boolean;
     text_protection: boolean;
     text_timeout: boolean;
     custom_words: string[];
@@ -65,6 +67,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
       form.reset({
         enabled: cfg.data.protection.enabled,
         voice_moderation: cfg.data.protection.voice_moderation,
+        voice_kick_immediately: cfg.data.protection.voice_kick_immediately,
         text_protection: cfg.data.protection.text_protection,
         text_timeout: cfg.data.protection.text_timeout,
         custom_words: cfg.data.protection.custom_words.join('\n'),
@@ -83,6 +86,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
       protection: {
         enabled: v.enabled,
         voice_moderation: v.voice_moderation,
+        voice_kick_immediately: v.voice_kick_immediately,
         text_protection: v.text_protection,
         text_timeout: v.text_timeout,
         custom_words: splitList(v.custom_words),
@@ -109,6 +113,11 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
           <span>{t('protection.voiceModeration')}</span>
         </label>
         <p className="mb-3 ms-6 text-xs text-slate-500">{t('protection.voiceModeration.hint')}</p>
+        <label className="mb-1 ms-6 flex items-center gap-2">
+          <input type="checkbox" {...form.register('voice_kick_immediately')} />
+          <span>{t('protection.voiceKickImmediate')}</span>
+        </label>
+        <p className="mb-3 ms-12 text-xs text-slate-500">{t('protection.voiceKickImmediate.hint')}</p>
         <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...form.register('text_protection')} />
           <span>{t('protection.textProtection')}</span>

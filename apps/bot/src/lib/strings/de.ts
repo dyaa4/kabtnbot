@@ -57,6 +57,7 @@ export const de = {
   textDeletedTimeout: '{user} deine Nachricht wurde gelöscht ({reason}) und du wurdest wegen Wiederholung für {minutes} Min. stummgeschaltet.',
   textLogDeleted: '🛡️ Nachricht von {user} in {channel} gelöscht — Grund: {reason}',
   textLogTimeoutSuffix: ' — ⏳ Timeout {minutes} Min. (Verstoß Nr. {strike})',
+  voiceWarnNotice: '⚠️ Warnung {user}: Achte auf deine Sprache. Bei Wiederholung wirst du aus dem Sprachkanal entfernt.',
   voiceKickedNotice: '🚫 {user} wurde wegen unangemessener Sprache aus dem Sprachkanal entfernt.',
   voiceKickFailedNotice: '⚠️ Unangemessene Sprache von {user} erkannt, konnte aber nicht entfernen — die Bot-Rolle muss über der des Mitglieds stehen und „Mitglieder verschieben" braucht es auch.',
   summaryTitle: '📊 **Wochenrückblick — {server}**',

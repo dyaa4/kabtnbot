@@ -57,6 +57,7 @@ export const ru = {
   textDeletedTimeout: '{user} твоё сообщение удалено ({reason}), и за повтор ты получил таймаут на {minutes} мин.',
   textLogDeleted: '🛡️ Удалено сообщение от {user} в {channel} — причина: {reason}',
   textLogTimeoutSuffix: ' — ⏳ таймаут {minutes} мин (нарушение №{strike})',
+  voiceWarnNotice: '⚠️ Предупреждение {user}: следи за словами. При повторе будешь удалён из голосового канала.',
   voiceKickedNotice: '🚫 {user} удалён из голосового канала за недопустимые выражения.',
   voiceKickFailedNotice: '⚠️ Обнаружены недопустимые выражения от {user}, но удалить не удалось — роль бота должна быть выше, и нужно право «Перемещать участников».',
   summaryTitle: '📊 **Итоги недели — {server}**',

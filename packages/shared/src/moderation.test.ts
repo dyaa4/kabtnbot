@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeText, matchesProfanity, scanMessage } from './moderation.js';
+import { normalizeText, matchesProfanity, findProfanity, scanMessage } from './moderation.js';
 
 describe('normalizeText', () => {
   it('lowercases, strips diacritics, collapses elongation', () => {
@@ -97,6 +97,18 @@ describe('matchesProfanity', () => {
     // clean text in both languages stays clean
     expect(matchesProfanity('good game everyone', [])).toBe(false);
     expect(matchesProfanity('يعطيك العافية يا بطل', [])).toBe(false);
+  });
+});
+
+describe('findProfanity', () => {
+  it('returns the offending source word so moderation can log what tripped', () => {
+    expect(findProfanity('you are an idiot', [])).toBe('idiot');
+    expect(findProfanity('روح يا كلب', [])).toBe('كلب');
+    expect(findProfanity('this is badcustom', ['badcustom'])).toBe('badcustom');
+  });
+  it('returns null for clean text', () => {
+    expect(findProfanity('good game everyone', [])).toBeNull();
+    expect(findProfanity('يعطيك العافية يا بطل', [])).toBeNull();
   });
 });
 

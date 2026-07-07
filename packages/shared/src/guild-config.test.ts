@@ -24,6 +24,7 @@ describe('GuildConfigSchema', () => {
     expect(c.protection).toEqual({
       enabled: false,
       voice_moderation: true,
+      voice_kick_immediately: false,
       text_protection: false,
       text_timeout: false,
       custom_words: [],

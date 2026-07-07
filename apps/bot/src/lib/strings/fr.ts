@@ -57,6 +57,7 @@ export const fr = {
   textDeletedTimeout: '{user} ton message a été supprimé ({reason}) et tu es réduit au silence {minutes} min pour récidive.',
   textLogDeleted: '🛡️ Message de {user} supprimé dans {channel} — raison : {reason}',
   textLogTimeoutSuffix: ' — ⏳ silence {minutes} min (infraction n°{strike})',
+  voiceWarnNotice: '⚠️ Avertissement {user} : surveille ton langage. En cas de récidive, tu seras retiré du vocal.',
   voiceKickedNotice: '🚫 {user} a été retiré du vocal pour propos inappropriés.',
   voiceKickFailedNotice: "⚠️ Propos inappropriés détectés chez {user} mais impossible de le retirer — vérifie que le rôle du bot est au-dessus du sien et qu'il a la permission Déplacer des membres.",
   summaryTitle: '📊 **Récap de la semaine — {server}**',

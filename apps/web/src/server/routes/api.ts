@@ -33,6 +33,7 @@ const ConfigPatch = z
       .object({
         enabled: z.boolean().optional(),
         voice_moderation: z.boolean().optional(),
+        voice_kick_immediately: z.boolean().optional(),
         text_protection: z.boolean().optional(),
         text_timeout: z.boolean().optional(),
         custom_words: z.array(z.string().min(1).max(60)).max(200).optional(),

@@ -25,6 +25,9 @@ export const GuildConfigSchema = z.object({
     .object({
       enabled: z.boolean().default(false),
       voice_moderation: z.boolean().default(true),
+      // false = warn on the first profane word, kick only on a repeat (safer,
+      // resists noisy STT false positives). true = kick on the first hit.
+      voice_kick_immediately: z.boolean().default(false),
       text_protection: z.boolean().default(false),
       text_timeout: z.boolean().default(false),
       custom_words: z.array(z.string()).max(200).default([]),

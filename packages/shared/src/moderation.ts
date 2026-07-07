@@ -67,20 +67,30 @@ function boundaryHit(normalizedText: string, nw: string): boolean {
   );
 }
 
-export function matchesProfanity(text: string, customWords: string[]): boolean {
+// Returns the offending source word (built-in or custom) if the text is
+// profane, else null. Callers that only need a yes/no use matchesProfanity;
+// moderation logs the returned word so admins can see WHAT tripped a kick and
+// spot false positives (e.g. a benign gaming term matched by mistake).
+export function findProfanity(text: string, customWords: string[]): string | null {
   const n = normalizeText(text);
   // Built-in entries stay boundary-anchored: substring matching would flag
   // innocent same-root words (كس→مكسور, ass→class).
-  if (BUILTIN_PROFANITY.some((w) => boundaryHit(n, normalizeText(w)))) return true;
+  const builtin = BUILTIN_PROFANITY.find((w) => boundaryHit(n, normalizeText(w)));
+  if (builtin) return builtin;
   // Admin custom words match anywhere in the text (contains) — the admin chose
   // them deliberately, and the dashboard promises containment. Single-character
   // entries keep boundary matching so they can't blanket-match every word.
-  return customWords.some((w) => {
+  const custom = customWords.find((w) => {
     const nw = normalizeText(w);
     if (!nw) return false;
     if (nw.length < 2) return boundaryHit(n, nw);
     return new RegExp(bodyOf(nw), 'u').test(n);
   });
+  return custom ?? null;
+}
+
+export function matchesProfanity(text: string, customWords: string[]): boolean {
+  return findProfanity(text, customWords) !== null;
 }
 
 function escapeRe(s: string): string {

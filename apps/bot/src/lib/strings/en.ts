@@ -57,6 +57,7 @@ export const en = {
   textDeletedTimeout: '{user} your message was deleted ({reason}) and you were timed out for {minutes} min for repeating it.',
   textLogDeleted: '🛡️ Deleted a message from {user} in {channel} — reason: {reason}',
   textLogTimeoutSuffix: ' — ⏳ timeout {minutes} min (strike #{strike})',
+  voiceWarnNotice: '⚠️ Warning {user}: watch your language. Repeating inappropriate language will get you removed from voice.',
   voiceKickedNotice: '🚫 {user} was removed from voice for inappropriate language.',
   voiceKickFailedNotice: "⚠️ Detected inappropriate language from {user} but couldn't remove them — make sure the bot's role is above theirs and it has the Move Members permission.",
   summaryTitle: '📊 **Weekly recap — {server}**',

@@ -57,6 +57,7 @@ export const tr = {
   textDeletedTimeout: '{user} mesajın silindi ({reason}) ve tekrar ettiğin için {minutes} dk susturuldun.',
   textLogDeleted: '🛡️ {channel} kanalında {user} adlı üyenin mesajı silindi — sebep: {reason}',
   textLogTimeoutSuffix: ' — ⏳ {minutes} dk susturma ({strike}. ihlal)',
+  voiceWarnNotice: '⚠️ Uyarı {user}: diline dikkat et. Tekrarında ses kanalından çıkarılırsın.',
   voiceKickedNotice: '🚫 {user} uygunsuz sözler nedeniyle ses kanalından çıkarıldı.',
   voiceKickFailedNotice: '⚠️ {user} adlı üyeden uygunsuz sözler tespit edildi ama çıkarılamadı — bot rolünün üyeninkinden üstte olduğundan ve Üyeleri Taşı izninden emin ol.',
   summaryTitle: '📊 **Haftalık özet — {server}**',

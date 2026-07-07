@@ -64,6 +64,7 @@ export const ar = {
   textLogDeleted: '🛡️ حذف رسالة من {user} في {channel} — السبب: {reason}',
   textLogTimeoutSuffix: ' — ⏳ إسكات {minutes} دقيقة (مخالفة رقم {strike})',
   // voice moderation
+  voiceWarnNotice: '⚠️ تحذير {user}: انتبه لألفاظك. تكرار الألفاظ غير اللائقة سيؤدي إلى إخراجك من الصوت.',
   voiceKickedNotice: '🚫 تم إخراج {user} من الصوت بسبب ألفاظ غير لائقة.',
   voiceKickFailedNotice: '⚠️ رصدت ألفاظاً من {user} لكن تعذّر إخراجه — تأكد أن رتبة البوت أعلى من رتبته ولديه صلاحية «نقل الأعضاء».',
   // weekly summary
