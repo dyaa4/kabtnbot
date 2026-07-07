@@ -17,4 +17,18 @@ describe('parseWakeWord', () => {
   it('returns null when no wake word', () => {
     expect(parseWakeWord('كيف الحال', 'يا بوت')).toBeNull();
   });
+
+  // Whisper spells the same wake word inconsistently; full normalization must
+  // fold those variants or the bot silently never answers.
+  it('matches across ta-marbuta / alef-maqsura variance', () => {
+    expect(parseWakeWord('يا كابتنه وزع الفرق', 'يا كابتنة')).toBe('وزع الفرق'); // ة↔ه
+    expect(parseWakeWord('يا مولي ساعد', 'يا مولى')).toBe('ساعد'); // ى↔ي
+  });
+  it('matches across alef-hamza and tatweel variance', () => {
+    expect(parseWakeWord('يا احمد اسكت', 'يا أحمد')).toBe('اسكت'); // أ↔ا
+    expect(parseWakeWord('يا كابتـن قف', 'يا كابتن')).toBe('قف'); // tatweel stripped
+  });
+  it('matches despite elongation (3+ repeated letters)', () => {
+    expect(parseWakeWord('يا كابتننننن وزع', 'يا كابتن')).toBe('وزع');
+  });
 });
