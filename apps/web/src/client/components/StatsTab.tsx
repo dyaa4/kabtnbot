@@ -105,11 +105,16 @@ export function StatsTab({ guildId }: { guildId: string }) {
   const mostActive = data?.topActive ?? [];
   const joinedRecent = data?.joinedRecent ?? [];
 
-  // The growth curve spans the whole server history, so its x-axis needs compact
-  // month/year ticks; the tooltip still shows the full date.
+  // The growth curve spans the whole server history: compact month/year ticks on
+  // the axis, a full readable date in the hover tooltip. Parse "YYYY-MM-DD" into a
+  // LOCAL date (not new Date(str), which treats it as UTC and can shift a day).
   const locale = lang === 'ar' ? 'ar' : 'en-GB';
-  const fmtAxisDate = (d: string) => new Date(d).toLocaleDateString(locale, { month: 'short', year: '2-digit' });
-  const fmtFullDate = (d: string) => new Date(d).toLocaleDateString(locale);
+  const parseDay = (d: string) => {
+    const [y, m, day] = d.split('-').map(Number);
+    return new Date(y, (m ?? 1) - 1, day ?? 1);
+  };
+  const fmtAxisDate = (d: string) => parseDay(d).toLocaleDateString(locale, { month: 'short', year: '2-digit' });
+  const fmtFullDate = (d: string) => parseDay(d).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <div className="grid gap-6">
@@ -177,7 +182,15 @@ export function StatsTab({ guildId }: { guildId: string }) {
             />
             <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
             <Tooltip {...TOOLTIP_PROPS} labelFormatter={fmtFullDate} />
-            <Line type="monotone" dataKey="member_count" stroke="#0891b2" strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+            <Line
+              type="monotone"
+              dataKey="member_count"
+              name={t('stats.members')}
+              stroke="#0891b2"
+              strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4 }}
+            />
           </LineChart>
         </ResponsiveContainer>
       </ChartCard>
