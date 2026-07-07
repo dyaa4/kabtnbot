@@ -133,15 +133,18 @@ export function StatsTab({ guildId }: { guildId: string }) {
       </div>
 
       <ChartCard title={t('stats.mostActive')} empty={mostActive.length === 0}>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={mostActive} layout="vertical">
+        {/* Height grows with the roster so bars aren't cramped; the wider, brighter
+            name axis shows full member names instead of clipping them. */}
+        <ResponsiveContainer width="100%" height={Math.max(220, mostActive.length * 40)}>
+          <BarChart data={mostActive} layout="vertical" margin={{ left: 8, right: 16 }}>
             <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
-            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
             <YAxis
               type="category"
               dataKey="name"
-              width={90}
-              tick={{ fill: '#64748b', fontSize: 11 }}
+              width={168}
+              interval={0}
+              tick={{ fill: '#cbd5e1', fontSize: 12 }}
               axisLine={false}
               tickLine={false}
             />
