@@ -19,13 +19,16 @@ function createGroqProvider(): AIProvider {
   return {
     name: 'groq',
     async generateResponse(prompt, opts) {
+      // Send the question as-is. An "<username> says:" wrapper leaks the
+      // (generic) username into the model's answer and mixes English framing
+      // into an Arabic turn — both degrade the reply.
       const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { role: 'system', content: opts.systemPrompt },
         ...(opts.history ?? []),
-        { role: 'user', content: `${opts.username} says: ${prompt}` },
+        { role: 'user', content: prompt },
       ];
       const completion = await groq.chat.completions.create({
-        model: config.GROQ_MODEL, messages, max_tokens: 1024,
+        model: config.GROQ_MODEL, messages, max_tokens: 1024, temperature: 0.6,
       });
       return completion.choices[0]?.message?.content || '';
     },
@@ -48,7 +51,7 @@ function createGeminiProvider(): AIProvider {
           })),
         ],
       });
-      const result = await chat.sendMessage(`${opts.username} says: ${prompt}`);
+      const result = await chat.sendMessage(prompt);
       return result.response.text();
     },
   };

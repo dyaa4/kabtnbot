@@ -15,7 +15,9 @@ const Env = z.object({
   DISCORD_GUILD_ID: z.string().optional().default(''),
   MONGODB_URI: z.string().min(1),
   GROQ_API_KEY: z.string().optional().default(''),
-  GROQ_MODEL: z.string().optional().default('llama-3.1-8b-instant'),
+  // 8b-instant produces broken, incoherent Arabic (esp. colloquial dialects);
+  // 70b-versatile is far stronger at Arabic and still fast on Groq. See voice-ai.
+  GROQ_MODEL: z.string().optional().default('llama-3.3-70b-versatile'),
   GEMINI_API_KEY: z.string().optional().default(''),
   ELEVENLABS_API_KEY: z.string().optional().default(''),
   ELEVENLABS_VOICE_ID: z.string().optional().default('21m00Tcm4TlvDq8ikWAM'),
