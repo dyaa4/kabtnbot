@@ -117,6 +117,20 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  router.get('/guilds/:guildId/info', guard, async (req, res, next) => {
+    try {
+      const guildId = req.params.guildId;
+      const info = await statsCached(`info:${guildId}`, () => rest.getGuildInfo(guildId));
+      if (!info) {
+        apiError(res, 404, 'NOT_FOUND', 'guild not found');
+        return;
+      }
+      res.json({ ...info, createdAt: snowflakeToDate(guildId) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get('/guilds/:guildId/channels', guard, async (req, res, next) => {
     try {
       res.json(await rest.listTextChannels(req.params.guildId));
@@ -203,6 +217,14 @@ function statsCached<T>(key: string, compute: () => Promise<T>): Promise<T> {
 
 function dateKeyOf(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+// A Discord snowflake encodes its creation time in the high bits: (id >> 22) + epoch.
+// Returns null for non-snowflake ids (e.g. test fixtures) so it never throws.
+const DISCORD_EPOCH = 1420070400000;
+function snowflakeToDate(id: string): string | null {
+  if (!/^\d+$/.test(id)) return null;
+  return new Date(Number(BigInt(id) >> 22n) + DISCORD_EPOCH).toISOString();
 }
 
 // Single source of truth for the window's boundary: must always equal fillDays(days)[0], i.e.

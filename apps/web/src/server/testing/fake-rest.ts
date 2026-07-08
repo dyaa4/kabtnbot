@@ -13,6 +13,10 @@ export class FakeDiscordRest implements DiscordRest {
   voiceChannels = new Map<string, { id: string; name: string }[]>();
   emojis = new Map<string, { id: string; name: string; animated: boolean }[]>();
   guildCounts = new Map<string, number>();
+  guildInfo = new Map<
+    string,
+    { name: string; icon: string | null; memberCount: number | null; onlineCount: number | null; boostTier: number; boostCount: number }
+  >();
   deletedChannels: string[] = [];
   clearedMessages: string[] = [];
   revokedTokens = new Set<string>();
@@ -63,6 +67,9 @@ export class FakeDiscordRest implements DiscordRest {
   async getGuildCounts(guildId: string) {
     const count = this.guildCounts.get(guildId);
     return count === undefined ? null : { approximate_member_count: count };
+  }
+  async getGuildInfo(guildId: string) {
+    return this.guildInfo.get(guildId) ?? null;
   }
   async deleteChannel(channelId: string) {
     this.deletedChannels.push(channelId);

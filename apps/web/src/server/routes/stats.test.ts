@@ -197,3 +197,43 @@ describe('stats route', () => {
     expect(res.body.totals.newMembers).toBe(0); // joined before the window
   });
 });
+
+describe('guild info route', () => {
+  beforeEach(() => {
+    clearAccessCache();
+    clearStatsCache();
+  });
+
+  // Discord's documented example snowflake resolves to 2016 — proves the id-derived date.
+  const SNOWFLAKE = '175928847299117063';
+
+  it('returns server info plus a snowflake-derived creation date', async () => {
+    const { app, rest, cookie } = setup(SNOWFLAKE);
+    rest.guildInfo.set(SNOWFLAKE, {
+      name: 'Kabtn HQ',
+      icon: 'abc123',
+      memberCount: 157,
+      onlineCount: 42,
+      boostTier: 2,
+      boostCount: 9,
+    });
+
+    const res = await request(app).get(`/api/guilds/${SNOWFLAKE}/info`).set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      name: 'Kabtn HQ',
+      icon: 'abc123',
+      memberCount: 157,
+      onlineCount: 42,
+      boostTier: 2,
+      boostCount: 9,
+    });
+    expect(new Date(res.body.createdAt).getUTCFullYear()).toBe(2016);
+  });
+
+  it('404 when the bot cannot see the guild', async () => {
+    const { app, cookie } = setup(SNOWFLAKE); // no guildInfo set -> getGuildInfo returns null
+    const res = await request(app).get(`/api/guilds/${SNOWFLAKE}/info`).set('Cookie', cookie);
+    expect(res.status).toBe(404);
+  });
+});

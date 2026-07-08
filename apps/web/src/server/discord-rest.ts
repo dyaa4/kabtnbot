@@ -25,6 +25,14 @@ export interface DiscordRest {
   listVoiceChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   listEmojis(guildId: string): Promise<{ id: string; name: string; animated: boolean }[]>;
   getGuildCounts(guildId: string): Promise<{ approximate_member_count: number } | null>;
+  getGuildInfo(guildId: string): Promise<{
+    name: string;
+    icon: string | null;
+    memberCount: number | null;
+    onlineCount: number | null;
+    boostTier: number;
+    boostCount: number;
+  } | null>;
   deleteChannel(channelId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
   getBotMember(guildId: string): Promise<BotMember | null>;
@@ -195,6 +203,27 @@ export function createDiscordRest(): DiscordRest {
     },
     async getGuildCounts(guildId) {
       return discordJson(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);
+    },
+    async getGuildInfo(guildId) {
+      // One call with_counts returns name/icon, live member + presence counts and
+      // boost tier/count — everything the Overview server card needs.
+      const g = await discordJson<{
+        name: string;
+        icon: string | null;
+        approximate_member_count?: number;
+        approximate_presence_count?: number;
+        premium_tier?: number;
+        premium_subscription_count?: number;
+      }>(`${API}/guilds/${guildId}?with_counts=true`, { headers: bot }, true);
+      if (!g) return null;
+      return {
+        name: g.name,
+        icon: g.icon,
+        memberCount: g.approximate_member_count ?? null,
+        onlineCount: g.approximate_presence_count ?? null,
+        boostTier: g.premium_tier ?? 0,
+        boostCount: g.premium_subscription_count ?? 0,
+      };
     },
     async deleteChannel(channelId) {
       await fetch(`${API}/channels/${channelId}`, { method: 'DELETE', headers: bot }).catch(() => {});
