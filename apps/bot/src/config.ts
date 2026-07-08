@@ -21,7 +21,7 @@ const Env = z.object({
   // Groq Orpheus TTS (Arabic Saudi). One GROQ_API_KEY now covers STT + chat + TTS.
   // Voices: Abdullah, Fahad, Sultan (m); Lulwa, Noura, Aisha (f).
   GROQ_TTS_MODEL: z.string().optional().default('canopylabs/orpheus-arabic-saudi'),
-  GROQ_TTS_VOICE: z.string().optional().default('Fahad'),
+  GROQ_TTS_VOICE: z.string().optional().default('fahad'),
   GEMINI_API_KEY: z.string().optional().default(''),
   // ElevenLabs is now an OPTIONAL fallback — only used if a key is still set.
   // Leave all three empty to run TTS purely on Groq Orpheus.

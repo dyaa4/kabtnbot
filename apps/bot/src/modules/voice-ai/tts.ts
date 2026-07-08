@@ -85,7 +85,13 @@ async function synthesizeGroq(text: string): Promise<Buffer> {
     const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
       method: 'POST',
       headers: { Authorization: `Bearer ${config.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: config.GROQ_TTS_MODEL, voice: config.GROQ_TTS_VOICE, input, response_format: 'wav' }),
+      // Groq/OpenAI-compatible TTS expects lowercase voice ids (e.g. "fahad").
+      body: JSON.stringify({
+        model: config.GROQ_TTS_MODEL,
+        voice: config.GROQ_TTS_VOICE.toLowerCase(),
+        input,
+        response_format: 'wav',
+      }),
     });
     if (!resp.ok) throw new Error(`Groq TTS ${resp.status}: ${await resp.text().catch(() => '')}`);
     const parsed = wavPcm(Buffer.from(await resp.arrayBuffer()));
