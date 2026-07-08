@@ -18,7 +18,13 @@ const Env = z.object({
   // 8b-instant produces broken, incoherent Arabic (esp. colloquial dialects);
   // 70b-versatile is far stronger at Arabic and still fast on Groq. See voice-ai.
   GROQ_MODEL: z.string().optional().default('llama-3.3-70b-versatile'),
+  // Groq Orpheus TTS (Arabic Saudi). One GROQ_API_KEY now covers STT + chat + TTS.
+  // Voices: Abdullah, Fahad, Sultan (m); Lulwa, Noura, Aisha (f).
+  GROQ_TTS_MODEL: z.string().optional().default('canopylabs/orpheus-arabic-saudi'),
+  GROQ_TTS_VOICE: z.string().optional().default('Fahad'),
   GEMINI_API_KEY: z.string().optional().default(''),
+  // ElevenLabs is now an OPTIONAL fallback — only used if a key is still set.
+  // Leave all three empty to run TTS purely on Groq Orpheus.
   ELEVENLABS_API_KEY: z.string().optional().default(''),
   ELEVENLABS_VOICE_ID: z.string().optional().default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().optional().default('eleven_flash_v2_5'),
