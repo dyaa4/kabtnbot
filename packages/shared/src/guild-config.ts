@@ -3,6 +3,11 @@ import { z } from 'zod';
 export const DIALECTS = ['gulf', 'syrian', 'egyptian', 'msa'] as const;
 export type Dialect = (typeof DIALECTS)[number];
 
+// Groq Orpheus (Arabic Saudi) TTS voices. Male: fahad, abdullah, sultan.
+// Female: noura, lulwa, aisha. Lowercase to match Groq's voice ids.
+export const TTS_VOICES = ['fahad', 'abdullah', 'sultan', 'noura', 'lulwa', 'aisha'] as const;
+export type TtsVoice = (typeof TTS_VOICES)[number];
+
 // Bot system-message languages. The voice assistant itself stays Arabic
 // (dialects above) — this only drives moderation notices, welcome/farewell
 // defaults, command replies and the weekly summary.
@@ -17,6 +22,7 @@ export const GuildConfigSchema = z.object({
       enabled: z.boolean().default(true),
       wake_word: z.string().min(2).max(30).default('يا كابتن'),
       dialect: z.enum(DIALECTS).default('gulf'),
+      tts_voice: z.enum(TTS_VOICES).default('fahad'),
       allowed_channel_ids: z.array(z.string()).default([]),
       personality_enabled: z.boolean().default(false),
     })

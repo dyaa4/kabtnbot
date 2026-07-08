@@ -20,6 +20,7 @@ describe('GuildConfigSchema', () => {
     const c = GuildConfigSchema.parse({});
     expect(c.admin_role_id).toBeNull();
     expect(c.voice.wake_word).toBe('يا كابتن');
+    expect(c.voice.tts_voice).toBe('fahad');
     expect(c.voice.personality_enabled).toBe(false);
     expect(c.protection).toEqual({
       enabled: false,

@@ -76,7 +76,7 @@ export function wavPcm(buf: Buffer): { pcm: Buffer; sampleRate: number; channels
   return { pcm, sampleRate, channels };
 }
 
-async function synthesizeGroq(text: string): Promise<Buffer> {
+async function synthesizeGroq(text: string, voice?: string): Promise<Buffer> {
   const chunks = chunkText(text, GROQ_TTS_MAX_CHARS);
   const pcmParts: Buffer[] = [];
   let sampleRate = 24000;
@@ -85,10 +85,11 @@ async function synthesizeGroq(text: string): Promise<Buffer> {
     const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
       method: 'POST',
       headers: { Authorization: `Bearer ${config.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
+      // Per-guild voice (from settings) wins; env is the fallback default.
       // Groq/OpenAI-compatible TTS expects lowercase voice ids (e.g. "fahad").
       body: JSON.stringify({
         model: config.GROQ_TTS_MODEL,
-        voice: config.GROQ_TTS_VOICE.toLowerCase(),
+        voice: (voice ?? config.GROQ_TTS_VOICE).toLowerCase(),
         input,
         response_format: 'wav',
       }),
@@ -123,10 +124,10 @@ async function synthesizeElevenLabs(text: string): Promise<Buffer> {
  * single GROQ_API_KEY covers STT + chat + TTS. ElevenLabs is used only as an
  * optional fallback when its key is still configured (e.g. during the switch).
  */
-export async function synthesizeSpeech(text: string): Promise<Buffer> {
+export async function synthesizeSpeech(text: string, voice?: string): Promise<Buffer> {
   if (config.GROQ_API_KEY) {
     try {
-      return await synthesizeGroq(text);
+      return await synthesizeGroq(text, voice);
     } catch (e) {
       console.error('[TTS] Groq Orpheus failed:', (e as Error)?.message ?? e);
       if (!config.ELEVENLABS_API_KEY) throw e;

@@ -104,6 +104,8 @@
   "settings.voice.wakeWord.hint": "الكلمة التي ينتبه لها البوت في الفويس قبل طلبك — مثال: «يا كابتن السرعة».",
   "settings.voice.dialect": "اللهجة",
   "settings.voice.dialect.hint": "لهجة الردود الصوتية للبوت.",
+  "settings.voice.ttsVoice": "صوت البوت",
+  "settings.voice.ttsVoice.hint": "الصوت الذي ينطق به البوت (♂ رجل، ♀ امرأة).",
   "settings.voice.allowedChannels": "الرومات الصوتية المسموحة",
   "settings.voice.allowedChannels.hint": "الرومات التي يُسمح للبوت بدخولها عبر /join — اترك الكل بدون تحديد للسماح بجميع الرومات.",
   "settings.voice.noVoiceChannels": "لا توجد رومات صوتية في السيرفر.",

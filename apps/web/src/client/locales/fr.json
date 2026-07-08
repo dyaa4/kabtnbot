@@ -104,6 +104,8 @@
   "settings.voice.wakeWord.hint": "Le mot que le bot écoute en vocal avant ta demande — p. ex. \"يا كابتن السرعة\".",
   "settings.voice.dialect": "Dialecte",
   "settings.voice.dialect.hint": "Le dialecte utilisé pour les réponses parlées du bot.",
+  "settings.voice.ttsVoice": "Voix du bot",
+  "settings.voice.ttsVoice.hint": "La voix avec laquelle le bot parle (♂ homme, ♀ femme).",
   "settings.voice.allowedChannels": "Salons vocaux autorisés",
   "settings.voice.allowedChannels.hint": "Les salons vocaux que le bot peut rejoindre via /join — ne rien cocher autorise tous les salons.",
   "settings.voice.noVoiceChannels": "Aucun salon vocal sur ce serveur.",

@@ -7,6 +7,7 @@ import { Readable } from 'stream';
 import type { VoiceBasedChannel } from 'discord.js';
 import type OpusScript from 'opusscript';
 import { synthesizeSpeech } from './tts.js';
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
 export interface VoiceSession {
   guildId: string;
@@ -92,7 +93,8 @@ export function leaveGuildVoice(guildId: string): boolean {
 export async function playSpeech(guildId: string, text: string): Promise<void> {
   const session = sessions.get(guildId);
   if (!session) throw new Error('NOT_CONNECTED');
-  const buffer = await synthesizeSpeech(text);
+  const config = await getCachedGuildConfig(guildId);
+  const buffer = await synthesizeSpeech(text, config.voice.tts_voice);
   const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Arbitrary });
   session.player.play(resource);
 }

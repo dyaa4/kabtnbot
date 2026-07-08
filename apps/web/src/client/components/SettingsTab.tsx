@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DIALECTS, LANGUAGES } from '@gamebot/shared';
+import { DIALECTS, LANGUAGES, TTS_VOICES } from '@gamebot/shared';
 import { api, ApiError } from '../api.js';
 import { useI18n, LANG_NAMES } from '../i18n.js';
 import { BotProfileCard } from './BotProfileCard.js';
@@ -16,6 +16,7 @@ const VoiceForm = z.object({
   enabled: z.boolean(),
   wake_word: z.string().min(2).max(30),
   dialect: z.enum(DIALECTS),
+  tts_voice: z.enum(TTS_VOICES),
   personality_enabled: z.boolean(),
 });
 
@@ -28,6 +29,7 @@ interface GuildConfigResp {
     enabled: boolean;
     wake_word: string;
     dialect: (typeof DIALECTS)[number];
+    tts_voice: (typeof TTS_VOICES)[number];
     allowed_channel_ids: string[];
     personality_enabled: boolean;
   };
@@ -40,6 +42,16 @@ interface GuildConfigResp {
 function sameIds(a: string[], b: string[]): boolean {
   return a.length === b.length && [...a].sort().join(',') === [...b].sort().join(',');
 }
+
+// Romanized name + gender symbol — language-neutral, no per-voice translation needed.
+const TTS_VOICE_LABELS: Record<(typeof TTS_VOICES)[number], string> = {
+  fahad: 'Fahad ♂',
+  abdullah: 'Abdullah ♂',
+  sultan: 'Sultan ♂',
+  noura: 'Noura ♀',
+  lulwa: 'Lulwa ♀',
+  aisha: 'Aisha ♀',
+};
 
 export function SettingsTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
@@ -143,6 +155,20 @@ export function SettingsTab({ guildId }: { guildId: string }) {
             </select>
           </label>
           <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
+          <label className="mb-1 block">
+            <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.ttsVoice')}</span>
+            <select
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              {...voice.register('tts_voice')}
+            >
+              {TTS_VOICES.map((v) => (
+                <option key={v} value={v}>
+                  {TTS_VOICE_LABELS[v]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="mb-4 text-xs text-slate-500">{t('settings.voice.ttsVoice.hint')}</p>
           <label className="mb-1 flex items-center gap-2">
             <input type="checkbox" {...voice.register('personality_enabled')} />
             <span>{t('settings.personality')}</span>
