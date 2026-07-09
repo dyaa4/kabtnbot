@@ -36,9 +36,20 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
     selfDeaf: false,
   });
 
+  // Diagnostic: log every state transition so a failed connect tells us WHICH
+  // layer stalled. Stuck at `signalling` => gateway never delivered the voice
+  // server (intent/adapter). Stuck at `connecting` => UDP handshake / IP
+  // discovery never completed (host network, e.g. Railway blocking UDP).
+  let lastStatus: string = connection.state.status;
+  connection.on('stateChange', (oldState, newState) => {
+    lastStatus = newState.status;
+    console.log(`[Voice ${channel.guildId}] state ${oldState.status} -> ${newState.status}`);
+  });
+
   try {
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
   } catch {
+    console.error(`[Voice ${channel.guildId}] connect timed out; last status: ${lastStatus}`);
     connection.destroy();
     throw new Error('VOICE_CONNECT_FAILED');
   }

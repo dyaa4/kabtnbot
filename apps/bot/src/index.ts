@@ -1,3 +1,4 @@
+import { generateDependencyReport } from '@discordjs/voice';
 import { connectDb, disconnectDb, clearBotHeartbeat } from '@gamebot/db';
 import { config } from './config.js';
 import { createClient } from './client.js';
@@ -12,6 +13,10 @@ import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/res
 
 async function main(): Promise<void> {
   registerProcessSafetyNets();
+  // Voice deps must load native (davey) + encryption (sodium) modules. On the
+  // Railway (Linux) image these can silently fail to resolve; the report tells
+  // us at a glance whether the runtime actually has what a voice connect needs.
+  console.log('[Voice] Dependency report:\n' + generateDependencyReport());
   await connectDb(config.MONGODB_URI);
   console.log('[DB] Connected');
   const client = createClient();
