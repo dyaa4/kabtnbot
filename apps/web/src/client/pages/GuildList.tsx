@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
+import { GuildListSkeleton } from '../components/Skeleton.js';
 
 interface Guild {
   id: string;
@@ -17,7 +18,7 @@ export function GuildList() {
   return (
     <Layout>
       <h1 className="mb-6 text-2xl font-bold">{t('guilds.title')}</h1>
-      {guilds.isLoading && <p className="text-slate-400">{t('loading')}</p>}
+      {guilds.isLoading && <GuildListSkeleton />}
       {guilds.data?.length === 0 && <p className="text-slate-400">{t('guilds.empty')}</p>}
       <div className="grid gap-4 sm:grid-cols-3">
         {guilds.data?.map((g) => (

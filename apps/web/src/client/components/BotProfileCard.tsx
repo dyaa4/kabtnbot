@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { CardSkeleton } from './Skeleton.js';
 
 interface BotProfileResp {
   nickname: string | null;
@@ -58,7 +59,7 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
     },
   });
 
-  if (profile.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (profile.isLoading) return <CardSkeleton />;
 
   const nickError =
     saveNick.error instanceof ApiError && saveNick.error.code === 'MISSING_PERMISSIONS'

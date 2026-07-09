@@ -7,6 +7,7 @@ import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { ChannelSelect } from './ChannelSelect.js';
 import { SaveBar } from './SaveBar.js';
+import { FormSkeleton } from './Skeleton.js';
 import { useToast } from './Toast.js';
 
 function splitList(raw: string): string[] {
@@ -78,7 +79,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.data]);
 
-  if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (cfg.isLoading) return <FormSkeleton sections={1} />;
 
   const onSubmit = (v: ProtectionValues) => {
     const logChannelId = v.log_channel_id.trim();

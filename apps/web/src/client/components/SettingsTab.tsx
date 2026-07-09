@@ -10,6 +10,7 @@ import { BotProfileCard } from './BotProfileCard.js';
 import { ChannelSelect } from './ChannelSelect.js';
 import { RoleSelect } from './RoleSelect.js';
 import { SaveBar } from './SaveBar.js';
+import { FormSkeleton } from './Skeleton.js';
 import { useToast } from './Toast.js';
 
 const VoiceForm = z.object({
@@ -99,7 +100,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
     setAllowedVoiceIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
-  if (cfg.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (cfg.isLoading) return <FormSkeleton sections={4} />;
 
   const base = cfg.data;
   const dirty =

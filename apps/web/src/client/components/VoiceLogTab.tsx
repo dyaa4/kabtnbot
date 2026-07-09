@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { VoiceLogSkeleton } from './Skeleton.js';
 
 interface VoiceLogEntry {
   user_id: string;
@@ -37,7 +38,7 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
     refetchInterval: 30_000,
   });
 
-  if (log.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (log.isLoading) return <VoiceLogSkeleton />;
   if (!log.data) return <p className="text-slate-400">{t('error.generic')}</p>;
 
   return (

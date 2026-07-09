@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { StatsSkeleton } from './Skeleton.js';
 
 interface SeriesPoint {
   date: string;
@@ -96,7 +97,7 @@ export function StatsTab({ guildId }: { guildId: string }) {
     queryFn: () => api<StatsResp>(`/api/guilds/${guildId}/stats?days=${days}`),
   });
 
-  if (stats.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (stats.isLoading) return <StatsSkeleton />;
 
   const data = stats.data;
   const memberSeries = data?.memberSeries ?? [];

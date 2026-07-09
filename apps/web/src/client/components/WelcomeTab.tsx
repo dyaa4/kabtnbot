@@ -6,6 +6,7 @@ import { ChannelSelect } from './ChannelSelect.js';
 import { MessageEditor } from './MessageEditor.js';
 import { RoleSelect } from './RoleSelect.js';
 import { SaveBar } from './SaveBar.js';
+import { FormSkeleton } from './Skeleton.js';
 import { useToast } from './Toast.js';
 
 interface GuildConfigResp {
@@ -171,7 +172,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
     return () => el.removeEventListener('wheel', onWheel);
   }, [hasBanner]);
 
-  if (cfg.isLoading || banner.isLoading) return <p className="text-slate-400">{t('loading')}</p>;
+  if (cfg.isLoading || banner.isLoading) return <FormSkeleton sections={2} />;
 
   const updateFromPointer = (clientX: number, clientY: number) => {
     const rect = boxRef.current?.getBoundingClientRect();
