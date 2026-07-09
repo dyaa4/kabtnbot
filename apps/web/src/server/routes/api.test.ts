@@ -79,6 +79,30 @@ describe('api routes', () => {
     expect((await request(app).get('/api/guilds/gX/config').set('Cookie', cookie)).status).toBe(403);
   });
 
+  it('dedupes concurrent access checks into one getMyGuilds call (no 429 stampede)', async () => {
+    const { app, cookie, rest } = setup();
+    // A dashboard page load fires many guarded endpoints at once. Hold the
+    // upstream identity lookup open so the requests genuinely overlap, and count
+    // how many actually reach Discord's tightly rate-limited /users/@me/guilds.
+    let calls = 0;
+    const orig = rest.getMyGuilds.bind(rest);
+    rest.getMyGuilds = async (token: string) => {
+      calls++;
+      await new Promise((r) => setTimeout(r, 10));
+      return orig(token);
+    };
+    const paths = [
+      '/api/guilds/g1/config',
+      '/api/guilds/g1/channels',
+      '/api/guilds/g1/roles',
+      '/api/guilds/g1/voice-channels',
+      '/api/guilds/g1/emojis',
+    ];
+    const results = await Promise.all(paths.map((p) => request(app).get(p).set('Cookie', cookie)));
+    for (const r of results) expect(r.status).not.toBe(403);
+    expect(calls).toBe(1);
+  });
+
   it('reads and patches config; invalid patch → 400; premium not patchable', async () => {
     const { app, cookie } = setup();
     const before = await request(app).get('/api/guilds/g1/config').set('Cookie', cookie);

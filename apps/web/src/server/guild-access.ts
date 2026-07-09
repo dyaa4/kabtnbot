@@ -14,19 +14,28 @@ export interface EligibleGuild {
   icon: string | null;
 }
 
-const cache = new Map<string, { at: number; value: unknown }>();
+const cache = new Map<string, { at: number; value: Promise<unknown> }>();
 
 export function clearAccessCache(): void {
   cache.clear();
 }
 
+// Cache the in-flight PROMISE, not just its resolved value. A dashboard page load
+// fires many guarded endpoints at once; storing the value only after compute()
+// resolves lets every concurrent cold-cache request run compute() in lockstep,
+// stampeding Discord's tightly rate-limited /users/@me/guilds into a 429. Storing
+// the promise immediately collapses that burst onto a single upstream call.
 function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < TTL_MS) return Promise.resolve(hit.value as T);
-  return compute().then((value) => {
-    cache.set(key, { at: Date.now(), value });
-    return value;
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.value as Promise<T>;
+  const value = compute();
+  cache.set(key, { at: Date.now(), value });
+  // Don't let a rejection stick for the whole TTL — evict so the next request
+  // retries instead of replaying the cached error.
+  void value.catch(() => {
+    if (cache.get(key)?.value === value) cache.delete(key);
   });
+  return value;
 }
 
 function hasManagePermission(permissions: string): boolean {
