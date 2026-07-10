@@ -111,3 +111,40 @@ export function VoiceLogSkeleton() {
     </div>
   );
 }
+
+/** Server info card — icon, name and four stat tiles (mirrors Overview's ServerInfoCard). */
+export function ServerInfoSkeleton() {
+  return (
+    <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+      <div className="mb-5 flex items-center gap-4">
+        <Skeleton className="h-14 w-14 rounded-2xl" />
+        <Skeleton className="h-6 w-48" />
+      </div>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {repeat(4, (i) => (
+          <div key={i}>
+            <Skeleton className="h-6 w-16" />
+            <Skeleton className="mt-1.5 h-3 w-20" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Two progress bars in a card — mirrors Overview's daily-usage panel. */
+export function UsageSkeleton() {
+  return (
+    <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+      {repeat(2, (i) => (
+        <div key={i} className="mb-4">
+          <div className="mb-1 flex justify-between">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+          <Skeleton className="h-2 w-full rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}

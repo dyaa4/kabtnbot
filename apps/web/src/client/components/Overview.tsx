@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { GettingStarted } from './GettingStarted.js';
+import { ServerInfoSkeleton, UsageSkeleton } from './Skeleton.js';
 
 interface Usage {
   listen_seconds: number;
@@ -52,6 +53,7 @@ function InfoStat({ label, value }: { label: string; value: string }) {
 function ServerInfoCard({ guildId }: { guildId: string }) {
   const { t, lang } = useI18n();
   const info = useQuery({ queryKey: ['guild-info', guildId], queryFn: () => api<ServerInfo>(`/api/guilds/${guildId}/info`) });
+  if (info.isLoading) return <ServerInfoSkeleton />;
   if (!info.data) return null;
   const s = info.data;
 
@@ -98,11 +100,15 @@ export function Overview({ guildId }: { guildId: string }) {
     <div>
       <ServerInfoCard guildId={guildId} />
       <GettingStarted guildId={guildId} />
-      {usage.data && (
-        <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-          <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_day} />
-          <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_day} />
-        </div>
+      {usage.isLoading ? (
+        <UsageSkeleton />
+      ) : (
+        usage.data && (
+          <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+            <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_day} />
+            <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_day} />
+          </div>
+        )
       )}
     </div>
   );
