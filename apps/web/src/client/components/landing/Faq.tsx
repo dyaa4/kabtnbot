@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n.js';
 import { SectionHeading } from './SectionHeading.js';
 
-const QUESTIONS = ['q1', 'q2', 'q3', 'q4', 'q5'] as const;
+const QUESTIONS = ['q1', 'q2', 'q3', 'q4', 'q5', 'q6', 'q7'] as const;
 
 export function Faq() {
   const { t } = useI18n();
