@@ -32,8 +32,13 @@ const Env = z.object({
   // only if a guild's text protection is actually enabled AND the Message Content Intent
   // is turned on in the Discord Developer Portal. See README.
   ENABLE_TEXT_PROTECTION: z.string().optional().default(''),
+  // Same privileged-intent guard for the /summarize ("Catch me up") command,
+  // which must read message content. Set 'true' only with the Message Content
+  // Intent enabled in the Discord Developer Portal.
+  ENABLE_SUMMARY: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
 
 export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION === 'true';
+export const summaryEnabled = config.ENABLE_SUMMARY === 'true';

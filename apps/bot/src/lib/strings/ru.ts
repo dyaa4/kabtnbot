@@ -75,4 +75,7 @@ export const ru = {
   leaderboardTitle: '🏆 Таблица лидеров',
   leaderboardLine: '{medal} <@{user}> — уровень {level} • {xp} XP',
   leaderboardEmpty: 'Данных об уровнях пока нет. Начните общаться!',
+  // AI channel summary (catch me up)
+  summaryEmpty: 'В этом канале недостаточно сообщений для сводки.',
+  summaryHeader: '📝 **Сводка последних сообщений:**',
 } as const satisfies Record<keyof typeof ar, string>;

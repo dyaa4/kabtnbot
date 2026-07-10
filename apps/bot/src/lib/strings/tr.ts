@@ -75,4 +75,7 @@ export const tr = {
   leaderboardTitle: '🏆 Sıralama',
   leaderboardLine: '{medal} <@{user}> — seviye {level} • {xp} XP',
   leaderboardEmpty: 'Henüz seviye verisi yok. Sohbete başlayın!',
+  // AI channel summary (catch me up)
+  summaryEmpty: 'Bu kanalda özetlenecek yeterli mesaj yok.',
+  summaryHeader: '📝 **Son mesajların özeti:**',
 } as const satisfies Record<keyof typeof ar, string>;

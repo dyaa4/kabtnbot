@@ -75,4 +75,7 @@ export const de = {
   leaderboardTitle: '🏆 Rangliste',
   leaderboardLine: '{medal} <@{user}> — Level {level} • {xp} XP',
   leaderboardEmpty: 'Noch keine Level-Daten. Schreibt im Chat!',
+  // AI channel summary (catch me up)
+  summaryEmpty: 'Nicht genug Nachrichten zum Zusammenfassen in diesem Channel.',
+  summaryHeader: '📝 **Zusammenfassung der letzten Nachrichten:**',
 } as const satisfies Record<keyof typeof ar, string>;

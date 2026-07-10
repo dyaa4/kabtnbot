@@ -12,6 +12,7 @@ import { welcomeTestCommand } from './welcome-test.js';
 import { rolesCommand } from './roles.js';
 import { rankCommand } from './rank.js';
 import { leaderboardCommand } from './leaderboard.js';
+import { summarizeCommand } from './summarize.js';
 
 export interface Command {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandsOnlyBuilder;
@@ -22,7 +23,7 @@ const commandMap = new Map<string, Command>();
 
 export function registerCommands(): Map<string, Command> {
   if (commandMap.size > 0) return commandMap;
-  const all: Command[] = [pingCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand, settingsCommand, welcomeTestCommand, rolesCommand, rankCommand, leaderboardCommand];
+  const all: Command[] = [pingCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand, settingsCommand, welcomeTestCommand, rolesCommand, rankCommand, leaderboardCommand, summarizeCommand];
   for (const cmd of all) commandMap.set(cmd.data.name, cmd);
   return commandMap;
 }

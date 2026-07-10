@@ -19,3 +19,13 @@ export function buildSystemPrompt(dialect: Dialect, guildName: string, opts: { c
   }
   return lines.join('\n');
 }
+
+/** System prompt for the /summarize command — text output, so short bullets are fine. */
+export function buildSummaryPrompt(dialect: Dialect, guildName: string): string {
+  return [
+    `أنت مساعد في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
+    DIALECT_RULES[dialect],
+    'لخّص المحادثة التالية بإيجاز في نقاط قصيرة: أهم المواضيع والقرارات والأحداث.',
+    'تجاهل الرسائل غير المهمة والتكرار. اكتب ملخصاً مفيداً في 3 إلى 6 أسطر كحد أقصى.',
+  ].join('\n');
+}

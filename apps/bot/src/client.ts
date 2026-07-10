@@ -1,5 +1,5 @@
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
-import { textProtectionEnabled } from './config.js';
+import { textProtectionEnabled, summaryEnabled } from './config.js';
 
 export function createClient(): Client {
   const intents = [
@@ -14,7 +14,7 @@ export function createClient(): Client {
   // Discord Developer Portal. Only request it when text protection is actually turned on
   // for this deploy (ENABLE_TEXT_PROTECTION=true) — the operator must also enable the
   // Message Content Intent in the portal in that case. See README.
-  if (textProtectionEnabled) intents.push(GatewayIntentBits.MessageContent);
+  if (textProtectionEnabled || summaryEnabled) intents.push(GatewayIntentBits.MessageContent);
 
   return new Client({
     intents,

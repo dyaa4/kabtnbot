@@ -83,4 +83,7 @@ export const ar = {
   leaderboardTitle: '🏆 المتصدرون',
   leaderboardLine: '{medal} <@{user}> — مستوى {level} • {xp} XP',
   leaderboardEmpty: 'ما فيه بيانات مستويات بعد. تكلموا في الشات!',
+  // AI channel summary (catch me up)
+  summaryEmpty: 'ما فيه رسائل كافية ألخصها في هذه القناة.',
+  summaryHeader: '📝 **ملخص آخر الرسائل:**',
 } as const;
