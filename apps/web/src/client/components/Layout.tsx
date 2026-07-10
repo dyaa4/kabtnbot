@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
 
   return (
-    <div className="min-h-screen">
+    <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-md">
         <Link
           to="/app"
@@ -73,7 +73,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </header>
-      <main className="mx-auto max-w-4xl px-6 py-8">{children}</main>
+      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">{children}</main>
+      <footer className="border-t border-white/10 px-6 py-6 text-sm text-slate-500">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-2">
+          <Link to="/terms" className="transition hover:text-cyan-300">{t('footer.terms')}</Link>
+          <Link to="/privacy" className="transition hover:text-cyan-300">{t('footer.privacy')}</Link>
+        </div>
+      </footer>
     </div>
   );
 }
