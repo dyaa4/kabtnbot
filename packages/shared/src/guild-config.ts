@@ -65,38 +65,6 @@ export const GuildConfigSchema = z.object({
       channel_id: z.string().nullable().default(null),
     })
     .default({}),
-  reaction_roles: z
-    .object({
-      enabled: z.boolean().default(false),
-      title: z.string().max(200).default(''),
-      // A single self-role button panel. `emoji` is a unicode emoji or a custom
-      // emoji id; null = no emoji. The bot posts these as buttons via /roles.
-      buttons: z
-        .array(
-          z.object({
-            label: z.string().min(1).max(80),
-            emoji: z.string().max(64).nullable().default(null),
-            role_id: z.string(),
-          }),
-        )
-        .max(25)
-        .default([]),
-    })
-    .default({}),
-  leveling: z
-    .object({
-      enabled: z.boolean().default(false),
-      // null = announce level-ups in the channel the message was sent in.
-      announce_channel_id: z.string().nullable().default(null),
-      xp_per_message: z.number().int().min(1).max(100).default(15),
-      cooldown_seconds: z.number().int().min(0).max(3600).default(60),
-      // Roles granted (and kept) once a member reaches the given level.
-      level_roles: z
-        .array(z.object({ level: z.number().int().min(1).max(1000), role_id: z.string() }))
-        .max(100)
-        .default([]),
-    })
-    .default({}),
   quotas: z
     .object({
       listen_minutes_per_day: z.number().int().positive().default(60),

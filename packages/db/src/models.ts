@@ -158,25 +158,4 @@ export const MemberSnapshotModel =
   (mongoose.models.MemberSnapshot as mongoose.Model<MemberSnapshotDoc>) ??
   mongoose.model<MemberSnapshotDoc>('MemberSnapshot', memberSnapshotSchema);
 
-// Cumulative XP/level per member per guild — NO TTL (a member's rank is permanent).
-export interface MemberLevelDoc {
-  guild_id: string;
-  user_id: string;
-  xp: number;
-  level: number;
-}
-
-const memberLevelSchema = new Schema<MemberLevelDoc>({
-  guild_id: { type: String, required: true },
-  user_id: { type: String, required: true },
-  xp: { type: Number, default: 0 },
-  level: { type: Number, default: 0 },
-});
-memberLevelSchema.index({ guild_id: 1, user_id: 1 }, { unique: true });
-memberLevelSchema.index({ guild_id: 1, xp: -1 }); // leaderboard / rank queries
-
-export const MemberLevelModel =
-  (mongoose.models.MemberLevel as mongoose.Model<MemberLevelDoc>) ??
-  mongoose.model<MemberLevelDoc>('MemberLevel', memberLevelSchema);
-
 export type { GuildConfig };

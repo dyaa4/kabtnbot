@@ -64,17 +64,6 @@ export const de = {
   summaryTotals: '💬 Nachrichten: **{messages}** • 🎙️ Sprachminuten: **{voiceMinutes}**',
   summaryTopHeader: 'Am aktivsten diese Woche:',
   summaryTopLine: '{medal} {user} — {messages} Nachrichten, {voiceMinutes} Sprachminuten',
-  // reaction roles (self-assign)
-  rolesPanelPosted: '✅ Rollen-Panel gepostet.',
-  rolesNotConfigured: '⚠️ Das Rollen-Panel ist deaktiviert oder hat keine Buttons — richte es im Dashboard ein.',
-  roleAdded: '✅ Du hast die Rolle {role} bekommen.',
-  roleRemoved: '✅ Rolle {role} entfernt.',
-  roleToggleFailed: '❌ Rolle konnte nicht geändert werden — die Bot-Rolle muss darüber stehen und „Rollen verwalten" haben.',
-  // leveling
-  levelUp: '🎉 {user} hat Level {level} erreicht!',
-  leaderboardTitle: '🏆 Rangliste',
-  leaderboardLine: '{medal} <@{user}> — Level {level} • {xp} XP',
-  leaderboardEmpty: 'Noch keine Level-Daten. Schreibt im Chat!',
   // AI channel summary (catch me up)
   summaryEmpty: 'Nicht genug Nachrichten zum Zusammenfassen in diesem Channel.',
   summaryHeader: '📝 **Zusammenfassung der letzten Nachrichten:**',

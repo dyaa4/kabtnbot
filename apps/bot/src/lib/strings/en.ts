@@ -64,17 +64,6 @@ export const en = {
   summaryTotals: '💬 Messages: **{messages}** • 🎙️ Voice minutes: **{voiceMinutes}**',
   summaryTopHeader: 'Most active this week:',
   summaryTopLine: '{medal} {user} — {messages} messages, {voiceMinutes} voice minutes',
-  // reaction roles (self-assign)
-  rolesPanelPosted: '✅ Role panel posted.',
-  rolesNotConfigured: '⚠️ The role panel is disabled or has no buttons — set it up in the dashboard.',
-  roleAdded: '✅ Gave you the {role} role.',
-  roleRemoved: '✅ Removed the {role} role.',
-  roleToggleFailed: "❌ Couldn't change the role — make sure the bot's role is above it and it has the Manage Roles permission.",
-  // leveling
-  levelUp: '🎉 {user} reached level {level}!',
-  leaderboardTitle: '🏆 Leaderboard',
-  leaderboardLine: '{medal} <@{user}> — level {level} • {xp} XP',
-  leaderboardEmpty: 'No level data yet. Start chatting!',
   // AI channel summary (catch me up)
   summaryEmpty: 'Not enough messages to summarize in this channel.',
   summaryHeader: '📝 **Summary of recent messages:**',
