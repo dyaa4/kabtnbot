@@ -18,6 +18,15 @@ const Env = z.object({
   WEB_BASE_URL: z.string().default('http://localhost:3000').transform((s) => s.replace(/\/+$/, '')),
   // Optional Discord webhook that receives bot offline/recovery alerts.
   ALERT_WEBHOOK_URL: z.string().optional().default(''),
+  // Comma-separated Discord user ids allowed into the owner/super-admin panel.
+  SUPER_ADMIN_IDS: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
+
+/** Discord user ids with super-admin (owner) access to the admin panel. */
+export const superAdminIds = config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean);
+
+export function isSuperAdmin(uid: string): boolean {
+  return superAdminIds.includes(uid);
+}

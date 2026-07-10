@@ -55,3 +55,13 @@ export async function updateGuildConfig(guildId: string, patch: Record<string, u
   await GuildConfigModel.updateOne({ guild_id: guildId }, { $set: { config: merged } }, { upsert: true });
   return merged;
 }
+
+/** Guild ids whose config currently has premium active — one query for the admin panel. */
+export async function listPremiumGuildIds(): Promise<string[]> {
+  return GuildConfigModel.find({ 'config.premium.active': true }).distinct('guild_id') as Promise<string[]>;
+}
+
+/** Super-admin manual premium toggle (bypasses the dashboard's premium-locked patch). */
+export async function setGuildPremium(guildId: string, active: boolean): Promise<void> {
+  await updateGuildConfig(guildId, { premium: { active } });
+}

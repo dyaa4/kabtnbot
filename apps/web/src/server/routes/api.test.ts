@@ -79,6 +79,17 @@ describe('api routes', () => {
     expect((await request(app).get('/api/guilds/gX/config').set('Cookie', cookie)).status).toBe(403);
   });
 
+  it('admin panel default-denies: /me reports non-admin, actions are forbidden', async () => {
+    const { app, cookie } = setup();
+    // No SUPER_ADMIN_IDS configured in tests → nobody is a super-admin.
+    expect((await request(app).get('/api/admin/me')).status).toBe(401); // needs a session
+    const me = await request(app).get('/api/admin/me').set('Cookie', cookie);
+    expect(me.status).toBe(200);
+    expect(me.body).toEqual({ isSuperAdmin: false });
+    expect((await request(app).get('/api/admin/guilds').set('Cookie', cookie)).status).toBe(403);
+    expect((await request(app).post('/api/admin/guilds/g1/leave').set('Cookie', cookie)).status).toBe(403);
+  });
+
   it('dedupes concurrent access checks into one getMyGuilds call (no 429 stampede)', async () => {
     const { app, cookie, rest } = setup();
     // A dashboard page load fires many guarded endpoints at once. Hold the

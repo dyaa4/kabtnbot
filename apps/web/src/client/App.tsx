@@ -7,6 +7,7 @@ import { GuildList } from './pages/GuildList.js';
 import { GuildView } from './pages/GuildView.js';
 import { Terms } from './pages/Terms.js';
 import { Privacy } from './pages/Privacy.js';
+import { Admin } from './pages/Admin.js';
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 15_000 } } });
 
@@ -21,6 +22,7 @@ export function App() {
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/app" element={<GuildList />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/app/:guildId/*" element={<GuildView />} />
           </Routes>
           </BrowserRouter>

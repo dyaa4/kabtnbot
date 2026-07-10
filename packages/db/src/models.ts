@@ -158,4 +158,28 @@ export const MemberSnapshotModel =
   (mongoose.models.MemberSnapshot as mongoose.Model<MemberSnapshotDoc>) ??
   mongoose.model<MemberSnapshotDoc>('MemberSnapshot', memberSnapshotSchema);
 
+// Owner-facing directory of every guild the bot is in, plus a block flag the
+// super-admin panel toggles (a blocked guild is left and refused on rejoin).
+export interface GuildDirectoryDoc {
+  guild_id: string;
+  name: string;
+  member_count: number;
+  blocked: boolean;
+  joined_at: Date;
+  left_at: Date | null;
+}
+
+const guildDirectorySchema = new Schema<GuildDirectoryDoc>({
+  guild_id: { type: String, required: true, unique: true },
+  name: { type: String, default: '' },
+  member_count: { type: Number, default: 0 },
+  blocked: { type: Boolean, default: false },
+  joined_at: { type: Date, default: Date.now },
+  left_at: { type: Date, default: null },
+});
+
+export const GuildDirectoryModel =
+  (mongoose.models.GuildDirectory as mongoose.Model<GuildDirectoryDoc>) ??
+  mongoose.model<GuildDirectoryDoc>('GuildDirectory', guildDirectorySchema);
+
 export type { GuildConfig };

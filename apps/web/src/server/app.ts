@@ -6,6 +6,7 @@ import type { DiscordRest } from './discord-rest.js';
 import { DiscordAuthError } from './discord-rest.js';
 import { authRouter } from './routes/auth.js';
 import { apiRouter } from './routes/api.js';
+import { adminRouter } from './routes/admin.js';
 import { clearSessionCookie } from './session.js';
 
 export interface AppDeps {
@@ -61,5 +62,6 @@ export function buildApp(deps: AppDeps): Express {
 // Route registration point; Tasks 5–8 append registrations here.
 function registerRoutes(app: Express, deps: AppDeps): void {
   app.use('/auth', authRouter(deps.rest));
+  app.use('/api/admin', adminRouter(deps.rest));
   app.use('/api', apiRouter(deps.rest));
 }

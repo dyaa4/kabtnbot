@@ -43,6 +43,11 @@ function BotStatusBadge() {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { t } = useI18n();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
+  const admin = useQuery({
+    queryKey: ['admin-me'],
+    queryFn: () => api<{ isSuperAdmin: boolean }>('/api/admin/me'),
+    retry: false,
+  });
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -55,6 +60,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
+          {admin.data?.isSuperAdmin && (
+            <Link to="/admin" className="text-sm font-semibold text-amber-300 transition hover:text-amber-200">
+              {t('admin.nav')}
+            </Link>
+          )}
           <BotStatusBadge />
           <LangSwitcher />
           {me.data && (

@@ -18,6 +18,7 @@ export class FakeDiscordRest implements DiscordRest {
     { name: string; icon: string | null; memberCount: number | null; onlineCount: number | null; boostTier: number; boostCount: number }
   >();
   deletedChannels: string[] = [];
+  leftGuilds: string[] = [];
   clearedMessages: string[] = [];
   revokedTokens = new Set<string>();
   botUser = { id: 'bot1', username: 'kabtn', avatar: null as string | null };
@@ -73,6 +74,9 @@ export class FakeDiscordRest implements DiscordRest {
   }
   async deleteChannel(channelId: string) {
     this.deletedChannels.push(channelId);
+  }
+  async leaveGuild(guildId: string) {
+    this.leftGuilds.push(guildId);
   }
   async clearMessageComponents(channelId: string, messageId: string) {
     this.clearedMessages.push(`${channelId}:${messageId}`);

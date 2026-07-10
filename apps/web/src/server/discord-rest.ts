@@ -34,6 +34,8 @@ export interface DiscordRest {
     boostCount: number;
   } | null>;
   deleteChannel(channelId: string): Promise<void>;
+  /** Makes the bot leave a guild (DELETE /users/@me/guilds/:id with the bot token). */
+  leaveGuild(guildId: string): Promise<void>;
   clearMessageComponents(channelId: string, messageId: string): Promise<void>;
   getBotMember(guildId: string): Promise<BotMember | null>;
   editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember>;
@@ -227,6 +229,9 @@ export function createDiscordRest(): DiscordRest {
     },
     async deleteChannel(channelId) {
       await fetch(`${API}/channels/${channelId}`, { method: 'DELETE', headers: bot }).catch(() => {});
+    },
+    async leaveGuild(guildId) {
+      await fetch(`${API}/users/@me/guilds/${guildId}`, { method: 'DELETE', headers: bot }).catch(() => {});
     },
     async clearMessageComponents(channelId, messageId) {
       await fetch(`${API}/channels/${channelId}/messages/${messageId}`, {
