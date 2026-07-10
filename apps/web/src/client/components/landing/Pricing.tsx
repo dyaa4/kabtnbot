@@ -27,7 +27,7 @@ export function Pricing({ inviteUrl }: { inviteUrl: string }) {
           <h3 className="mb-1 text-2xl font-bold text-cyan-300">{t('pricing.free.title')}</h3>
           <p className="mb-6 text-sm text-slate-400">{t('pricing.free.tagline')}</p>
           <ul className="grid gap-3 text-sm text-slate-300">
-            {(['protection', 'welcome', 'stats', 'voicelog', 'botProfile'] as const).map((key) => (
+            {(['protection', 'welcome', 'leveling', 'reactionRoles', 'stats', 'voicelog', 'botProfile'] as const).map((key) => (
               <PlanItem key={key} text={t(`pricing.free.${key}`)} tone="cyan" />
             ))}
           </ul>
@@ -57,7 +57,7 @@ export function Pricing({ inviteUrl }: { inviteUrl: string }) {
             </div>
             <p className="mb-6 text-sm text-slate-400">{t('pricing.premium.tagline')}</p>
             <ul className="grid gap-3 text-sm text-slate-300">
-              {(['everything', 'ai', 'chat', 'moderation', 'voices', 'limits', 'noCheckin'] as const).map((key) => (
+              {(['everything', 'ai', 'chat', 'summarize', 'moderation', 'voices', 'limits', 'noCheckin'] as const).map((key) => (
                 <PlanItem key={key} text={t(`pricing.premium.${key}`)} tone="amber" />
               ))}
             </ul>
