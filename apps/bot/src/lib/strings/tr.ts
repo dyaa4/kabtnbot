@@ -64,4 +64,10 @@ export const tr = {
   summaryTotals: '💬 Mesajlar: **{messages}** • 🎙️ Ses dakikaları: **{voiceMinutes}**',
   summaryTopHeader: 'Bu haftanın en aktifleri:',
   summaryTopLine: '{medal} {user} — {messages} mesaj, {voiceMinutes} dakika ses',
+  // reaction roles (self-assign)
+  rolesPanelPosted: '✅ Rol paneli gönderildi.',
+  rolesNotConfigured: '⚠️ Rol paneli kapalı veya hiç buton yok — panelden ayarla.',
+  roleAdded: '✅ Sana {role} rolünü verdim.',
+  roleRemoved: '✅ {role} rolünü kaldırdım.',
+  roleToggleFailed: '❌ Rol değiştirilemedi — bot rolünün üstte olduğundan ve Rolleri Yönet izninden emin ol.',
 } as const satisfies Record<keyof typeof ar, string>;

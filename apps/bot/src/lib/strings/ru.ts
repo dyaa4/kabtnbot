@@ -64,4 +64,10 @@ export const ru = {
   summaryTotals: '💬 Сообщения: **{messages}** • 🎙️ Голосовые минуты: **{voiceMinutes}**',
   summaryTopHeader: 'Самые активные за неделю:',
   summaryTopLine: '{medal} {user} — {messages} сообщений, {voiceMinutes} минут в голосе',
+  // reaction roles (self-assign)
+  rolesPanelPosted: '✅ Панель ролей опубликована.',
+  rolesNotConfigured: '⚠️ Панель ролей выключена или без кнопок — настрой её в панели управления.',
+  roleAdded: '✅ Выдал тебе роль {role}.',
+  roleRemoved: '✅ Снял роль {role}.',
+  roleToggleFailed: '❌ Не удалось изменить роль — роль бота должна быть выше, и нужно право «Управление ролями».',
 } as const satisfies Record<keyof typeof ar, string>;

@@ -3,6 +3,7 @@ import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
 import { ProtectionTab } from '../components/ProtectionTab.js';
+import { ReactionRolesTab } from '../components/ReactionRolesTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 import { VoiceLogTab } from '../components/VoiceLogTab.js';
@@ -17,6 +18,7 @@ export function GuildView() {
     { to: '', key: 'tabs.overview' },
     { to: 'settings', key: 'tabs.settings' },
     { to: 'protection', key: 'tabs.protection' },
+    { to: 'reaction-roles', key: 'tabs.reactionRoles' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
     { to: 'voice-log', key: 'tabs.voiceLog' },
@@ -46,6 +48,7 @@ export function GuildView() {
         <Route index element={<Overview guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
+        <Route path="reaction-roles" element={<ReactionRolesTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
         <Route path="voice-log" element={<VoiceLogTab guildId={guildId} />} />

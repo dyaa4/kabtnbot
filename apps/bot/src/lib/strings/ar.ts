@@ -72,4 +72,10 @@ export const ar = {
   summaryTotals: '💬 الرسائل: **{messages}** • 🎙️ دقائق الصوت: **{voiceMinutes}**',
   summaryTopHeader: 'الأكثر نشاطاً هذا الأسبوع:',
   summaryTopLine: '{medal} {user} — {messages} رسالة، {voiceMinutes} دقيقة صوت',
+  // reaction roles (self-assign)
+  rolesPanelPosted: '✅ تم نشر لوحة الرتب.',
+  rolesNotConfigured: '⚠️ لوحة الرتب غير مفعّلة أو ما فيها أزرار — أعدّها من لوحة التحكم.',
+  roleAdded: '✅ أعطيتك رتبة {role}.',
+  roleRemoved: '✅ شلت عنك رتبة {role}.',
+  roleToggleFailed: '❌ ما قدرت أغيّر الرتبة — تأكد أن رتبة البوت أعلى ولديه صلاحية «إدارة الرتب».',
 } as const;

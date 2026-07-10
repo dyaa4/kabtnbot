@@ -10,6 +10,9 @@ export function onInteractionCreate(client: Client): void {
       if (interaction.isChatInputCommand()) {
         const cmd = registerCommands().get(interaction.commandName);
         if (cmd) await cmd.execute(interaction);
+      } else if (interaction.isButton() && interaction.customId.startsWith('rr:')) {
+        const { handleRoleButton } = await import('./reaction-roles.js');
+        await handleRoleButton(interaction);
       }
     } catch (err) {
       console.error('[Interaction] Error:', err);

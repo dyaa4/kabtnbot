@@ -9,6 +9,7 @@ import { joinCommand, leaveCommand, speakCommand } from './voice.js';
 import { askCommand, chatCommand } from './ask.js';
 import { settingsCommand } from './settings.js';
 import { welcomeTestCommand } from './welcome-test.js';
+import { rolesCommand } from './roles.js';
 
 export interface Command {
   data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder | SlashCommandSubcommandsOnlyBuilder;
@@ -19,7 +20,7 @@ const commandMap = new Map<string, Command>();
 
 export function registerCommands(): Map<string, Command> {
   if (commandMap.size > 0) return commandMap;
-  const all: Command[] = [pingCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand, settingsCommand, welcomeTestCommand];
+  const all: Command[] = [pingCommand, joinCommand, leaveCommand, speakCommand, askCommand, chatCommand, settingsCommand, welcomeTestCommand, rolesCommand];
   for (const cmd of all) commandMap.set(cmd.data.name, cmd);
   return commandMap;
 }

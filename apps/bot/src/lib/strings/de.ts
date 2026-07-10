@@ -64,4 +64,10 @@ export const de = {
   summaryTotals: '💬 Nachrichten: **{messages}** • 🎙️ Sprachminuten: **{voiceMinutes}**',
   summaryTopHeader: 'Am aktivsten diese Woche:',
   summaryTopLine: '{medal} {user} — {messages} Nachrichten, {voiceMinutes} Sprachminuten',
+  // reaction roles (self-assign)
+  rolesPanelPosted: '✅ Rollen-Panel gepostet.',
+  rolesNotConfigured: '⚠️ Das Rollen-Panel ist deaktiviert oder hat keine Buttons — richte es im Dashboard ein.',
+  roleAdded: '✅ Du hast die Rolle {role} bekommen.',
+  roleRemoved: '✅ Rolle {role} entfernt.',
+  roleToggleFailed: '❌ Rolle konnte nicht geändert werden — die Bot-Rolle muss darüber stehen und „Rollen verwalten" haben.',
 } as const satisfies Record<keyof typeof ar, string>;

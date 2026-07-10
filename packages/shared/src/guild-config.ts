@@ -65,6 +65,24 @@ export const GuildConfigSchema = z.object({
       channel_id: z.string().nullable().default(null),
     })
     .default({}),
+  reaction_roles: z
+    .object({
+      enabled: z.boolean().default(false),
+      title: z.string().max(200).default(''),
+      // A single self-role button panel. `emoji` is a unicode emoji or a custom
+      // emoji id; null = no emoji. The bot posts these as buttons via /roles.
+      buttons: z
+        .array(
+          z.object({
+            label: z.string().min(1).max(80),
+            emoji: z.string().max(64).nullable().default(null),
+            role_id: z.string(),
+          }),
+        )
+        .max(25)
+        .default([]),
+    })
+    .default({}),
   quotas: z
     .object({
       listen_minutes_per_day: z.number().int().positive().default(60),

@@ -66,6 +66,23 @@ const ConfigPatch = z
       })
       .strict()
       .optional(),
+    reaction_roles: z
+      .object({
+        enabled: z.boolean().optional(),
+        title: z.string().max(200).optional(),
+        buttons: z
+          .array(
+            z.object({
+              label: z.string().min(1).max(80),
+              emoji: z.string().max(64).nullable(),
+              role_id: z.string(),
+            }),
+          )
+          .max(25)
+          .optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 
