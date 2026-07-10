@@ -76,7 +76,7 @@ export function wavPcm(buf: Buffer): { pcm: Buffer; sampleRate: number; channels
   return { pcm, sampleRate, channels };
 }
 
-async function synthesizeGroq(text: string, voice?: string): Promise<Buffer> {
+async function synthesizeGroq(text: string, model: string, voice: string): Promise<Buffer> {
   const chunks = chunkText(text, GROQ_TTS_MAX_CHARS);
   const pcmParts: Buffer[] = [];
   let sampleRate = 24000;
@@ -85,14 +85,7 @@ async function synthesizeGroq(text: string, voice?: string): Promise<Buffer> {
     const resp = await fetch('https://api.groq.com/openai/v1/audio/speech', {
       method: 'POST',
       headers: { Authorization: `Bearer ${config.GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-      // Per-guild voice (from settings) wins; env is the fallback default.
-      // Groq/OpenAI-compatible TTS expects lowercase voice ids (e.g. "fahad").
-      body: JSON.stringify({
-        model: config.GROQ_TTS_MODEL,
-        voice: (voice ?? config.GROQ_TTS_VOICE).toLowerCase(),
-        input,
-        response_format: 'wav',
-      }),
+      body: JSON.stringify({ model, voice, input, response_format: 'wav' }),
     });
     if (!resp.ok) throw new Error(`Groq TTS ${resp.status}: ${await resp.text().catch(() => '')}`);
     const parsed = wavPcm(Buffer.from(await resp.arrayBuffer()));
@@ -119,17 +112,33 @@ async function synthesizeElevenLabs(text: string): Promise<Buffer> {
   return runFfmpeg(Buffer.from(await resp.arrayBuffer()));
 }
 
+/** Languages we can actually speak. Arabic → Orpheus, English → PlayAI (Groq). */
+export function isSpeakableLanguage(language: string): boolean {
+  return language === 'ar' || language === 'en';
+}
+
+// Picks the Groq TTS model + voice for a language. Arabic uses the per-guild
+// Orpheus voice (lowercased ids like "fahad"); English uses the PlayAI model.
+function ttsParamsFor(language: string, voice?: string): { model: string; voice: string } | null {
+  if (language === 'en') return { model: config.GROQ_TTS_MODEL_EN, voice: config.GROQ_TTS_VOICE_EN };
+  if (language === 'ar') return { model: config.GROQ_TTS_MODEL, voice: (voice ?? config.GROQ_TTS_VOICE).toLowerCase() };
+  return null;
+}
+
 /**
- * Text → spoken audio (mp3 buffer). Primary path is Groq Orpheus (Arabic), so a
- * single GROQ_API_KEY covers STT + chat + TTS. ElevenLabs is used only as an
- * optional fallback when its key is still configured (e.g. during the switch).
+ * Text → spoken audio (mp3 buffer) in the guild's bot language. Groq covers STT
+ * + chat + TTS from one key: Orpheus for Arabic, PlayAI for English. Throws
+ * TTS_UNSUPPORTED_LANGUAGE for other languages so callers fall back to text-only.
+ * ElevenLabs stays an optional fallback if its key is still configured.
  */
-export async function synthesizeSpeech(text: string, voice?: string): Promise<Buffer> {
+export async function synthesizeSpeech(text: string, opts: { language: string; voice?: string }): Promise<Buffer> {
+  const params = ttsParamsFor(opts.language, opts.voice);
+  if (!params) throw new Error('TTS_UNSUPPORTED_LANGUAGE');
   if (config.GROQ_API_KEY) {
     try {
-      return await synthesizeGroq(text, voice);
+      return await synthesizeGroq(text, params.model, params.voice);
     } catch (e) {
-      console.error('[TTS] Groq Orpheus failed:', (e as Error)?.message ?? e);
+      console.error('[TTS] Groq failed:', (e as Error)?.message ?? e);
       if (!config.ELEVENLABS_API_KEY) throw e;
       console.error('[TTS] falling back to ElevenLabs');
     }

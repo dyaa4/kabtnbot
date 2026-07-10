@@ -67,4 +67,9 @@ export const tr = {
   // AI channel summary (catch me up)
   summaryEmpty: 'Bu kanalda özetlenecek yeterli mesaj yok.',
   summaryHeader: '📝 **Son mesajların özeti:**',
+  // voice command responses (routed by bot language)
+  voiceLeft: 'Ses kanalından çıktım.',
+  voiceStopped: 'Dinlemeyi durdurdum.',
+  voicePing: 'Gecikme {ms} ms.',
+  voiceKicked: '{name} sesten atıldı.',
 } as const satisfies Record<keyof typeof ar, string>;

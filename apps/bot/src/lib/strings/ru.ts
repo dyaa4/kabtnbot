@@ -67,4 +67,9 @@ export const ru = {
   // AI channel summary (catch me up)
   summaryEmpty: 'В этом канале недостаточно сообщений для сводки.',
   summaryHeader: '📝 **Сводка последних сообщений:**',
+  // voice command responses (routed by bot language)
+  voiceLeft: 'Вышел из голосового канала.',
+  voiceStopped: 'Перестал слушать.',
+  voicePing: 'Задержка {ms} мс.',
+  voiceKicked: '{name} исключён из войса.',
 } as const satisfies Record<keyof typeof ar, string>;

@@ -67,4 +67,9 @@ export const en = {
   // AI channel summary (catch me up)
   summaryEmpty: 'Not enough messages to summarize in this channel.',
   summaryHeader: '📝 **Summary of recent messages:**',
+  // voice command responses (routed by bot language)
+  voiceLeft: 'Left the voice channel.',
+  voiceStopped: 'Stopped listening.',
+  voicePing: 'Latency is {ms} ms.',
+  voiceKicked: 'Kicked {name} from voice.',
 } as const satisfies Record<keyof typeof ar, string>;

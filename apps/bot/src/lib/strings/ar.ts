@@ -75,4 +75,9 @@ export const ar = {
   // AI channel summary (catch me up)
   summaryEmpty: 'ما فيه رسائل كافية ألخصها في هذه القناة.',
   summaryHeader: '📝 **ملخص آخر الرسائل:**',
+  // voice command responses (routed by bot language)
+  voiceLeft: 'طلعت من الفويس.',
+  voiceStopped: 'وقفت الاستماع.',
+  voicePing: 'سرعة الاتصال {ms} ملي ثانية.',
+  voiceKicked: 'طردت {name} من الفويس.',
 } as const;

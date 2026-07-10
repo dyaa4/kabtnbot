@@ -1,4 +1,4 @@
-import type { Dialect } from '@gamebot/shared';
+import type { Dialect, Language } from '@gamebot/shared';
 
 const DIALECT_RULES: Record<Dialect, string> = {
   gulf: 'رد باللهجة الخليجية العامية فقط. ممنوع الفصحى.',
@@ -7,7 +7,37 @@ const DIALECT_RULES: Record<Dialect, string> = {
   msa: 'رد بالعربية الفصحى المبسطة.',
 };
 
-export function buildSystemPrompt(dialect: Dialect, guildName: string, opts: { comedic?: boolean } = {}): string {
+// English name of each language, used to instruct the model which language to
+// reply in for non-Arabic guilds.
+const LANGUAGE_NAMES: Record<Language, string> = {
+  ar: 'Arabic',
+  en: 'English',
+  de: 'German',
+  tr: 'Turkish',
+  fr: 'French',
+  ru: 'Russian',
+};
+
+export function buildSystemPrompt(
+  dialect: Dialect,
+  guildName: string,
+  opts: { comedic?: boolean; language?: Language } = {},
+): string {
+  const language = opts.language ?? 'ar';
+
+  if (language !== 'ar') {
+    const lines = [
+      `You are a smart voice assistant in a Discord gaming server called "${guildName}".`,
+      `Reply ONLY in ${LANGUAGE_NAMES[language]}.`,
+      'Your replies are read aloud: keep them very short (one to three sentences), with no symbols, emojis or lists.',
+      'If you are asked something you do not know, say so honestly and briefly.',
+    ];
+    if (opts.comedic) {
+      lines.push('Be very funny and playful with light jokes, while keeping the reply short.');
+    }
+    return lines.join('\n');
+  }
+
   const lines = [
     `أنت بوت صوتي ذكي في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
     DIALECT_RULES[dialect],
@@ -21,7 +51,15 @@ export function buildSystemPrompt(dialect: Dialect, guildName: string, opts: { c
 }
 
 /** System prompt for the /summarize command — text output, so short bullets are fine. */
-export function buildSummaryPrompt(dialect: Dialect, guildName: string): string {
+export function buildSummaryPrompt(dialect: Dialect, guildName: string, language: Language = 'ar'): string {
+  if (language !== 'ar') {
+    return [
+      `You summarize a conversation in a Discord gaming server called "${guildName}".`,
+      `Write the summary ONLY in ${LANGUAGE_NAMES[language]}.`,
+      'Summarize concisely as short bullet points: the main topics, decisions and events.',
+      'Ignore unimportant messages and repetition. Keep it to 3-6 lines at most.',
+    ].join('\n');
+  }
   return [
     `أنت مساعد في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
     DIALECT_RULES[dialect],
