@@ -83,6 +83,19 @@ const ConfigPatch = z
       })
       .strict()
       .optional(),
+    leveling: z
+      .object({
+        enabled: z.boolean().optional(),
+        announce_channel_id: z.string().nullable().optional(),
+        xp_per_message: z.number().int().min(1).max(100).optional(),
+        cooldown_seconds: z.number().int().min(0).max(3600).optional(),
+        level_roles: z
+          .array(z.object({ level: z.number().int().min(1).max(1000), role_id: z.string() }))
+          .max(100)
+          .optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict();
 

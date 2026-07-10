@@ -78,4 +78,9 @@ export const ar = {
   roleAdded: '✅ أعطيتك رتبة {role}.',
   roleRemoved: '✅ شلت عنك رتبة {role}.',
   roleToggleFailed: '❌ ما قدرت أغيّر الرتبة — تأكد أن رتبة البوت أعلى ولديه صلاحية «إدارة الرتب».',
+  // leveling
+  levelUp: '🎉 {user} وصل للمستوى {level}!',
+  leaderboardTitle: '🏆 المتصدرون',
+  leaderboardLine: '{medal} <@{user}> — مستوى {level} • {xp} XP',
+  leaderboardEmpty: 'ما فيه بيانات مستويات بعد. تكلموا في الشات!',
 } as const;

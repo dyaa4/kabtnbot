@@ -2,6 +2,7 @@ import { NavLink, Route, Routes, useParams } from 'react-router-dom';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
+import { LevelingTab } from '../components/LevelingTab.js';
 import { ProtectionTab } from '../components/ProtectionTab.js';
 import { ReactionRolesTab } from '../components/ReactionRolesTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
@@ -19,6 +20,7 @@ export function GuildView() {
     { to: 'settings', key: 'tabs.settings' },
     { to: 'protection', key: 'tabs.protection' },
     { to: 'reaction-roles', key: 'tabs.reactionRoles' },
+    { to: 'leveling', key: 'tabs.leveling' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
     { to: 'voice-log', key: 'tabs.voiceLog' },
@@ -49,6 +51,7 @@ export function GuildView() {
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="reaction-roles" element={<ReactionRolesTab guildId={guildId} />} />
+        <Route path="leveling" element={<LevelingTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
         <Route path="voice-log" element={<VoiceLogTab guildId={guildId} />} />

@@ -70,4 +70,9 @@ export const tr = {
   roleAdded: '✅ Sana {role} rolünü verdim.',
   roleRemoved: '✅ {role} rolünü kaldırdım.',
   roleToggleFailed: '❌ Rol değiştirilemedi — bot rolünün üstte olduğundan ve Rolleri Yönet izninden emin ol.',
+  // leveling
+  levelUp: '🎉 {user} {level}. seviyeye ulaştı!',
+  leaderboardTitle: '🏆 Sıralama',
+  leaderboardLine: '{medal} <@{user}> — seviye {level} • {xp} XP',
+  leaderboardEmpty: 'Henüz seviye verisi yok. Sohbete başlayın!',
 } as const satisfies Record<keyof typeof ar, string>;

@@ -70,4 +70,9 @@ export const en = {
   roleAdded: '✅ Gave you the {role} role.',
   roleRemoved: '✅ Removed the {role} role.',
   roleToggleFailed: "❌ Couldn't change the role — make sure the bot's role is above it and it has the Manage Roles permission.",
+  // leveling
+  levelUp: '🎉 {user} reached level {level}!',
+  leaderboardTitle: '🏆 Leaderboard',
+  leaderboardLine: '{medal} <@{user}> — level {level} • {xp} XP',
+  leaderboardEmpty: 'No level data yet. Start chatting!',
 } as const satisfies Record<keyof typeof ar, string>;

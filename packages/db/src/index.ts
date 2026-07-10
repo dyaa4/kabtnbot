@@ -9,3 +9,4 @@ export * from './backup.js';
 export * from './repos/usage-repo.js';
 export * from './repos/analytics-repo.js';
 export * from './repos/activity-repo.js';
+export * from './repos/leveling-repo.js';

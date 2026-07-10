@@ -70,4 +70,9 @@ export const ru = {
   roleAdded: '✅ Выдал тебе роль {role}.',
   roleRemoved: '✅ Снял роль {role}.',
   roleToggleFailed: '❌ Не удалось изменить роль — роль бота должна быть выше, и нужно право «Управление ролями».',
+  // leveling
+  levelUp: '🎉 {user} достиг уровня {level}!',
+  leaderboardTitle: '🏆 Таблица лидеров',
+  leaderboardLine: '{medal} <@{user}> — уровень {level} • {xp} XP',
+  leaderboardEmpty: 'Данных об уровнях пока нет. Начните общаться!',
 } as const satisfies Record<keyof typeof ar, string>;

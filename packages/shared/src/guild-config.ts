@@ -83,6 +83,20 @@ export const GuildConfigSchema = z.object({
         .default([]),
     })
     .default({}),
+  leveling: z
+    .object({
+      enabled: z.boolean().default(false),
+      // null = announce level-ups in the channel the message was sent in.
+      announce_channel_id: z.string().nullable().default(null),
+      xp_per_message: z.number().int().min(1).max(100).default(15),
+      cooldown_seconds: z.number().int().min(0).max(3600).default(60),
+      // Roles granted (and kept) once a member reaches the given level.
+      level_roles: z
+        .array(z.object({ level: z.number().int().min(1).max(1000), role_id: z.string() }))
+        .max(100)
+        .default([]),
+    })
+    .default({}),
   quotas: z
     .object({
       listen_minutes_per_day: z.number().int().positive().default(60),
