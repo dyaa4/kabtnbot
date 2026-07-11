@@ -13,7 +13,7 @@ import { SaveBar } from '../SaveBar.js';
 import { FormSkeleton } from '../Skeleton.js';
 import { useToast } from '../Toast.js';
 import { FolderSidebar, type Selection } from './FolderSidebar.js';
-import { FlowCanvas } from './FlowCanvas.js';
+import { FlowCanvas, defaultAction } from './FlowCanvas.js';
 import { SlashCommandPanel } from './SlashCommandPanel.js';
 import { builtinNameKey } from './builtin-meta.js';
 
@@ -125,6 +125,32 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   const overrideOf = (key: BuiltinCommandKey): BuiltinOverride =>
     draft.builtin_overrides[key] ?? structuredClone(DEFAULT_OVERRIDE);
 
+  // One-click starter templates for the empty state — a prefilled flow is far
+  // easier to tweak than an empty canvas. `null` = blank command.
+  const createFromTemplate = (type: 'speak_tts' | 'ai_reply' | 'send_message' | null) => {
+    const id = crypto.randomUUID();
+    const action = defaultAction(type ?? 'speak_tts', 0);
+    if (action.type === 'speak_tts' && type) action.text = t('commands.template.reply.text');
+    if (action.type === 'send_message') action.text = t('commands.template.reply.text');
+    if (action.type === 'ai_reply') action.system_prompt = t('commands.template.ai.prompt');
+    const flow: CommandFlow = {
+      id,
+      name: t('commands.newName'),
+      folder: '',
+      enabled: true,
+      sources: { voice: true, text: false },
+      triggers: type ? [t('commands.template.trigger')] : [],
+      match_mode: type === 'ai_reply' ? 'prefix' : 'exact',
+      llm_fallback: true,
+      conditions: { role_ids: [], user_ids: [], channel_ids: [] },
+      actions: [action],
+      cooldown_seconds: 5,
+      layout: { trigger: { x: 0, y: 120 }, condition: { x: 320, y: 120 } },
+    };
+    setDraft({ ...draft, flows: [...draft.flows, flow] });
+    setSelection({ kind: 'flow', id });
+  };
+
   const updateFlow = (next: CommandFlow) =>
     setDraft({ ...draft, flows: draft.flows.map((f) => (f.id === next.id ? next : f)) });
   const updateOverride = (key: BuiltinCommandKey, next: BuiltinOverride) =>
@@ -210,8 +236,31 @@ export function CommandsTab({ guildId }: { guildId: string }) {
           ) : selectedSlash ? (
             <SlashCommandPanel guildId={guildId} draft={draft} cmd={selectedSlash} onChange={setDraft} />
           ) : (
-            <div className="flex h-[75vh] min-h-[560px] items-center justify-center rounded-2xl border border-dashed border-white/10 text-slate-500">
-              {t('commands.empty')}
+            <div className="flex h-[75vh] min-h-[560px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-200">{t('commands.start.title')}</h3>
+                <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>
+              </div>
+              <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-3">
+                {([['speak_tts', '🗣️'], ['ai_reply', '🤖'], ['send_message', '💬']] as const).map(([type, emoji]) => (
+                  <button
+                    key={type}
+                    type="button"
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                    onClick={() => createFromTemplate(type)}
+                  >
+                    <span className="text-3xl">{emoji}</span>
+                    {t(`commands.action.${type}`)}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                onClick={() => createFromTemplate(null)}
+              >
+                ＋ {t('commands.start.blank')}
+              </button>
             </div>
           )}
         </div>
