@@ -36,22 +36,29 @@ export function CommandsTab({ guildId }: { guildId: string }) {
     queryKey: ['command-flows', guildId],
     queryFn: () => api<GuildCommandFlows>(`/api/guilds/${guildId}/command-flows`),
     retry: (count, err) => !(err instanceof ApiError && err.status === 403) && count < 2,
+    // A window-focus refetch must never clobber an in-progress draft.
+    refetchOnWindowFocus: false,
   });
 
   const [draft, setDraft] = useState<GuildCommandFlows | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
 
+  // Initialize the draft ONCE from the first load — later refetches would
+  // otherwise silently wipe unsaved edits.
   useEffect(() => {
-    if (flowsQuery.data) setDraft(structuredClone(flowsQuery.data));
+    if (flowsQuery.data) setDraft((prev) => prev ?? structuredClone(flowsQuery.data));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flowsQuery.data]);
 
   const save = useMutation({
     mutationFn: (body: GuildCommandFlows) =>
-      api(`/api/guilds/${guildId}/command-flows`, { method: 'PUT', body: JSON.stringify(body) }),
-    onSuccess: () => {
+      api<GuildCommandFlows>(`/api/guilds/${guildId}/command-flows`, { method: 'PUT', body: JSON.stringify(body) }),
+    onSuccess: (saved) => {
       toast.success(t('settings.saved'));
-      void qc.invalidateQueries({ queryKey: ['command-flows', guildId] });
+      // Sync cache + draft to the server-parsed result (defaults filled) so
+      // the save bar disarms without a refetch racing the local state.
+      qc.setQueryData(['command-flows', guildId], saved);
+      setDraft(structuredClone(saved));
     },
     onError: (err) => {
       const detail = err instanceof ApiError && err.message ? ` (${err.message})` : '';

@@ -1,18 +1,11 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
-
-export interface TriggerNodeData {
-  flow: CommandFlow | null; // null in built-in mode
-  update: (patch: Partial<CommandFlow>) => void;
-  /** Built-in mode: stock phrases are fixed, only extra triggers are editable. */
-  builtin?: { extraTriggers: string[]; setExtraTriggers: (t: string[]) => void };
-  [key: string]: unknown;
-}
+import { useCanvas } from '../FlowCanvas.js';
 
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
 
 function PhraseChips({
   phrases,
@@ -64,12 +57,12 @@ function PhraseChips({
   );
 }
 
-export function TriggerNode({ data }: { data: TriggerNodeData }) {
+export const TriggerNode = memo(function TriggerNode() {
   const { t } = useI18n();
-  const { flow, update, builtin } = data;
+  const { flow, change, builtin } = useCanvas();
 
   return (
-    <div className="w-72 rounded-2xl border border-cyan-400/30 bg-slate-900/90 p-4 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)] backdrop-blur-md">
+    <div className="w-72 rounded-2xl border border-cyan-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)]">
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-cyan-300">
         <span>🎙️</span>
         {t('commands.trigger.title')}
@@ -81,8 +74,8 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
           <span className="mb-3 block text-sm text-slate-400">{t('commands.builtin.hint')}</span>
           <label className="mb-1 block text-xs text-slate-400">{t('commands.trigger.extraPhrases')}</label>
           <PhraseChips
-            phrases={builtin?.extraTriggers ?? []}
-            onChange={(p) => builtin?.setExtraTriggers(p)}
+            phrases={builtin?.override.extra_triggers ?? []}
+            onChange={(extra_triggers) => builtin?.onChange({ ...builtin.override, extra_triggers })}
             placeholder={t('commands.trigger.addPhrase')}
             min={0}
           />
@@ -92,7 +85,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
           <label className="mb-1 block text-xs text-slate-400">{t('commands.trigger.phrases')}</label>
           <PhraseChips
             phrases={flow.triggers}
-            onChange={(triggers) => update({ triggers })}
+            onChange={(triggers) => change({ triggers })}
             placeholder={t('commands.trigger.addPhrase')}
           />
 
@@ -102,7 +95,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
                 type="checkbox"
                 className="nodrag"
                 checked={flow.sources.voice}
-                onChange={(e) => update({ sources: { ...flow.sources, voice: e.target.checked } })}
+                onChange={(e) => change({ sources: { ...flow.sources, voice: e.target.checked } })}
               />
               {t('commands.trigger.voice')}
             </label>
@@ -111,7 +104,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
                 type="checkbox"
                 className="nodrag"
                 checked={flow.sources.text}
-                onChange={(e) => update({ sources: { ...flow.sources, text: e.target.checked } })}
+                onChange={(e) => change({ sources: { ...flow.sources, text: e.target.checked } })}
               />
               {t('commands.trigger.text')}
             </label>
@@ -122,7 +115,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
           <select
             className={INPUT_CLASS}
             value={flow.match_mode}
-            onChange={(e) => update({ match_mode: e.target.value as CommandFlow['match_mode'] })}
+            onChange={(e) => change({ match_mode: e.target.value as CommandFlow['match_mode'] })}
           >
             <option value="exact">{t('commands.trigger.exact')}</option>
             <option value="prefix">{t('commands.trigger.prefix')}</option>
@@ -133,7 +126,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
               type="checkbox"
               className="nodrag"
               checked={flow.llm_fallback}
-              onChange={(e) => update({ llm_fallback: e.target.checked })}
+              onChange={(e) => change({ llm_fallback: e.target.checked })}
             />
             {t('commands.trigger.llm')}
           </label>
@@ -145,7 +138,7 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
             max={3600}
             className={INPUT_CLASS}
             value={flow.cooldown_seconds}
-            onChange={(e) => update({ cooldown_seconds: Math.max(0, Number(e.target.value) || 0) })}
+            onChange={(e) => change({ cooldown_seconds: Math.max(0, Number(e.target.value) || 0) })}
           />
         </>
       )}
@@ -153,4 +146,4 @@ export function TriggerNode({ data }: { data: TriggerNodeData }) {
       <Handle type="source" position={Position.Right} className="!bg-cyan-400" />
     </div>
   );
-}
+});

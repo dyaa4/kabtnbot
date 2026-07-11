@@ -1,19 +1,13 @@
+import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { FlowAction } from '@gamebot/shared';
+import type { CommandFlow, FlowAction } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
+import { useCanvas } from '../FlowCanvas.js';
+import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
 
-export interface ActionNodeData {
-  guildId: string;
-  action: FlowAction;
-  update: (patch: Partial<FlowAction>) => void;
-  remove?: () => void; // undefined = not deletable (last action / built-in)
-  readonlyLabel?: string; // built-ins: fixed action, no form
-  [key: string]: unknown;
-}
-
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
 
 function TargetPicker({
   value,
@@ -34,9 +28,16 @@ function TargetPicker({
   );
 }
 
-function Params({ data }: { data: ActionNodeData }) {
+function Params({
+  guildId,
+  action,
+  update,
+}: {
+  guildId: string;
+  action: FlowAction;
+  update: (patch: Partial<FlowAction>) => void;
+}) {
   const { t } = useI18n();
-  const { guildId, action, update } = data;
   const roles = useRoles(guildId);
   const textChannels = useTextChannels(guildId);
   const voiceChannels = useVoiceChannels(guildId);
@@ -132,46 +133,70 @@ function Params({ data }: { data: ActionNodeData }) {
       );
     case 'ai_reply':
       return (
-        <>
-          <textarea
-            className={`${INPUT_CLASS} nowheel mt-1 h-24`}
-            maxLength={2000}
-            value={action.system_prompt}
-            onChange={(e) => update({ system_prompt: e.target.value } as Partial<FlowAction>)}
-          />
-        </>
+        <textarea
+          className={`${INPUT_CLASS} nowheel mt-1 h-24`}
+          maxLength={2000}
+          value={action.system_prompt}
+          onChange={(e) => update({ system_prompt: e.target.value } as Partial<FlowAction>)}
+        />
       );
   }
 }
 
-export function ActionNode({ data }: { data: ActionNodeData }) {
+export const ActionNode = memo(function ActionNode({
+  data,
+}: {
+  data: { actionId?: string; builtinAction?: boolean };
+}) {
   const { t } = useI18n();
+  const { guildId, flow, change, builtin } = useCanvas();
+
+  if (data.builtinAction || !flow) {
+    return (
+      <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
+        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+          <span>⚡</span>
+          {builtin ? t(builtinNameKey(builtin.key)) : ''}
+        </div>
+        <p className="mt-2 text-xs text-slate-500">{t('commands.builtin.actionLabel')}</p>
+        <Handle type="target" position={Position.Left} className="!bg-emerald-400" />
+      </div>
+    );
+  }
+
+  const action = flow.actions.find((a) => a.id === data.actionId);
+  if (!action) return null;
+
+  const update = (patch: Partial<FlowAction>) =>
+    change({
+      actions: flow.actions.map((a) => (a.id === action.id ? ({ ...a, ...patch } as FlowAction) : a)),
+    } as Partial<CommandFlow>);
+  const remove =
+    flow.actions.length > 1
+      ? () => change({ actions: flow.actions.filter((a) => a.id !== action.id) } as Partial<CommandFlow>)
+      : undefined;
 
   return (
-    <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900/90 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)] backdrop-blur-md">
+    <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
           <span>⚡</span>
-          {data.readonlyLabel ?? t(`commands.action.${data.action.type}`)}
+          {t(`commands.action.${action.type}`)}
         </div>
-        {data.remove && (
+        {remove && (
           <button
             type="button"
             className="nodrag rounded-lg px-1.5 text-slate-500 hover:bg-rose-400/10 hover:text-rose-300"
-            onClick={data.remove}
+            onClick={remove}
             title="×"
           >
             ✕
           </button>
         )}
       </div>
-      {data.readonlyLabel ? (
-        <p className="text-xs text-slate-500">{t('commands.builtin.actionLabel')}</p>
-      ) : (
-        <Params data={data} />
-      )}
+      <Params guildId={guildId} action={action} update={update} />
       <Handle type="target" position={Position.Left} className="!bg-emerald-400" />
       <Handle type="source" position={Position.Right} className="!bg-emerald-400" />
     </div>
   );
-}
+});
