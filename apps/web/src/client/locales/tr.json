@@ -297,5 +297,7 @@
   "chatlog.message": "Mesaj",
   "chatlog.time": "Zaman",
   "chatlog.premium.title": "Sohbet kaydı bir Premium özelliğidir",
-  "chatlog.premium.body": "Ses kaydında olduğu gibi son kanal mesajlarının moderasyon kaydını görmek için bu sunucuyu Premium'a yükselt."
+  "chatlog.premium.body": "Ses kaydında olduğu gibi son kanal mesajlarının moderasyon kaydını görmek için bu sunucuyu Premium'a yükselt.",
+  "voicelog.premium.title": "Ses kaydı bir Premium özelliğidir",
+  "voicelog.premium.body": "Şu anda seste kimlerin olduğunu ve son ses oturumlarını görmek için bu sunucuyu Premium'a yükselt."
 }

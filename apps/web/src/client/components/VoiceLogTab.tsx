@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { api } from '../api.js';
+import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { VoiceLogSkeleton } from './Skeleton.js';
 
@@ -36,15 +36,29 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
     queryKey: ['voice-log', guildId],
     queryFn: () => api<VoiceLogResp>(`/api/guilds/${guildId}/voice-log`),
     refetchInterval: 30_000,
+    retry: (count, err) => !(err instanceof ApiError && err.status === 403) && count < 2,
   });
 
   if (log.isLoading) return <VoiceLogSkeleton />;
+
+  if (log.error instanceof ApiError && log.error.code === 'PREMIUM_REQUIRED') {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-12 text-center backdrop-blur-md">
+        <span className="text-4xl">💎</span>
+        <h3 className="text-lg font-semibold text-amber-200">{t('voicelog.premium.title')}</h3>
+        <p className="max-w-md text-sm text-slate-400">{t('voicelog.premium.body')}</p>
+      </div>
+    );
+  }
+
   if (!log.data) return <p className="text-slate-400">{t('error.generic')}</p>;
 
   return (
     <div className="grid gap-8">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-        <h3 className="mb-1 text-lg font-semibold">{t('voicelog.activeNow')}</h3>
+        <h3 className="mb-1 text-lg font-semibold">
+          {t('voicelog.activeNow')} <span className="ms-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">💎 Pro</span>
+        </h3>
         <p className="mb-4 text-xs text-slate-500">{t('voicelog.hint')}</p>
         {log.data.active.length === 0 ? (
           <p className="text-sm text-slate-500">{t('voicelog.nobodyActive')}</p>

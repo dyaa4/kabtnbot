@@ -297,5 +297,7 @@
   "chatlog.message": "Message",
   "chatlog.time": "Heure",
   "chatlog.premium.title": "Le journal de chat est une fonctionnalité Premium",
-  "chatlog.premium.body": "Passe ce serveur en Premium pour voir un journal de modération des derniers messages, comme pour le journal vocal."
+  "chatlog.premium.body": "Passe ce serveur en Premium pour voir un journal de modération des derniers messages, comme pour le journal vocal.",
+  "voicelog.premium.title": "Le journal vocal est une fonctionnalité Premium",
+  "voicelog.premium.body": "Passe ce serveur en Premium pour voir qui est en vocal en ce moment et les dernières sessions vocales."
 }

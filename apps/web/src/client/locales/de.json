@@ -297,5 +297,7 @@
   "chatlog.message": "Nachricht",
   "chatlog.time": "Zeit",
   "chatlog.premium.title": "Der Chat-Log ist ein Premium-Feature",
-  "chatlog.premium.body": "Hol dir Premium für diesen Server, um ein Moderations-Log der letzten Kanalnachrichten zu sehen — genau wie beim Voice-Log."
+  "chatlog.premium.body": "Hol dir Premium für diesen Server, um ein Moderations-Log der letzten Kanalnachrichten zu sehen — genau wie beim Voice-Log.",
+  "voicelog.premium.title": "Der Voice-Log ist ein Premium-Feature",
+  "voicelog.premium.body": "Hol dir Premium für diesen Server, um zu sehen, wer gerade im Voice ist und die letzten Voice-Sitzungen."
 }

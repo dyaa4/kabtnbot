@@ -7,7 +7,7 @@ import {
   getCommandFlows, putCommandFlows, listChatMessages,
 } from '@gamebot/db';
 import { DIALECTS, LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
-import { config } from '../config.js';
+import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
 import { requireSession } from '../session.js';
@@ -234,6 +234,15 @@ export function apiRouter(rest: DiscordRest): Router {
 
 const DaysParam = z.enum(['7', '30', '90']).default('30');
 
+// Premium gate for paid dashboard features. The super-admin (bot owner)
+// always has premium access — no manual grant needed for their own guilds.
+async function hasPremiumAccess(guildId: string, res: { locals: { session?: unknown } }): Promise<boolean> {
+  const session = res.locals.session as Session | undefined;
+  if (session && isSuperAdmin(session.uid)) return true;
+  const guildConfig = await getGuildConfig(guildId);
+  return guildConfig.premium.active;
+}
+
 // Discord REST results (member list + guild counts) are cached in-memory per guild, mirroring
 // the TTL-cache pattern in guild-access.ts, so the stats route doesn't hammer Discord on every load.
 const STATS_TTL_MS = 5 * 60_000;
@@ -384,9 +393,14 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
     }
   });
 
+  // Premium-gated like the chat log (owner decision 2026-07-11).
   router.get('/guilds/:guildId/voice-log', guard, async (req, res, next) => {
     try {
       const guildId = req.params.guildId;
+      if (!(await hasPremiumAccess(guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Voice log requires premium');
+        return;
+      }
       const [members, voiceChannels, active, sessions] = await Promise.all([
         statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
         statsCached(`vchannels:${guildId}`, () => rest.listVoiceChannels(guildId)),
@@ -415,8 +429,7 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
   router.get('/guilds/:guildId/chat-log', guard, async (req, res, next) => {
     try {
       const guildId = req.params.guildId;
-      const guildConfig = await getGuildConfig(guildId);
-      if (!guildConfig.premium.active) {
+      if (!(await hasPremiumAccess(guildId, res))) {
         apiError(res, 403, 'PREMIUM_REQUIRED', 'Chat log requires premium');
         return;
       }

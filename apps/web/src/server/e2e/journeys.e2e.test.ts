@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import {
-  getGuildConfig, updateGuildConfig, getGuildAsset,
+  getGuildConfig, updateGuildConfig, getGuildAsset, setGuildPremium,
   startVoiceSession, incrementListenSeconds, incrementAiQuestions, recordBotHeartbeat, clearBotHeartbeat,
 } from '@gamebot/db';
 import { todayKey } from '@gamebot/shared';
@@ -202,12 +202,17 @@ describe('journey: read-only dashboards (stats, usage, voice-log, status)', () =
     expect(usage.body.limits).toBeDefined();
   });
 
-  it('shows an active voice session with the member name resolved', async () => {
+  it('shows an active voice session with the member name resolved (premium)', async () => {
     const { app, rest } = scenario();
     rest.membersList.set('g1', [{ id: 'm7', username: 'Faisal', avatar: null, joined_at: '2026-01-01T00:00:00Z' }]);
     rest.voiceChannels.set('g1', [{ id: 'vc1', name: 'Lobby' }]);
     await startVoiceSession('g1', 'm7', 'vc1');
     const agent = await login(app);
+
+    // voice log is premium-gated
+    await setGuildPremium('g1', false);
+    expect((await agent.get('/api/guilds/g1/voice-log')).status).toBe(403);
+    await setGuildPremium('g1', true);
 
     const log = await agent.get('/api/guilds/g1/voice-log');
     expect(log.status).toBe(200);

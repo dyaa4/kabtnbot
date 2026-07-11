@@ -10,6 +10,7 @@ import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
 import { encryptToken } from '../crypto.js';
 import { clearAccessCache } from '../guild-access.js';
+import { superAdminIds } from '../config.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -297,8 +298,15 @@ describe('api routes', () => {
     expect((await request(app).get('/api/guilds/gX/channels').set('Cookie', cookie)).status).toBe(403);
   });
 
-  it('serves the voice log with resolved member and channel names', async () => {
+  it('serves the voice log with resolved member and channel names (premium-gated)', async () => {
     const { app, cookie, rest } = setup();
+
+    await setGuildPremium('g1', false);
+    const locked = await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie);
+    expect(locked.status).toBe(403);
+    expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
+
+    await setGuildPremium('g1', true);
     rest.membersList.set('g1', [
       { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
     ]);
@@ -392,6 +400,20 @@ describe('api routes', () => {
 
     await setGuildPremium('g1', false); // reset for other tests
     expect((await request(app).get('/api/guilds/gX/chat-log').set('Cookie', cookie)).status).toBe(403);
+  });
+
+  it('super-admin bypasses the premium gate on voice/chat log', async () => {
+    const { app, cookie } = setup();
+    await setGuildPremium('g1', false);
+    superAdminIds.push('u1'); // session uid from setup()
+    try {
+      expect((await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie)).status).toBe(200);
+      expect((await request(app).get('/api/guilds/g1/chat-log').set('Cookie', cookie)).status).toBe(200);
+    } finally {
+      superAdminIds.splice(superAdminIds.indexOf('u1'), 1);
+    }
+    // gate is back for normal users
+    expect((await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie)).status).toBe(403);
   });
 
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {
