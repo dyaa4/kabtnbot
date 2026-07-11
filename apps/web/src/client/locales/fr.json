@@ -271,6 +271,8 @@
   "commands.condition.users": "Membres autorisés",
   "commands.condition.channels": "Seulement dans ces salons",
   "commands.action.add": "Ajouter une action",
+  "commands.canvas.fullscreen": "Plein écran",
+  "commands.canvas.exitFullscreen": "Quitter le plein écran",
   "commands.action.target": "Cible",
   "commands.action.target.speaker": "Celui qui parle/écrit",
   "commands.action.target.spokenName": "Membre nommé ({args})",

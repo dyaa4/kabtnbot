@@ -271,6 +271,8 @@
   "commands.condition.users": "İzinli üyeler",
   "commands.condition.channels": "Sadece bu kanallarda",
   "commands.action.add": "İşlem ekle",
+  "commands.canvas.fullscreen": "Tam ekran",
+  "commands.canvas.exitFullscreen": "Tam ekrandan çık",
   "commands.action.target": "Hedef",
   "commands.action.target.speaker": "Konuşan/yazan kişi",
   "commands.action.target.spokenName": "Adı geçen üye ({args})",

@@ -271,6 +271,8 @@
   "commands.condition.users": "Allowed members",
   "commands.condition.channels": "Only in these channels",
   "commands.action.add": "Add action",
+  "commands.canvas.fullscreen": "Fullscreen",
+  "commands.canvas.exitFullscreen": "Exit fullscreen",
   "commands.action.target": "Target",
   "commands.action.target.speaker": "The speaker/writer",
   "commands.action.target.spokenName": "Named member ({args})",

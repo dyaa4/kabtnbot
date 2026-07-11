@@ -271,6 +271,8 @@
   "commands.condition.users": "Erlaubte Mitglieder",
   "commands.condition.channels": "Nur in diesen Kanälen",
   "commands.action.add": "Aktion hinzufügen",
+  "commands.canvas.fullscreen": "Vollbild",
+  "commands.canvas.exitFullscreen": "Vollbild beenden",
   "commands.action.target": "Ziel",
   "commands.action.target.speaker": "Der Sprecher/Schreiber",
   "commands.action.target.spokenName": "Genanntes Mitglied ({args})",

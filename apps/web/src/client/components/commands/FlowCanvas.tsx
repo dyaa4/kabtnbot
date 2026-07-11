@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -95,13 +95,26 @@ export function FlowCanvas({
   builtin?: CanvasCtx['builtin'];
 }) {
   const { t } = useI18n();
+  const [fullscreen, setFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!fullscreen) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setFullscreen(false);
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [fullscreen]);
 
   // Remount the (uncontrolled) canvas only when the STRUCTURE changes:
   // another command selected, or actions added/removed. Typing in node
-  // forms never touches React Flow's store.
+  // forms never touches React Flow's store. Fullscreen is part of the key
+  // so the canvas refits to the new viewport size.
   const canvasKey = flow
-    ? `flow:${flow.id}:${flow.actions.map((a) => a.id).join('.')}`
-    : `builtin:${builtin?.key ?? 'none'}`;
+    ? `flow:${flow.id}:${flow.actions.map((a) => a.id).join('.')}:${fullscreen}`
+    : `builtin:${builtin?.key ?? 'none'}:${fullscreen}`;
 
   const ctx: CanvasCtx = {
     guildId,
@@ -163,7 +176,14 @@ export function FlowCanvas({
   return (
     // React Flow's coordinate system is LTR — pin the canvas to LTR even when
     // the surrounding dashboard renders RTL (Arabic).
-    <div dir="ltr" className="h-[75vh] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
+    <div
+      dir="ltr"
+      className={
+        fullscreen
+          ? 'fixed inset-0 z-50 bg-slate-950'
+          : 'h-[75vh] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40'
+      }
+    >
       <CanvasContext.Provider value={ctx}>
         <ReactFlowProvider>
           <ReactFlow
@@ -182,8 +202,8 @@ export function FlowCanvas({
           >
             <Background gap={24} color="rgba(255,255,255,0.06)" />
             <Controls showInteractive={false} />
-            {flow && onFlowChange && (
-              <Panel position="top-right">
+            <Panel position="top-right" className="flex items-center gap-2">
+              {flow && onFlowChange && (
                 <select
                   className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 focus:border-cyan-400/50 focus:outline-none"
                   value=""
@@ -203,8 +223,16 @@ export function FlowCanvas({
                     </option>
                   ))}
                 </select>
-              </Panel>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => setFullscreen((f) => !f)}
+                title={fullscreen ? t('commands.canvas.exitFullscreen') : t('commands.canvas.fullscreen')}
+                className="rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50 focus:border-cyan-400/50 focus:outline-none"
+              >
+                {fullscreen ? '✕ ' + t('commands.canvas.exitFullscreen') : '⛶ ' + t('commands.canvas.fullscreen')}
+              </button>
+            </Panel>
           </ReactFlow>
         </ReactFlowProvider>
       </CanvasContext.Provider>
