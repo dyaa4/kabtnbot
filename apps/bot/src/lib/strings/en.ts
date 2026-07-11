@@ -70,7 +70,8 @@ export const en = {
   summaryHeader: '📝 **Summary of recent messages:**',
   // voice command responses (routed by bot language)
   voiceLeft: 'Left the voice channel.',
-  voiceStopped: 'Stopped listening.',
+  voiceStopped: 'Stopped listening and deafened myself 🎧 — use /listen to resume.',
+  voiceResumed: 'Listening again 🎙️ — say "{wake}" followed by your command.',
   voicePing: 'Latency is {ms} ms.',
   voiceKicked: 'Kicked {name} from voice.',
 } as const satisfies Record<keyof typeof ar, string>;

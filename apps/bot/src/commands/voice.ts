@@ -42,6 +42,28 @@ export const joinCommand: Command = {
   },
 };
 
+// Resuming by VOICE is impossible on purpose: "stop listening" self-deafens
+// the bot (crossed-out headset), so it cannot hear a spoken resume command.
+export const listenCommand: Command = {
+  data: new SlashCommandBuilder().setName('listen').setDescription('يرجع البوت يستمع بعد إيقاف الاستماع'),
+  async execute(interaction) {
+    const config = await requireVoiceContext(interaction);
+    if (!config) return;
+    const strings = t(config.language);
+    const session = getSession(interaction.guildId!);
+    if (!session) {
+      await interaction.reply({ content: strings.notConnected, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    await interaction.deferReply();
+    const { startListening } = await import('../modules/voice-ai/listen.js');
+    const listening = await startListening(session, interaction.guild!);
+    await interaction.editReply(
+      listening ? fmt(strings.voiceResumed, { wake: config.voice.wake_word }) : strings.listenQuotaExhausted,
+    );
+  },
+};
+
 export const leaveCommand: Command = {
   data: new SlashCommandBuilder().setName('leave').setDescription('يطلع البوت من الفويس'),
   async execute(interaction) {

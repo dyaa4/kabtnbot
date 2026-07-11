@@ -13,6 +13,15 @@ const SAMPLE_RATE = 48000;
 const OPUS_CHANNELS = 2;
 const FRAME_SECONDS = 0.02; // one Opus frame ≈ 20 ms
 
+// Self-deafen mirrors the listening state in the Discord UI: a crossed-out
+// headset shows members the bot genuinely cannot receive audio. A deafened
+// bot hears nothing, so resuming has to come from outside voice (/listen).
+function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
+  try {
+    session.connection.rejoin({ channelId: session.channelId, selfDeaf: deaf, selfMute: false });
+  } catch { /* connection already destroyed (leave path) */ }
+}
+
 export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
   if (session.listening) return true;
   if (await isListenQuotaExceeded(guild.id)) {
@@ -20,6 +29,7 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     return false;
   }
   session.listening = true;
+  setSelfDeaf(session, false);
 
   const members = guild.members.cache.filter(
     (m) => m.voice.channelId === session.channelId && !m.user.bot,
@@ -45,6 +55,7 @@ export function stopListening(session: VoiceSession): void {
     decoder.delete();
   }
   session.subscriptions.clear();
+  setSelfDeaf(session, true);
 }
 
 function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): void {

@@ -70,7 +70,8 @@ export const ru = {
   summaryHeader: '📝 **Сводка последних сообщений:**',
   // voice command responses (routed by bot language)
   voiceLeft: 'Вышел из голосового канала.',
-  voiceStopped: 'Перестал слушать.',
+  voiceStopped: 'Перестал слушать и заглушил себя 🎧 — /listen, чтобы продолжить.',
+  voiceResumed: 'Снова слушаю 🎙️ — скажи «{wake}» и команду.',
   voicePing: 'Задержка {ms} мс.',
   voiceKicked: '{name} исключён из войса.',
 } as const satisfies Record<keyof typeof ar, string>;

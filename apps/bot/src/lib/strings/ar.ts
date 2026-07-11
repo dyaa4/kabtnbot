@@ -78,7 +78,8 @@ export const ar = {
   summaryHeader: '📝 **ملخص آخر الرسائل:**',
   // voice command responses (routed by bot language)
   voiceLeft: 'طلعت من الفويس.',
-  voiceStopped: 'وقفت الاستماع.',
+  voiceStopped: 'وقفت الاستماع وسكّرت سماعتي 🎧 — استخدم /listen عشان أرجع أسمع.',
+  voiceResumed: 'رجعت أسمع 🎙️ — قل "{wake}" وبعدها أمرك.',
   voicePing: 'سرعة الاتصال {ms} ملي ثانية.',
   voiceKicked: 'طردت {name} من الفويس.',
 } as const;

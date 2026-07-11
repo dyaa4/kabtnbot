@@ -150,7 +150,8 @@ export async function routeVoiceCommand(
 
     switch (key) {
       case 'leave':
-        stopListening(session);
+        // leaveGuildVoice tears down subscriptions + handler itself; calling
+        // stopListening first would deafen-rejoin right before the destroy.
         leaveGuildVoice(guild.id);
         return strings.voiceLeft;
       case 'stop':

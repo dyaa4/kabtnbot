@@ -70,7 +70,8 @@ export const tr = {
   summaryHeader: '📝 **Son mesajların özeti:**',
   // voice command responses (routed by bot language)
   voiceLeft: 'Ses kanalından çıktım.',
-  voiceStopped: 'Dinlemeyi durdurdum.',
+  voiceStopped: 'Dinlemeyi durdurdum ve kulaklığımı kapattım 🎧 — devam etmek için /listen.',
+  voiceResumed: 'Tekrar dinliyorum 🎙️ — "{wake}" deyip komutunu söyle.',
   voicePing: 'Gecikme {ms} ms.',
   voiceKicked: '{name} sesten atıldı.',
 } as const satisfies Record<keyof typeof ar, string>;

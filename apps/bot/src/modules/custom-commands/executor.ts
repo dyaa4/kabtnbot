@@ -73,9 +73,8 @@ export async function executeActions(
     try {
       switch (action.type) {
         case 'voice_leave': {
-          if (!ctx.session) break;
-          stopListening(ctx.session);
-          leaveGuildVoice(ctx.guild.id);
+          // leaveGuildVoice tears down subscriptions + handler itself.
+          if (ctx.session) leaveGuildVoice(ctx.guild.id);
           break;
         }
         case 'voice_stop_listening': {

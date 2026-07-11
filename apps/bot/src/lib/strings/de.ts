@@ -70,7 +70,8 @@ export const de = {
   summaryHeader: '📝 **Zusammenfassung der letzten Nachrichten:**',
   // voice command responses (routed by bot language)
   voiceLeft: 'Habe den Voice-Channel verlassen.',
-  voiceStopped: 'Höre nicht mehr zu.',
+  voiceStopped: 'Höre nicht mehr zu und habe mich taub gestellt 🎧 — /listen zum Fortsetzen.',
+  voiceResumed: 'Ich höre wieder zu 🎙️ — sag "{wake}" und dann deinen Befehl.',
   voicePing: 'Die Latenz beträgt {ms} ms.',
   voiceKicked: '{name} aus dem Voice entfernt.',
 } as const satisfies Record<keyof typeof ar, string>;
