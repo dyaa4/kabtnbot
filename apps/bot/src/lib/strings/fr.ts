@@ -19,6 +19,7 @@ export const fr = {
   kickNoMatch: "❓ Je n'ai pas compris de qui tu parles, précise le nom.",
   kickFailed: "Impossible d'expulser le membre, vérifie mes permissions.",
   commandNotAllowed: "❌ Tu n'as pas le droit d'utiliser cette commande.",
+  slashDisabled: '❌ Cette commande est désactivée sur ce serveur.',
   settingsSaved: '✅ Paramètre enregistré.',
   settingsTitle: '⚙️ Paramètres du serveur',
   settingsFieldVoice: '🎙️ Vocal',

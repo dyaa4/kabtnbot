@@ -19,6 +19,7 @@ export const de = {
   kickNoMatch: '❓ Ich konnte nicht erkennen, wen du meinst — sag den Namen deutlicher.',
   kickFailed: 'Konnte das Mitglied nicht entfernen, prüfe meine Berechtigungen.',
   commandNotAllowed: '❌ Du darfst diesen Befehl nicht verwenden.',
+  slashDisabled: '❌ Dieser Befehl ist auf diesem Server deaktiviert.',
   settingsSaved: '✅ Einstellung gespeichert.',
   settingsTitle: '⚙️ Server-Einstellungen',
   settingsFieldVoice: '🎙️ Sprache',

@@ -20,6 +20,7 @@ export const ar = {
   kickNoMatch: '❓ ما قدرت أحدد مين تقصد، وضّح الاسم أكثر.',
   kickFailed: 'ما قدرت أطرد العضو، تأكد من صلاحياتي.',
   commandNotAllowed: '❌ هذا الأمر غير مسموح لك.',
+  slashDisabled: '❌ هذا الأمر معطّل في هذا السيرفر.',
   // settings
   settingsSaved: '✅ انحفظ الإعداد.',
   settingsTitle: '⚙️ إعدادات السيرفر',

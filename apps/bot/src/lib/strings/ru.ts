@@ -19,6 +19,7 @@ export const ru = {
   kickNoMatch: '❓ Не понял, кого ты имеешь в виду — назови имя точнее.',
   kickFailed: 'Не смог кикнуть участника, проверь мои права.',
   commandNotAllowed: '❌ Тебе нельзя использовать эту команду.',
+  slashDisabled: '❌ Эта команда отключена на этом сервере.',
   settingsSaved: '✅ Настройка сохранена.',
   settingsTitle: '⚙️ Настройки сервера',
   settingsFieldVoice: '🎙️ Голос',

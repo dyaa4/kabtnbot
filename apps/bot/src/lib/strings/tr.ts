@@ -19,6 +19,7 @@ export const tr = {
   kickNoMatch: '❓ Kimi kastettiğini anlayamadım, ismi daha net söyle.',
   kickFailed: 'Üyeyi atamadım, izinlerimi kontrol et.',
   commandNotAllowed: '❌ Bu komutu kullanma iznin yok.',
+  slashDisabled: '❌ Bu komut bu sunucuda devre dışı.',
   settingsSaved: '✅ Ayar kaydedildi.',
   settingsTitle: '⚙️ Sunucu ayarları',
   settingsFieldVoice: '🎙️ Ses',

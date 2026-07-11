@@ -14,6 +14,7 @@ import { FormSkeleton } from '../Skeleton.js';
 import { useToast } from '../Toast.js';
 import { FolderSidebar, type Selection } from './FolderSidebar.js';
 import { FlowCanvas } from './FlowCanvas.js';
+import { SlashCommandPanel } from './SlashCommandPanel.js';
 import { builtinNameKey } from './builtin-meta.js';
 
 const DEFAULT_OVERRIDE: BuiltinOverride = {
@@ -120,6 +121,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   const selectedFlow = selection?.kind === 'flow' ? draft.flows.find((f) => f.id === selection.id) : undefined;
   const selectedBuiltin = selection?.kind === 'builtin' ? selection.key : undefined;
+  const selectedSlash = selection?.kind === 'slash' ? selection.key : undefined;
   const overrideOf = (key: BuiltinCommandKey): BuiltinOverride =>
     draft.builtin_overrides[key] ?? structuredClone(DEFAULT_OVERRIDE);
 
@@ -205,6 +207,8 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 onChange: (next) => updateOverride(selectedBuiltin, next),
               }}
             />
+          ) : selectedSlash ? (
+            <SlashCommandPanel guildId={guildId} draft={draft} cmd={selectedSlash} onChange={setDraft} />
           ) : (
             <div className="flex h-[75vh] min-h-[560px] items-center justify-center rounded-2xl border border-dashed border-white/10 text-slate-500">
               {t('commands.empty')}

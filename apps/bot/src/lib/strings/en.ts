@@ -19,6 +19,7 @@ export const en = {
   kickNoMatch: "❓ Couldn't tell who you mean, please be more specific.",
   kickFailed: "Couldn't kick the member, check my permissions.",
   commandNotAllowed: '❌ You are not allowed to use this command.',
+  slashDisabled: '❌ This command is disabled in this server.',
   settingsSaved: '✅ Setting saved.',
   settingsTitle: '⚙️ Server settings',
   settingsFieldVoice: '🎙️ Voice',

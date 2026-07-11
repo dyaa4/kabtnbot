@@ -10,6 +10,15 @@ import { normalizeText } from './moderation.js';
 export const BUILTIN_COMMAND_KEYS = ['leave', 'stop', 'say', 'kick', 'help', 'ping'] as const;
 export type BuiltinCommandKey = (typeof BUILTIN_COMMAND_KEYS)[number];
 
+// Discord SLASH commands the bot registers. Admins can disable each per guild
+// and restrict it to roles/users from the dashboard; the bot enforces this in
+// its interaction handler (guild admins always bypass, so /settings can't
+// lock the admins out of their own server).
+export const SLASH_COMMAND_KEYS = [
+  'join', 'leave', 'listen', 'speak', 'ask', 'chat', 'summarize', 'welcome-test', 'settings', 'ping',
+] as const;
+export type SlashCommandKey = (typeof SLASH_COMMAND_KEYS)[number];
+
 const NodePos = z.object({ x: z.number(), y: z.number() });
 const idStr = z.string().min(1).max(40);
 
@@ -100,9 +109,35 @@ export const BuiltinOverridesSchema = z
   .default({});
 export type BuiltinOverrides = z.infer<typeof BuiltinOverridesSchema>;
 
+export const SlashOverrideSchema = z.object({
+  enabled: z.boolean().default(true),
+  // Both lists empty = everyone may use the command.
+  role_ids: z.array(z.string()).max(25).default([]),
+  user_ids: z.array(z.string()).max(25).default([]),
+});
+export type SlashOverride = z.infer<typeof SlashOverrideSchema>;
+
+// Sparse map with explicit optional keys, same rationale as BuiltinOverridesSchema.
+export const SlashOverridesSchema = z
+  .object({
+    join: SlashOverrideSchema.optional(),
+    leave: SlashOverrideSchema.optional(),
+    listen: SlashOverrideSchema.optional(),
+    speak: SlashOverrideSchema.optional(),
+    ask: SlashOverrideSchema.optional(),
+    chat: SlashOverrideSchema.optional(),
+    summarize: SlashOverrideSchema.optional(),
+    'welcome-test': SlashOverrideSchema.optional(),
+    settings: SlashOverrideSchema.optional(),
+    ping: SlashOverrideSchema.optional(),
+  })
+  .default({});
+export type SlashOverrides = z.infer<typeof SlashOverridesSchema>;
+
 export const GuildCommandFlowsSchema = z.object({
   flows: z.array(CommandFlowSchema).max(50).default([]),
   builtin_overrides: BuiltinOverridesSchema,
+  slash_overrides: SlashOverridesSchema,
   folders: z.array(z.string().min(1).max(40)).max(20).default([]),
 });
 export type GuildCommandFlows = z.infer<typeof GuildCommandFlowsSchema>;

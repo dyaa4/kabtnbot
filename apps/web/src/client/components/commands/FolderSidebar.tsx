@@ -1,9 +1,13 @@
 import { useState } from 'react';
-import type { BuiltinCommandKey, GuildCommandFlows } from '@gamebot/shared';
+import { SLASH_COMMAND_KEYS, type BuiltinCommandKey, type GuildCommandFlows, type SlashCommandKey } from '@gamebot/shared';
 import { useI18n } from '../../i18n.js';
 import { BUILTIN_KEYS, builtinNameKey } from './builtin-meta.js';
 
-export type Selection = { kind: 'flow'; id: string } | { kind: 'builtin'; key: BuiltinCommandKey } | null;
+export type Selection =
+  | { kind: 'flow'; id: string }
+  | { kind: 'builtin'; key: BuiltinCommandKey }
+  | { kind: 'slash'; key: SlashCommandKey }
+  | null;
 
 function Dot({ on }: { on: boolean }) {
   return <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${on ? 'bg-emerald-400' : 'bg-slate-600'}`} />;
@@ -163,6 +167,29 @@ export function FolderSidebar({
               >
                 <Dot on={enabled} />
                 <span className="truncate">{t(builtinNameKey(key))}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          🔷 {t('commands.slash.section')}
+        </div>
+        <div className="space-y-0.5">
+          {SLASH_COMMAND_KEYS.map((key) => {
+            // Optional chain: cached responses from before this field existed.
+            const enabled = draft.slash_overrides?.[key]?.enabled !== false;
+            return (
+              <button
+                key={key}
+                type="button"
+                className={`${itemClass(selection?.kind === 'slash' && selection.key === key)} ${enabled ? '' : 'opacity-50'}`}
+                onClick={() => onSelect({ kind: 'slash', key })}
+              >
+                <Dot on={enabled} />
+                <span className="truncate font-mono" dir="ltr">/{key}</span>
               </button>
             );
           })}
