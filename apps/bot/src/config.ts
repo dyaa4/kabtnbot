@@ -43,6 +43,8 @@ const Env = z.object({
   // Same guard for user-defined TEXT command triggers (flow editor). Voice
   // triggers work regardless — only reading channel messages needs the intent.
   ENABLE_TEXT_COMMANDS: z.string().optional().default(''),
+  // Same guard for the premium chat log (stores recent messages, 7-day TTL).
+  ENABLE_CHAT_LOG: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
@@ -50,3 +52,4 @@ export const config = Env.parse(process.env);
 export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION === 'true';
 export const summaryEnabled = config.ENABLE_SUMMARY === 'true';
 export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS === 'true';
+export const chatLogEnabled = config.ENABLE_CHAT_LOG === 'true';

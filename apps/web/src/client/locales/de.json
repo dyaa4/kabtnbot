@@ -287,5 +287,15 @@
   "commands.action.role_remove": "Rolle entfernen",
   "commands.action.ai_reply": "KI-Antwort (eigener Prompt)",
   "commands.users.search": "Mitglieder suchen…",
-  "commands.textIntentHint": "Text-Auslöser benötigen ENABLE_TEXT_COMMANDS im Server-Deployment"
+  "commands.textIntentHint": "Text-Auslöser benötigen ENABLE_TEXT_COMMANDS im Server-Deployment",
+  "tabs.chatLog": "Chat-Log",
+  "chatlog.title": "Chat-Log",
+  "chatlog.hint": "Die neuesten Kanalnachrichten der letzten 7 Tage — danach automatisch gelöscht",
+  "chatlog.empty": "Noch keine Nachrichten aufgezeichnet.",
+  "chatlog.member": "Mitglied",
+  "chatlog.channel": "Kanal",
+  "chatlog.message": "Nachricht",
+  "chatlog.time": "Zeit",
+  "chatlog.premium.title": "Der Chat-Log ist ein Premium-Feature",
+  "chatlog.premium.body": "Hol dir Premium für diesen Server, um ein Moderations-Log der letzten Kanalnachrichten zu sehen — genau wie beim Voice-Log."
 }

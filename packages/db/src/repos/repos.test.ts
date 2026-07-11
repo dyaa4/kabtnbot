@@ -11,6 +11,7 @@ import {
   activeVoiceSessions, listVoiceSessions,
 } from './voice-log-repo.js';
 import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
+import { recordChatMessage, listChatMessages } from './chat-log-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -84,6 +85,27 @@ describe('command-flows-repo', () => {
       putCommandFlows('gF2', { flows: [{ id: 'x', name: 'bad', triggers: [], actions: [] }] }),
     ).rejects.toThrow();
     expect((await getCommandFlows('gF2')).flows).toEqual([]); // nothing persisted
+  });
+});
+
+describe('chat-log-repo', () => {
+  it('records messages and lists them newest first', async () => {
+    const t0 = new Date('2026-07-10T10:00:00Z');
+    const t1 = new Date('2026-07-10T11:00:00Z');
+    await recordChatMessage({ guildId: 'gC', userId: 'u1', channelId: 'c1', messageId: 'm1', content: 'hallo', at: t0 });
+    await recordChatMessage({ guildId: 'gC', userId: 'u2', channelId: 'c2', messageId: 'm2', content: 'يا هلا', at: t1 });
+    const list = await listChatMessages('gC');
+    expect(list.map((m) => m.message_id)).toEqual(['m2', 'm1']);
+    expect(list[0].content).toBe('يا هلا');
+    expect(await listChatMessages('gOther')).toEqual([]);
+  });
+
+  it('caps stored content at 500 chars and skips empty messages', async () => {
+    await recordChatMessage({ guildId: 'gC2', userId: 'u1', channelId: 'c1', messageId: 'mBig', content: 'x'.repeat(900) });
+    await recordChatMessage({ guildId: 'gC2', userId: 'u1', channelId: 'c1', messageId: 'mEmpty', content: '' });
+    const list = await listChatMessages('gC2');
+    expect(list).toHaveLength(1);
+    expect(list[0].content).toHaveLength(500);
   });
 });
 

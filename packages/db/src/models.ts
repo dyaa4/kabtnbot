@@ -158,6 +158,31 @@ export const MemberSnapshotModel =
   (mongoose.models.MemberSnapshot as mongoose.Model<MemberSnapshotDoc>) ??
   mongoose.model<MemberSnapshotDoc>('MemberSnapshot', memberSnapshotSchema);
 
+// Chat log (premium): recent channel messages with content, auto-deleted
+// after 7 days (TTL) — mirrors the voice log's short-retention design.
+export interface ChatMessageDoc {
+  guild_id: string;
+  user_id: string;
+  channel_id: string;
+  message_id: string;
+  content: string;
+  created_at: Date;
+}
+
+const chatMessageSchema = new Schema<ChatMessageDoc>({
+  guild_id: { type: String, required: true },
+  user_id: { type: String, required: true },
+  channel_id: { type: String, required: true },
+  message_id: { type: String, required: true },
+  content: { type: String, required: true },
+  created_at: { type: Date, default: Date.now, expires: '7d' },
+});
+chatMessageSchema.index({ guild_id: 1, created_at: -1 });
+
+export const ChatMessageModel =
+  (mongoose.models.ChatMessage as mongoose.Model<ChatMessageDoc>) ??
+  mongoose.model<ChatMessageDoc>('ChatMessage', chatMessageSchema);
+
 // Per-guild command-flow editor data (custom commands + built-in overrides),
 // one doc per guild. The blob is validated by GuildCommandFlowsSchema in the
 // repo layer, same split as GuildConfig.

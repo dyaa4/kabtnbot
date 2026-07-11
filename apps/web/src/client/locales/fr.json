@@ -287,5 +287,15 @@
   "commands.action.role_remove": "Retirer un rôle",
   "commands.action.ai_reply": "Réponse IA (prompt personnalisé)",
   "commands.users.search": "Rechercher des membres…",
-  "commands.textIntentHint": "Les déclencheurs texte nécessitent ENABLE_TEXT_COMMANDS côté déploiement"
+  "commands.textIntentHint": "Les déclencheurs texte nécessitent ENABLE_TEXT_COMMANDS côté déploiement",
+  "tabs.chatLog": "Journal de chat",
+  "chatlog.title": "Journal de chat",
+  "chatlog.hint": "Les derniers messages des salons sur 7 jours — supprimés automatiquement ensuite",
+  "chatlog.empty": "Aucun message enregistré pour l'instant.",
+  "chatlog.member": "Membre",
+  "chatlog.channel": "Salon",
+  "chatlog.message": "Message",
+  "chatlog.time": "Heure",
+  "chatlog.premium.title": "Le journal de chat est une fonctionnalité Premium",
+  "chatlog.premium.body": "Passe ce serveur en Premium pour voir un journal de modération des derniers messages, comme pour le journal vocal."
 }

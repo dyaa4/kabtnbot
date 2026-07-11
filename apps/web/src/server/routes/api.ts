@@ -4,7 +4,7 @@ import {
   getGuildConfig, updateGuildConfig, getUsage,
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
-  getCommandFlows, putCommandFlows,
+  getCommandFlows, putCommandFlows, listChatMessages,
 } from '@gamebot/db';
 import { DIALECTS, LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -405,6 +405,38 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         seconds: s.seconds,
       });
       res.json({ active: active.map(serialize), sessions: sessions.map(serialize) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Premium-gated: the chat log stores message CONTENT, offered as a paid
+  // feature — hard-enforced server-side, not just hidden in the UI.
+  router.get('/guilds/:guildId/chat-log', guard, async (req, res, next) => {
+    try {
+      const guildId = req.params.guildId;
+      const guildConfig = await getGuildConfig(guildId);
+      if (!guildConfig.premium.active) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Chat log requires premium');
+        return;
+      }
+      const [members, textChannels, messages] = await Promise.all([
+        statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
+        statsCached(`tchannels:${guildId}`, () => rest.listTextChannels(guildId)),
+        listChatMessages(guildId, 200),
+      ]);
+      const nameById = new Map(members.map((m) => [m.id, m.username]));
+      const channelById = new Map(textChannels.map((c) => [c.id, c.name]));
+      res.json({
+        messages: messages.map((m) => ({
+          user_id: m.user_id,
+          name: nameById.get(m.user_id) ?? `#${m.user_id.slice(-4)}`,
+          channel_id: m.channel_id,
+          channel_name: channelById.get(m.channel_id) ?? m.channel_id,
+          content: m.content,
+          created_at: m.created_at.toISOString(),
+        })),
+      });
     } catch (err) {
       next(err);
     }

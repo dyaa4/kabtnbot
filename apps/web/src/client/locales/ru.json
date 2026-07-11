@@ -287,5 +287,15 @@
   "commands.action.role_remove": "Убрать роль",
   "commands.action.ai_reply": "Ответ ИИ (свой промпт)",
   "commands.users.search": "Поиск участников…",
-  "commands.textIntentHint": "Текстовым триггерам нужен ENABLE_TEXT_COMMANDS в деплое"
+  "commands.textIntentHint": "Текстовым триггерам нужен ENABLE_TEXT_COMMANDS в деплое",
+  "tabs.chatLog": "Журнал чата",
+  "chatlog.title": "Журнал чата",
+  "chatlog.hint": "Свежие сообщения каналов за последние 7 дней — затем удаляются автоматически",
+  "chatlog.empty": "Пока нет записанных сообщений.",
+  "chatlog.member": "Участник",
+  "chatlog.channel": "Канал",
+  "chatlog.message": "Сообщение",
+  "chatlog.time": "Время",
+  "chatlog.premium.title": "Журнал чата — функция Premium",
+  "chatlog.premium.body": "Переведи сервер на Premium, чтобы видеть модерационный журнал последних сообщений — как журнал голоса."
 }

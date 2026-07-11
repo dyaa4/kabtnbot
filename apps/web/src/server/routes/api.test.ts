@@ -3,7 +3,7 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import {
   connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat,
-  startVoiceSession, endVoiceSession,
+  startVoiceSession, endVoiceSession, setGuildPremium, recordChatMessage,
 } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
@@ -369,6 +369,29 @@ describe('api routes', () => {
     expect(res.body).toEqual([{ id: 'u1', username: 'Ahmad', display_name: 'Ahmad', avatar: null }]);
 
     expect((await request(app).get('/api/guilds/gX/members?query=ahm').set('Cookie', cookie)).status).toBe(403);
+  });
+
+  it('chat log is premium-gated and resolves names once unlocked', async () => {
+    const { app, cookie, rest } = setup();
+    await setGuildPremium('g1', false);
+    const locked = await request(app).get('/api/guilds/g1/chat-log').set('Cookie', cookie);
+    expect(locked.status).toBe(403);
+    expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
+
+    await setGuildPremium('g1', true);
+    rest.membersList.set('g1', [
+      { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
+    ]);
+    rest.textChannels.set('g1', [{ id: 'tc1', name: 'general' }]);
+    await recordChatMessage({ guildId: 'g1', userId: 'u7', channelId: 'tc1', messageId: 'm1', content: 'hi there' });
+
+    const res = await request(app).get('/api/guilds/g1/chat-log').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.messages).toHaveLength(1);
+    expect(res.body.messages[0]).toMatchObject({ name: 'أبو فهد', channel_name: 'general', content: 'hi there' });
+
+    await setGuildPremium('g1', false); // reset for other tests
+    expect((await request(app).get('/api/guilds/gX/chat-log').set('Cookie', cookie)).status).toBe(403);
   });
 
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {

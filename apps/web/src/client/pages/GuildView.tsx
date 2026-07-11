@@ -7,6 +7,7 @@ import { CommandsTab } from '../components/commands/CommandsTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 import { VoiceLogTab } from '../components/VoiceLogTab.js';
+import { ChatLogTab } from '../components/ChatLogTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
 
 export function GuildView() {
@@ -22,6 +23,7 @@ export function GuildView() {
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
     { to: 'voice-log', key: 'tabs.voiceLog' },
+    { to: 'chat-log', key: 'tabs.chatLog' },
   ];
 
   return (
@@ -52,6 +54,7 @@ export function GuildView() {
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
         <Route path="voice-log" element={<VoiceLogTab guildId={guildId} />} />
+        <Route path="chat-log" element={<ChatLogTab guildId={guildId} />} />
       </Routes>
     </Layout>
   );

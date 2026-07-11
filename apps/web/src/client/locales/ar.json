@@ -287,5 +287,15 @@
   "commands.action.role_remove": "إزالة رتبة",
   "commands.action.ai_reply": "رد الذكاء الاصطناعي (برومبت مخصص)",
   "commands.users.search": "ابحث عن الأعضاء…",
-  "commands.textIntentHint": "المشغّلات النصية تتطلب ENABLE_TEXT_COMMANDS في إعدادات النشر"
+  "commands.textIntentHint": "المشغّلات النصية تتطلب ENABLE_TEXT_COMMANDS في إعدادات النشر",
+  "tabs.chatLog": "سجل الدردشة",
+  "chatlog.title": "سجل الدردشة",
+  "chatlog.hint": "أحدث رسائل القنوات خلال آخر 7 أيام — تُحذف تلقائياً بعدها",
+  "chatlog.empty": "لا توجد رسائل مسجلة بعد.",
+  "chatlog.member": "العضو",
+  "chatlog.channel": "القناة",
+  "chatlog.message": "الرسالة",
+  "chatlog.time": "الوقت",
+  "chatlog.premium.title": "سجل الدردشة ميزة Premium",
+  "chatlog.premium.body": "رقِّ هذا السيرفر إلى Premium لعرض سجل إشرافي بأحدث رسائل القنوات، تماماً مثل سجل الصوت."
 }

@@ -287,5 +287,15 @@
   "commands.action.role_remove": "Rolü kaldır",
   "commands.action.ai_reply": "Yapay zekâ yanıtı (özel prompt)",
   "commands.users.search": "Üye ara…",
-  "commands.textIntentHint": "Metin tetikleyiciler sunucu dağıtımında ENABLE_TEXT_COMMANDS gerektirir"
+  "commands.textIntentHint": "Metin tetikleyiciler sunucu dağıtımında ENABLE_TEXT_COMMANDS gerektirir",
+  "tabs.chatLog": "Sohbet kaydı",
+  "chatlog.title": "Sohbet kaydı",
+  "chatlog.hint": "Son 7 günün en yeni kanal mesajları — sonrasında otomatik silinir",
+  "chatlog.empty": "Henüz kaydedilmiş mesaj yok.",
+  "chatlog.member": "Üye",
+  "chatlog.channel": "Kanal",
+  "chatlog.message": "Mesaj",
+  "chatlog.time": "Zaman",
+  "chatlog.premium.title": "Sohbet kaydı bir Premium özelliğidir",
+  "chatlog.premium.body": "Ses kaydında olduğu gibi son kanal mesajlarının moderasyon kaydını görmek için bu sunucuyu Premium'a yükselt."
 }

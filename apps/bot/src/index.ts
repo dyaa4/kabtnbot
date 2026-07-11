@@ -9,6 +9,7 @@ import { registerTextProtection } from './modules/protection/text-mod.js';
 import { registerCustomCommands } from './modules/custom-commands/text-listener.js';
 import { registerWelcome } from './events/guildMemberAdd.js';
 import { registerVoiceLog } from './events/voice-log.js';
+import { registerChatLog } from './events/chat-log.js';
 import { registerGuildDirectory } from './events/guild-directory.js';
 import { registerWeeklySummary } from './lib/weekly-summary.js';
 import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/resilience.js';
@@ -30,6 +31,7 @@ async function main(): Promise<void> {
   registerCustomCommands(client);
   registerWelcome(client);
   registerVoiceLog(client);
+  registerChatLog(client);
   registerGuildDirectory(client);
   registerWeeklySummary(client);
 

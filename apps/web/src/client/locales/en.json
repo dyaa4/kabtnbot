@@ -287,5 +287,15 @@
   "commands.action.role_remove": "Remove role",
   "commands.action.ai_reply": "AI reply (custom prompt)",
   "commands.users.search": "Search members…",
-  "commands.textIntentHint": "Text triggers require ENABLE_TEXT_COMMANDS on the server deployment"
+  "commands.textIntentHint": "Text triggers require ENABLE_TEXT_COMMANDS on the server deployment",
+  "tabs.chatLog": "Chat log",
+  "chatlog.title": "Chat log",
+  "chatlog.hint": "The latest channel messages of the last 7 days — auto-deleted afterwards",
+  "chatlog.empty": "No messages recorded yet.",
+  "chatlog.member": "Member",
+  "chatlog.channel": "Channel",
+  "chatlog.message": "Message",
+  "chatlog.time": "Time",
+  "chatlog.premium.title": "Chat log is a Premium feature",
+  "chatlog.premium.body": "Upgrade this server to Premium to see a moderation log of recent channel messages, just like the voice log."
 }
