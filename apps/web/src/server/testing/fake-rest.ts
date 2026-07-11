@@ -53,6 +53,13 @@ export class FakeDiscordRest implements DiscordRest {
   async listMembers(guildId: string, limit = 1000) {
     return (this.membersList.get(guildId) ?? []).slice(0, limit);
   }
+  async searchMembers(guildId: string, query: string, limit = 20) {
+    const q = query.toLowerCase();
+    return (this.membersList.get(guildId) ?? [])
+      .filter((m) => m.username.toLowerCase().includes(q))
+      .slice(0, limit)
+      .map((m) => ({ id: m.id, username: m.username, display_name: m.username, avatar: m.avatar }));
+  }
   async listTextChannels(guildId: string) {
     return this.textChannels.get(guildId) ?? [];
   }

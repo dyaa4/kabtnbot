@@ -130,7 +130,7 @@ describe('SettingsTab', () => {
     renderTab();
     await screen.findByDisplayValue('يا بوت');
 
-    const select = screen.getByLabelText(/لغة رسائل البوت|Bot message language/);
+    const select = screen.getByLabelText(/لغة البوت|Bot language/);
     for (const name of ['العربية', 'English', 'Deutsch', 'Türkçe', 'Français', 'Русский']) {
       expect(screen.getAllByRole('option', { name }).length).toBeGreaterThanOrEqual(1);
     }

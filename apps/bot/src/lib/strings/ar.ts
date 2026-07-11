@@ -19,6 +19,7 @@ export const ar = {
   kickNeedsAdmin: '❌ طرد الأعضاء بالصوت يحتاج صلاحية إدارة السيرفر أو الرول الإداري.',
   kickNoMatch: '❓ ما قدرت أحدد مين تقصد، وضّح الاسم أكثر.',
   kickFailed: 'ما قدرت أطرد العضو، تأكد من صلاحياتي.',
+  commandNotAllowed: '❌ هذا الأمر غير مسموح لك.',
   // settings
   settingsSaved: '✅ انحفظ الإعداد.',
   settingsTitle: '⚙️ إعدادات السيرفر',

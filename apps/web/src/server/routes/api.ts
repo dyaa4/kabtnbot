@@ -4,6 +4,7 @@ import {
   getGuildConfig, updateGuildConfig, getUsage,
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
+  getCommandFlows, putCommandFlows,
 } from '@gamebot/db';
 import { DIALECTS, LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config } from '../config.js';
@@ -184,6 +185,41 @@ export function apiRouter(rest: DiscordRest): Router {
         }
       }
       res.json(await updateGuildConfig(req.params.guildId, parsed.data));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get('/guilds/:guildId/command-flows', guard, async (req, res, next) => {
+    try {
+      res.json(await getCommandFlows(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Full-document replace — the flow editor always saves its whole draft.
+  router.put('/guilds/:guildId/command-flows', guard, async (req, res, next) => {
+    try {
+      res.json(await putCommandFlows(req.params.guildId, req.body));
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        apiError(res, 400, 'VALIDATION', err.issues[0]?.message ?? 'Invalid flows');
+        return;
+      }
+      next(err);
+    }
+  });
+
+  // Member name search for the flow editor's user picker.
+  router.get('/guilds/:guildId/members', guard, async (req, res, next) => {
+    try {
+      const query = typeof req.query.query === 'string' ? req.query.query.trim() : '';
+      if (query.length < 2) {
+        res.json([]);
+        return;
+      }
+      res.json(await rest.searchMembers(req.params.guildId, query, 20));
     } catch (err) {
       next(err);
     }

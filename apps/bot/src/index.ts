@@ -6,6 +6,7 @@ import { onReady } from './events/ready.js';
 import { onInteractionCreate } from './events/interactionCreate.js';
 import { registerActivityTracking } from './events/activity.js';
 import { registerTextProtection } from './modules/protection/text-mod.js';
+import { registerCustomCommands } from './modules/custom-commands/text-listener.js';
 import { registerWelcome } from './events/guildMemberAdd.js';
 import { registerVoiceLog } from './events/voice-log.js';
 import { registerGuildDirectory } from './events/guild-directory.js';
@@ -26,6 +27,7 @@ async function main(): Promise<void> {
   onInteractionCreate(client);
   registerActivityTracking(client);
   registerTextProtection(client);
+  registerCustomCommands(client);
   registerWelcome(client);
   registerVoiceLog(client);
   registerGuildDirectory(client);

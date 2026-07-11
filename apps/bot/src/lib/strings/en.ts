@@ -18,6 +18,7 @@ export const en = {
   kickNeedsAdmin: '❌ Voice-kicking members requires Manage Server permission or the admin role.',
   kickNoMatch: "❓ Couldn't tell who you mean, please be more specific.",
   kickFailed: "Couldn't kick the member, check my permissions.",
+  commandNotAllowed: '❌ You are not allowed to use this command.',
   settingsSaved: '✅ Setting saved.',
   settingsTitle: '⚙️ Server settings',
   settingsFieldVoice: '🎙️ Voice',

@@ -1,9 +1,16 @@
 import type { Guild } from 'discord.js';
 import { getGuildConfig } from '@gamebot/db';
-import type { Language } from '@gamebot/shared';
+import {
+  matchCustomFlows, matchBuiltinExtraTriggers, isSpeakerAllowed,
+  type BuiltinCommandKey, type BuiltinOverrides, type CommandFlow, type Language,
+} from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
+import { getCachedCommandFlows } from '../../lib/flows-cache.js';
+import { executeActions, type ExecContext } from '../custom-commands/executor.js';
+import { classifyIntent, candidatesOf } from '../custom-commands/intent.js';
+import { checkCooldown } from '../custom-commands/cooldown.js';
 import { getAIProvider } from './providers.js';
 import { buildSystemPrompt } from './prompts.js';
 import { resolveKickTarget } from './kick.js';
@@ -72,6 +79,28 @@ const COMMANDS: Record<Language, CommandPatterns> = {
   },
 };
 
+// Original built-in precedence — kept exactly (say/kick last because their
+// prefix patterns are the loosest).
+const BUILTIN_ORDER: BuiltinCommandKey[] = ['leave', 'stop', 'help', 'ping', 'say', 'kick'];
+
+/** First built-in whose stock regex or admin-added extra trigger matches; disabled overrides never hit. */
+function matchBuiltin(
+  cmds: CommandPatterns,
+  overrides: BuiltinOverrides,
+  q: string,
+): { key: BuiltinCommandKey; args: string } | null {
+  for (const key of BUILTIN_ORDER) {
+    if (overrides[key]?.enabled === false) continue;
+    if (key === 'say' || key === 'kick') {
+      const m = q.match(cmds[key]);
+      if (m) return { key, args: (m[1] ?? '').trim() };
+    } else if (cmds[key].test(q)) {
+      return { key, args: '' };
+    }
+  }
+  return matchBuiltinExtraTriggers(overrides, q);
+}
+
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
 ): Promise<string> {
@@ -79,49 +108,93 @@ export async function routeVoiceCommand(
   const config = await getGuildConfig(guild.id);
   const strings = t(config.language);
   const cmds = COMMANDS[config.language] ?? COMMANDS.ar;
+  const flows = await getCachedCommandFlows(guild.id);
+  const speaker = guild.members.cache.get(speakerId);
+  const speakerRoleIds = speaker ? [...speaker.roles.cache.keys()] : [];
 
-  if (cmds.leave.test(q)) {
-    stopListening(session);
-    leaveGuildVoice(guild.id);
-    return strings.voiceLeft;
-  }
-  if (cmds.stop.test(q)) {
-    stopListening(session);
-    return strings.voiceStopped;
-  }
-  if (cmds.help.test(q)) return strings.voiceHelp;
-  if (cmds.ping.test(q)) return fmt(strings.voicePing, { ms: guild.client.ws.ping });
-
-  const sayMatch = q.match(cmds.say);
-  if (sayMatch) return sayMatch[1];
-
-  const kickMatch = q.match(cmds.kick);
-  if (kickMatch) {
-    const speaker = guild.members.cache.get(speakerId);
-    if (!speaker || !isGuildAdmin(speaker, config.admin_role_id)) return strings.kickNeedsAdmin;
-
-    const channel = guild.channels.cache.get(session.channelId);
-    const members = channel?.isVoiceBased()
-      ? [...channel.members.values()]
-        .filter((m) => !m.user.bot)
-        .map((m) => ({ id: m.id, displayName: m.displayName }))
-      : [];
-    const targetId = resolveKickTarget(kickMatch[1].trim(), members);
-    if (!targetId) return strings.kickNoMatch;
-
-    const target = guild.members.cache.get(targetId);
-    try {
-      await target?.voice.disconnect();
-    } catch {
-      return strings.kickFailed;
+  const runFlow = async (flow: CommandFlow, args: string): Promise<string> => {
+    if (!isSpeakerAllowed(flow.conditions, speakerId, speakerRoleIds)) {
+      return strings.commandNotAllowed;
     }
-    return fmt(strings.voiceKicked, { name: target?.displayName ?? '' });
+    if (flow.conditions.channel_ids.length > 0 && !flow.conditions.channel_ids.includes(session.channelId)) {
+      return '';
+    }
+    if (!checkCooldown(`${guild.id}:${flow.id}:${speakerId}`, flow.cooldown_seconds)) return '';
+    const ctx: ExecContext = {
+      guild, invokerId: speakerId, utterance: q, args, source: 'voice', session, config,
+    };
+    return (await executeActions(flow.actions, ctx)).reply;
+  };
+
+  // 1. Custom flows by phrase — deliberately BEFORE built-ins so an admin can
+  // shadow a stock phrase with their own command.
+  const custom = matchCustomFlows(flows.flows, q, 'voice');
+  if (custom) return runFlow(custom.flow, custom.args);
+
+  // 2. Built-ins, gated by dashboard overrides. With no overrides saved this
+  // behaves byte-identically to the old if-chain.
+  const builtin = matchBuiltin(cmds, flows.builtin_overrides, q);
+  if (builtin) {
+    const { key, args } = builtin;
+    const ov = flows.builtin_overrides[key];
+    const hasCustomGate = ov !== undefined && (ov.role_ids.length > 0 || ov.user_ids.length > 0);
+    const allowed = hasCustomGate
+      ? isSpeakerAllowed(ov, speakerId, speakerRoleIds)
+      : key !== 'kick' || (!!speaker && isGuildAdmin(speaker, config.admin_role_id));
+    if (!allowed) return key === 'kick' && !hasCustomGate ? strings.kickNeedsAdmin : strings.commandNotAllowed;
+
+    switch (key) {
+      case 'leave':
+        stopListening(session);
+        leaveGuildVoice(guild.id);
+        return strings.voiceLeft;
+      case 'stop':
+        stopListening(session);
+        return strings.voiceStopped;
+      case 'help':
+        return strings.voiceHelp;
+      case 'ping':
+        return fmt(strings.voicePing, { ms: guild.client.ws.ping });
+      case 'say':
+        return args;
+      case 'kick': {
+        const channel = guild.channels.cache.get(session.channelId);
+        const members = channel?.isVoiceBased()
+          ? [...channel.members.values()]
+            .filter((m) => !m.user.bot)
+            .map((m) => ({ id: m.id, displayName: m.displayName }))
+          : [];
+        const targetId = resolveKickTarget(args, members);
+        if (!targetId) return strings.kickNoMatch;
+
+        const target = guild.members.cache.get(targetId);
+        try {
+          await target?.voice.disconnect();
+        } catch {
+          return strings.kickFailed;
+        }
+        return fmt(strings.voiceKicked, { name: target?.displayName ?? '' });
+      }
+    }
   }
 
   if (!q) return '';
 
-  // Free-form question → AI (quota-gated), answered in the guild's bot language.
+  // 3+4 share ONE quota consume: the intent classification and the free-form
+  // answer are alternatives, not two questions.
   if (!(await tryConsumeAiQuestion(guild.id))) return strings.aiQuotaExhausted;
+
+  // 3. LLM intent fallback — did the speaker MEAN one of the custom commands?
+  const candidates = candidatesOf(flows.flows);
+  if (candidates.length > 0) {
+    const matchedId = await classifyIntent(q, candidates).catch(() => null);
+    if (matchedId) {
+      const flow = flows.flows.find((f) => f.id === matchedId);
+      if (flow) return runFlow(flow, q);
+    }
+  }
+
+  // 4. Free-form question → AI, answered in the guild's bot language.
   try {
     const ai = getAIProvider();
     return await ai.generateResponse(q, {

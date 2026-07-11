@@ -3,6 +3,7 @@ import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
 import { ProtectionTab } from '../components/ProtectionTab.js';
+import { CommandsTab } from '../components/commands/CommandsTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 import { VoiceLogTab } from '../components/VoiceLogTab.js';
@@ -16,6 +17,7 @@ export function GuildView() {
   const tabs = [
     { to: '', key: 'tabs.overview' },
     { to: 'settings', key: 'tabs.settings' },
+    { to: 'commands', key: 'tabs.commands' },
     { to: 'protection', key: 'tabs.protection' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
@@ -45,6 +47,7 @@ export function GuildView() {
       <Routes>
         <Route index element={<Overview guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
+        <Route path="commands" element={<CommandsTab guildId={guildId} />} />
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />

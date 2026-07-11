@@ -20,6 +20,12 @@ export interface DiscordRest {
   getGuild(guildId: string): Promise<{ id: string; name: string; icon: string | null } | null>;
   getMember(guildId: string, userId: string): Promise<{ roles: string[] } | null>;
   listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
+  /** Name search via Discord's purpose-built /members/search (username + nick prefix match). */
+  searchMembers(
+    guildId: string,
+    query: string,
+    limit?: number,
+  ): Promise<{ id: string; username: string; display_name: string; avatar: string | null }[]>;
   listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   listRoles(guildId: string): Promise<{ id: string; name: string }[]>;
   listVoiceChannels(guildId: string): Promise<{ id: string; name: string }[]>;
@@ -156,6 +162,22 @@ export function createDiscordRest(): DiscordRest {
         console.warn(`[discord-rest] listMembers(${guildId}) hit the ${limit} cap; members beyond it are omitted`);
       }
       return out;
+    },
+    async searchMembers(guildId, query, limit = 20) {
+      const page = await discordJson<
+        { user: { id: string; username: string; global_name?: string | null; avatar: string | null }; nick: string | null }[]
+      >(
+        `${API}/guilds/${guildId}/members/search?query=${encodeURIComponent(query)}&limit=${limit}`,
+        { headers: bot },
+        true,
+      );
+      if (!page) return [];
+      return page.map((m) => ({
+        id: m.user.id,
+        username: m.user.username,
+        display_name: m.nick ?? m.user.global_name ?? m.user.username,
+        avatar: m.user.avatar,
+      }));
     },
     async listTextChannels(guildId) {
       const channels = await discordJson<{ id: string; name: string; type: number }[]>(

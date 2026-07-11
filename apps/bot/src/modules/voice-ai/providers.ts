@@ -10,6 +10,9 @@ export interface AIProvider {
       systemPrompt: string;
       username: string;
       history?: { role: 'user' | 'assistant'; content: string }[];
+      /** Override sampling for deterministic classification calls. */
+      temperature?: number;
+      maxTokens?: number;
     },
   ): Promise<string>;
 }
@@ -28,7 +31,10 @@ function createGroqProvider(): AIProvider {
         { role: 'user', content: prompt },
       ];
       const completion = await groq.chat.completions.create({
-        model: config.GROQ_MODEL, messages, max_tokens: 1024, temperature: 0.6,
+        model: config.GROQ_MODEL,
+        messages,
+        max_tokens: opts.maxTokens ?? 1024,
+        temperature: opts.temperature ?? 0.6,
       });
       return completion.choices[0]?.message?.content || '';
     },

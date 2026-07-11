@@ -18,6 +18,7 @@ export const fr = {
   kickNeedsAdmin: '❌ Expulser des membres à la voix nécessite Gérer le serveur ou le rôle admin.',
   kickNoMatch: "❓ Je n'ai pas compris de qui tu parles, précise le nom.",
   kickFailed: "Impossible d'expulser le membre, vérifie mes permissions.",
+  commandNotAllowed: "❌ Tu n'as pas le droit d'utiliser cette commande.",
   settingsSaved: '✅ Paramètre enregistré.',
   settingsTitle: '⚙️ Paramètres du serveur',
   settingsFieldVoice: '🎙️ Vocal',

@@ -13,9 +13,15 @@ vi.mock('@gamebot/db', () => ({
   getUsage: vi.fn(async () => ({ listen_seconds: 0, ai_questions: 0 })),
   incrementAiQuestions: vi.fn(async () => {}),
   incrementListenSeconds: vi.fn(async () => {}),
+  getCommandFlows: vi.fn(async () => GuildCommandFlowsSchema.parse({})),
 }));
 
+import { beforeEach } from 'vitest';
+import { GuildCommandFlowsSchema } from '@gamebot/shared';
+import { getCommandFlows } from '@gamebot/db';
 import { routeVoiceCommand } from './router.js';
+import { clearFlowsCache } from '../../lib/flows-cache.js';
+import { clearCooldowns } from '../custom-commands/cooldown.js';
 import { S } from '../../lib/strings.js';
 
 function fakeGuild(memberIds: string[], extraMembers: Record<string, unknown> = {}) {
@@ -48,6 +54,12 @@ function fakeSession() {
 }
 
 describe('routeVoiceCommand', () => {
+  beforeEach(() => {
+    clearFlowsCache();
+    clearCooldowns();
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({}));
+  });
+
   it('answers ping-style commands', async () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
     expect(reply).toContain('42');
@@ -71,5 +83,63 @@ describe('routeVoiceCommand', () => {
     });
     const reply = await routeVoiceCommand(guild, fakeSession(), 'اطرد u2', 'u-speaker');
     expect(reply).toBe(S.kickNeedsAdmin);
+  });
+
+  it('runs a custom flow before built-ins and speaks its text', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f1', name: 'Gruß', triggers: ['السرعة'], // shadows the built-in ping phrase
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'مرحبا {user}' }],
+      }],
+    }));
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
+    expect(reply).toContain('مرحبا');
+    expect(reply).not.toContain('42'); // custom flow shadowed the built-in
+  });
+
+  it('denies a custom flow to speakers outside its allowlist', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f1', name: 'VIP', triggers: ['سر'],
+        conditions: { role_ids: ['r-vip'], user_ids: [], channel_ids: [] },
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'ok' }],
+      }],
+    }));
+    const guild = fakeGuild([], {
+      'u-speaker': {
+        id: 'u-speaker', user: { bot: false }, displayName: 'Speaker',
+        voice: { channelId: 'vc1' }, roles: { cache: new Map() },
+      },
+    });
+    const reply = await routeVoiceCommand(guild, fakeSession(), 'سر', 'u-speaker');
+    expect(reply).toBe(S.commandNotAllowed);
+  });
+
+  it('a disabled built-in override stops the stock phrase from matching', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      builtin_overrides: { ping: { enabled: false } },
+    }));
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
+    expect(reply).not.toContain('42'); // falls through to AI (which fails in tests)
+  });
+
+  it('an extra trigger from an override reaches the built-in handler', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      builtin_overrides: { ping: { extra_triggers: ['بنج سريع'] } },
+    }));
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'بنج سريع', 'u-speaker');
+    expect(reply).toContain('42');
+  });
+
+  it('cooldown silences an immediate repeat of the same flow', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f1', name: 'Echo', triggers: ['ناداني'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'هلا' }],
+      }],
+    }));
+    const guild = fakeGuild([]);
+    expect(await routeVoiceCommand(guild, fakeSession(), 'ناداني', 'u-speaker')).toContain('هلا');
+    expect(await routeVoiceCommand(guild, fakeSession(), 'ناداني', 'u-speaker')).toBe('');
   });
 });

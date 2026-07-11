@@ -158,6 +158,28 @@ export const MemberSnapshotModel =
   (mongoose.models.MemberSnapshot as mongoose.Model<MemberSnapshotDoc>) ??
   mongoose.model<MemberSnapshotDoc>('MemberSnapshot', memberSnapshotSchema);
 
+// Per-guild command-flow editor data (custom commands + built-in overrides),
+// one doc per guild. The blob is validated by GuildCommandFlowsSchema in the
+// repo layer, same split as GuildConfig.
+export interface CommandFlowsDoc {
+  guild_id: string;
+  data: Record<string, unknown>;
+  created_at: Date;
+  updated_at: Date;
+}
+
+const commandFlowsSchema = new Schema<CommandFlowsDoc>(
+  {
+    guild_id: { type: String, required: true, unique: true },
+    data: { type: Object, required: true },
+  },
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
+);
+
+export const CommandFlowsModel =
+  (mongoose.models.CommandFlows as mongoose.Model<CommandFlowsDoc>) ??
+  mongoose.model<CommandFlowsDoc>('CommandFlows', commandFlowsSchema);
+
 // Owner-facing directory of every guild the bot is in, plus a block flag the
 // super-admin panel toggles (a blocked guild is left and refused on rejoin).
 export interface GuildDirectoryDoc {

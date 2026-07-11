@@ -321,6 +321,56 @@ describe('api routes', () => {
     expect((await request(app).get('/api/guilds/gX/voice-log').set('Cookie', cookie)).status).toBe(403);
   });
 
+  it('command-flows: GET defaults, PUT round-trips, invalid PUT → 400', async () => {
+    const { app, cookie } = setup();
+    const empty = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
+    expect(empty.status).toBe(200);
+    expect(empty.body).toMatchObject({ flows: [], builtin_overrides: {}, folders: [] });
+
+    const put = await request(app)
+      .put('/api/guilds/g1/command-flows')
+      .set('Cookie', cookie)
+      .send({
+        flows: [{
+          id: 'f1', name: 'Raus', folder: 'audio', triggers: ['geh raus'],
+          actions: [{ id: 'a1', type: 'voice_leave' }],
+        }],
+        folders: ['audio'],
+        builtin_overrides: { stop: { enabled: false } },
+      });
+    expect(put.status).toBe(200);
+    expect(put.body.flows[0].enabled).toBe(true); // defaults filled
+
+    const readBack = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
+    expect(readBack.body.flows).toHaveLength(1);
+    expect(readBack.body.builtin_overrides.stop.enabled).toBe(false);
+
+    const bad = await request(app)
+      .put('/api/guilds/g1/command-flows')
+      .set('Cookie', cookie)
+      .send({ flows: [{ id: 'x', name: 'bad', triggers: [], actions: [] }] });
+    expect(bad.status).toBe(400);
+    expect(bad.body.error.code).toBe('VALIDATION');
+
+    expect((await request(app).put('/api/guilds/gX/command-flows').set('Cookie', cookie).send({})).status).toBe(403);
+  });
+
+  it('member search requires 2+ chars and filters by name', async () => {
+    const { app, cookie, rest } = setup();
+    rest.membersList.set('g1', [
+      { id: 'u1', username: 'Ahmad', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
+      { id: 'u2', username: 'Sara', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
+    ]);
+    const short = await request(app).get('/api/guilds/g1/members?query=a').set('Cookie', cookie);
+    expect(short.status).toBe(200);
+    expect(short.body).toEqual([]);
+
+    const res = await request(app).get('/api/guilds/g1/members?query=ahm').set('Cookie', cookie);
+    expect(res.body).toEqual([{ id: 'u1', username: 'Ahmad', display_name: 'Ahmad', avatar: null }]);
+
+    expect((await request(app).get('/api/guilds/gX/members?query=ahm').set('Cookie', cookie)).status).toBe(403);
+  });
+
   it('revoked Discord token → 401 UNAUTHENTICATED and clears the session cookie', async () => {
     clearAccessCache();
     const { app, cookie, rest } = setup();

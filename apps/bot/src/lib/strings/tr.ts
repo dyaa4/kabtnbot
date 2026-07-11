@@ -18,6 +18,7 @@ export const tr = {
   kickNeedsAdmin: '❌ Sesle üye atmak Sunucuyu Yönet izni veya yönetici rolü gerektirir.',
   kickNoMatch: '❓ Kimi kastettiğini anlayamadım, ismi daha net söyle.',
   kickFailed: 'Üyeyi atamadım, izinlerimi kontrol et.',
+  commandNotAllowed: '❌ Bu komutu kullanma iznin yok.',
   settingsSaved: '✅ Ayar kaydedildi.',
   settingsTitle: '⚙️ Sunucu ayarları',
   settingsFieldVoice: '🎙️ Ses',

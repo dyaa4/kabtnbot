@@ -18,6 +18,7 @@ export const de = {
   kickNeedsAdmin: '❌ Mitglieder per Stimme zu kicken erfordert „Server verwalten" oder die Admin-Rolle.',
   kickNoMatch: '❓ Ich konnte nicht erkennen, wen du meinst — sag den Namen deutlicher.',
   kickFailed: 'Konnte das Mitglied nicht entfernen, prüfe meine Berechtigungen.',
+  commandNotAllowed: '❌ Du darfst diesen Befehl nicht verwenden.',
   settingsSaved: '✅ Einstellung gespeichert.',
   settingsTitle: '⚙️ Server-Einstellungen',
   settingsFieldVoice: '🎙️ Sprache',

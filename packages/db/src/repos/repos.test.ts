@@ -10,6 +10,7 @@ import {
   startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
   activeVoiceSessions, listVoiceSessions,
 } from './voice-log-repo.js';
+import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -47,6 +48,42 @@ describe('guild-config-repo', () => {
     expect(await GuildConfigModel.countDocuments({ guild_id: 'gReadOnly' })).toBe(0); // no write
     await updateGuildConfig('gReadOnly', { protection: { custom_words: ['zzz'] } });
     expect((await getGuildConfigRead('gReadOnly')).protection.custom_words).toContain('zzz');
+  });
+});
+
+describe('command-flows-repo', () => {
+  it('returns defaults without creating a document', async () => {
+    const { CommandFlowsModel } = await import('../models.js');
+    const data = await getCommandFlows('gF0');
+    expect(data.flows).toEqual([]);
+    expect(data.builtin_overrides).toEqual({});
+    expect(await CommandFlowsModel.countDocuments({ guild_id: 'gF0' })).toBe(0);
+  });
+
+  it('put → get round-trips and fully replaces (no merge)', async () => {
+    const flowOf = (id: string, trigger: string) => ({
+      id, name: id, triggers: [trigger],
+      actions: [{ id: 'a1', type: 'voice_leave' }],
+    });
+    await putCommandFlows('gF1', { flows: [flowOf('one', 'raus'), flowOf('two', 'stopp')] });
+    expect((await getCommandFlows('gF1')).flows).toHaveLength(2);
+
+    // Full replace: a save with one flow deletes the other.
+    await putCommandFlows('gF1', {
+      flows: [flowOf('one', 'raus')],
+      builtin_overrides: { kick: { role_ids: ['r1'] } },
+    });
+    const after = await getCommandFlows('gF1');
+    expect(after.flows.map((f) => f.id)).toEqual(['one']);
+    expect(after.builtin_overrides.kick?.role_ids).toEqual(['r1']);
+    expect(after.flows[0].enabled).toBe(true); // defaults filled by Zod
+  });
+
+  it('rejects invalid data', async () => {
+    await expect(
+      putCommandFlows('gF2', { flows: [{ id: 'x', name: 'bad', triggers: [], actions: [] }] }),
+    ).rejects.toThrow();
+    expect((await getCommandFlows('gF2')).flows).toEqual([]); // nothing persisted
   });
 });
 
