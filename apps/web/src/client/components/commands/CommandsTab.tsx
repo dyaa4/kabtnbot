@@ -35,6 +35,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   const flowsQuery = useQuery({
     queryKey: ['command-flows', guildId],
     queryFn: () => api<GuildCommandFlows>(`/api/guilds/${guildId}/command-flows`),
+    retry: (count, err) => !(err instanceof ApiError && err.status === 403) && count < 2,
   });
 
   const [draft, setDraft] = useState<GuildCommandFlows | null>(null);
@@ -57,6 +58,16 @@ export function CommandsTab({ guildId }: { guildId: string }) {
       toast.error(`${t('error.generic')}${detail}`);
     },
   });
+
+  if (flowsQuery.error instanceof ApiError && flowsQuery.error.code === 'PREMIUM_REQUIRED') {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-12 text-center backdrop-blur-md">
+        <span className="text-4xl">💎</span>
+        <h3 className="text-lg font-semibold text-amber-200">{t('commands.premium.title')}</h3>
+        <p className="max-w-md text-sm text-slate-400">{t('commands.premium.body')}</p>
+      </div>
+    );
+  }
 
   if (flowsQuery.isLoading || !draft) return <FormSkeleton sections={1} />;
 
@@ -165,7 +176,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
               }}
             />
           ) : (
-            <div className="flex h-[560px] items-center justify-center rounded-2xl border border-dashed border-white/10 text-slate-500">
+            <div className="flex h-[75vh] min-h-[560px] items-center justify-center rounded-2xl border border-dashed border-white/10 text-slate-500">
               {t('commands.empty')}
             </div>
           )}

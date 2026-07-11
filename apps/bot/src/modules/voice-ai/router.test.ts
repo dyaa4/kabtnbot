@@ -1,15 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
 
+const baseConfig = (premiumActive: boolean) => ({
+  language: 'ar',
+  admin_role_id: null,
+  voice: {
+    enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [], personality_enabled: false,
+  },
+  quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
+  // Command flows are premium — most tests run WITH premium so flows apply.
+  premium: { active: premiumActive, listen_minutes_override: null, ai_questions_override: null },
+});
+
 vi.mock('@gamebot/db', () => ({
-  getGuildConfig: vi.fn(async () => ({
-    language: 'ar',
-    admin_role_id: null,
-    voice: {
-      enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [], personality_enabled: false,
-    },
-    quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
-    premium: { active: false, listen_minutes_override: null, ai_questions_override: null },
-  })),
+  getGuildConfig: vi.fn(async () => baseConfig(true)),
   getUsage: vi.fn(async () => ({ listen_seconds: 0, ai_questions: 0 })),
   incrementAiQuestions: vi.fn(async () => {}),
   incrementListenSeconds: vi.fn(async () => {}),
@@ -18,7 +21,7 @@ vi.mock('@gamebot/db', () => ({
 
 import { beforeEach } from 'vitest';
 import { GuildCommandFlowsSchema } from '@gamebot/shared';
-import { getCommandFlows } from '@gamebot/db';
+import { getCommandFlows, getGuildConfig } from '@gamebot/db';
 import { routeVoiceCommand } from './router.js';
 import { clearFlowsCache } from '../../lib/flows-cache.js';
 import { clearCooldowns } from '../custom-commands/cooldown.js';
@@ -129,6 +132,21 @@ describe('routeVoiceCommand', () => {
     }));
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'بنج سريع', 'u-speaker');
     expect(reply).toContain('42');
+  });
+
+  it('without premium, custom flows and overrides are inert (stock built-ins only)', async () => {
+    vi.mocked(getGuildConfig).mockResolvedValue(baseConfig(false) as never);
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f1', name: 'Shadow', triggers: ['السرعة'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'مرحبا' }],
+      }],
+      builtin_overrides: { ping: { enabled: false } },
+    }));
+    // custom flow does NOT shadow, disabled override does NOT apply → stock ping answers
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
+    expect(reply).toContain('42');
+    vi.mocked(getGuildConfig).mockResolvedValue(baseConfig(true) as never);
   });
 
   it('cooldown silences an immediate repeat of the same flow', async () => {

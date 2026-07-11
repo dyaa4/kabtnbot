@@ -299,5 +299,7 @@
   "chatlog.premium.title": "Sohbet kaydı bir Premium özelliğidir",
   "chatlog.premium.body": "Ses kaydında olduğu gibi son kanal mesajlarının moderasyon kaydını görmek için bu sunucuyu Premium'a yükselt.",
   "voicelog.premium.title": "Ses kaydı bir Premium özelliğidir",
-  "voicelog.premium.body": "Şu anda seste kimlerin olduğunu ve son ses oturumlarını görmek için bu sunucuyu Premium'a yükselt."
+  "voicelog.premium.body": "Şu anda seste kimlerin olduğunu ve son ses oturumlarını görmek için bu sunucuyu Premium'a yükselt.",
+  "commands.premium.title": "Komut düzenleyici bir Premium özelliğidir",
+  "commands.premium.body": "Kendi tetikleyici ifadelerin, izinlerin ve işlemlerinle özel ses ve metin komutları oluşturmak için bu sunucuyu Premium'a yükselt."
 }

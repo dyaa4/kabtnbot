@@ -329,8 +329,16 @@ describe('api routes', () => {
     expect((await request(app).get('/api/guilds/gX/voice-log').set('Cookie', cookie)).status).toBe(403);
   });
 
-  it('command-flows: GET defaults, PUT round-trips, invalid PUT → 400', async () => {
+  it('command-flows: premium-gated, GET defaults, PUT round-trips, invalid PUT → 400', async () => {
     const { app, cookie } = setup();
+
+    await setGuildPremium('g1', false);
+    const locked = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
+    expect(locked.status).toBe(403);
+    expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
+    expect((await request(app).put('/api/guilds/g1/command-flows').set('Cookie', cookie).send({})).status).toBe(403);
+
+    await setGuildPremium('g1', true);
     const empty = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
     expect(empty.status).toBe(200);
     expect(empty.body).toMatchObject({ flows: [], builtin_overrides: {}, folders: [] });

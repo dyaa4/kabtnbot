@@ -299,5 +299,7 @@
   "chatlog.premium.title": "Chat log is a Premium feature",
   "chatlog.premium.body": "Upgrade this server to Premium to see a moderation log of recent channel messages, just like the voice log.",
   "voicelog.premium.title": "Voice log is a Premium feature",
-  "voicelog.premium.body": "Upgrade this server to Premium to see who is in voice right now and the recent voice sessions."
+  "voicelog.premium.body": "Upgrade this server to Premium to see who is in voice right now and the recent voice sessions.",
+  "commands.premium.title": "The command editor is a Premium feature",
+  "commands.premium.body": "Upgrade this server to Premium to build custom voice and text commands with your own trigger phrases, permissions and actions."
 }

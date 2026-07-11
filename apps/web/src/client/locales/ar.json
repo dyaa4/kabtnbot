@@ -299,5 +299,7 @@
   "chatlog.premium.title": "سجل الدردشة ميزة Premium",
   "chatlog.premium.body": "رقِّ هذا السيرفر إلى Premium لعرض سجل إشرافي بأحدث رسائل القنوات، تماماً مثل سجل الصوت.",
   "voicelog.premium.title": "سجل الصوت ميزة Premium",
-  "voicelog.premium.body": "رقِّ هذا السيرفر إلى Premium لمعرفة من في الصوت الآن وعرض آخر الجلسات الصوتية."
+  "voicelog.premium.body": "رقِّ هذا السيرفر إلى Premium لمعرفة من في الصوت الآن وعرض آخر الجلسات الصوتية.",
+  "commands.premium.title": "محرر الأوامر ميزة Premium",
+  "commands.premium.body": "رقِّ هذا السيرفر إلى Premium لبناء أوامر صوتية ونصية مخصصة بعباراتك وصلاحياتك وإجراءاتك الخاصة."
 }

@@ -2,7 +2,7 @@ import type { Guild } from 'discord.js';
 import { getGuildConfig } from '@gamebot/db';
 import {
   matchCustomFlows, matchBuiltinExtraTriggers, isSpeakerAllowed,
-  type BuiltinCommandKey, type BuiltinOverrides, type CommandFlow, type Language,
+  type BuiltinCommandKey, type BuiltinOverrides, type CommandFlow, type GuildCommandFlows, type Language,
 } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
@@ -108,7 +108,12 @@ export async function routeVoiceCommand(
   const config = await getGuildConfig(guild.id);
   const strings = t(config.language);
   const cmds = COMMANDS[config.language] ?? COMMANDS.ar;
-  const flows = await getCachedCommandFlows(guild.id);
+  // Command flows are a premium feature: without premium, custom flows,
+  // built-in overrides and the LLM intent fallback are all inert — the
+  // built-ins behave exactly like stock.
+  const flows: GuildCommandFlows = config.premium.active
+    ? await getCachedCommandFlows(guild.id)
+    : { flows: [], builtin_overrides: {}, folders: [] };
   const speaker = guild.members.cache.get(speakerId);
   const speakerRoleIds = speaker ? [...speaker.roles.cache.keys()] : [];
 

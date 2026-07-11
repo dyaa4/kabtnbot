@@ -10,6 +10,10 @@ import { checkCooldown } from './cooldown.js';
 async function handleMessage(msg: Message): Promise<void> {
   if (!msg.guild || msg.author.bot || !msg.member || !msg.content) return;
 
+  // Command flows are premium — non-premium guilds never match text triggers.
+  const config = await getCachedGuildConfig(msg.guild.id);
+  if (!config.premium.active) return;
+
   const flows = await getCachedCommandFlows(msg.guild.id);
   // Fast skip before any matching work — most guilds define no text triggers.
   if (!flows.flows.some((f) => f.enabled && f.sources.text)) return;
@@ -23,7 +27,6 @@ async function handleMessage(msg: Message): Promise<void> {
   if (!isSpeakerAllowed(flow.conditions, msg.author.id, [...msg.member.roles.cache.keys()])) return;
   if (!checkCooldown(`${msg.guild.id}:${flow.id}:${msg.author.id}`, flow.cooldown_seconds)) return;
 
-  const config = await getCachedGuildConfig(msg.guild.id);
   const ctx: ExecContext = {
     guild: msg.guild,
     invokerId: msg.author.id,

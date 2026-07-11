@@ -188,7 +188,7 @@ export function FlowCanvas({
   return (
     // React Flow's coordinate system is LTR — pin the canvas to LTR even when
     // the surrounding dashboard renders RTL (Arabic).
-    <div dir="ltr" className="h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
+    <div dir="ltr" className="h-[75vh] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40">
       <ReactFlowProvider>
         <ReactFlow
           key={flow?.id ?? builtin?.key ?? 'empty'}

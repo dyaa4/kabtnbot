@@ -299,5 +299,7 @@
   "chatlog.premium.title": "Le journal de chat est une fonctionnalité Premium",
   "chatlog.premium.body": "Passe ce serveur en Premium pour voir un journal de modération des derniers messages, comme pour le journal vocal.",
   "voicelog.premium.title": "Le journal vocal est une fonctionnalité Premium",
-  "voicelog.premium.body": "Passe ce serveur en Premium pour voir qui est en vocal en ce moment et les dernières sessions vocales."
+  "voicelog.premium.body": "Passe ce serveur en Premium pour voir qui est en vocal en ce moment et les dernières sessions vocales.",
+  "commands.premium.title": "L'éditeur de commandes est une fonctionnalité Premium",
+  "commands.premium.body": "Passe ce serveur en Premium pour créer des commandes vocales et textuelles personnalisées avec tes propres phrases, permissions et actions."
 }

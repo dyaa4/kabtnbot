@@ -76,6 +76,9 @@ export function FolderSidebar({
 
   return (
     <aside className="w-64 shrink-0 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+      <div className="flex items-center justify-between px-1 text-xs font-semibold text-amber-300">
+        <span>💎 Pro</span>
+      </div>
       <div className="flex gap-2">
         <button
           type="button"

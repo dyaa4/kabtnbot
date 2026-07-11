@@ -190,8 +190,14 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  // Premium-gated: the command-flow editor is a paid feature (super-admin
+  // always passes, see hasPremiumAccess).
   router.get('/guilds/:guildId/command-flows', guard, async (req, res, next) => {
     try {
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Command flows require premium');
+        return;
+      }
       res.json(await getCommandFlows(req.params.guildId));
     } catch (err) {
       next(err);
@@ -201,6 +207,10 @@ export function apiRouter(rest: DiscordRest): Router {
   // Full-document replace — the flow editor always saves its whole draft.
   router.put('/guilds/:guildId/command-flows', guard, async (req, res, next) => {
     try {
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Command flows require premium');
+        return;
+      }
       res.json(await putCommandFlows(req.params.guildId, req.body));
     } catch (err) {
       if (err instanceof z.ZodError) {
