@@ -1,4 +1,5 @@
 import { BotStatusModel, type BotStatusDoc } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
 // The bot heartbeats every 30s; three missed beats = offline.
 export const BOT_OFFLINE_AFTER_MS = 90_000;
@@ -11,11 +12,11 @@ export interface BotStatus {
 
 /** Called by the bot process on a timer; the dashboard reads it via getBotStatus. */
 export async function recordBotHeartbeat(guildCount: number): Promise<void> {
-  await BotStatusModel.updateOne(
+  await retryOnDupKey(() => BotStatusModel.updateOne(
     { key: 'bot' },
     { $set: { last_seen: new Date(), guild_count: guildCount } },
     { upsert: true },
-  );
+  ));
 }
 
 /** Called on graceful shutdown so the dashboard flips to offline immediately. */

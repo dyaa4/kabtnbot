@@ -82,4 +82,7 @@ export const ar = {
   voiceResumed: 'رجعت أسمع 🎙️ — قل "{wake}" وبعدها أمرك.',
   voicePing: 'سرعة الاتصال {ms} ملي ثانية.',
   voiceKicked: 'طردت {name} من الفويس.',
+  // spoken moderation lines (TTS, routed by bot language like all replies)
+  voiceWarnSpoken: 'يا {name}، انتبه لألفاظك، هذا تحذير. التكرار سيؤدي إلى إخراجك.',
+  voiceKickedSpoken: 'يا {name}، تم إخراجك بسبب الألفاظ غير اللائقة.',
 } as const;

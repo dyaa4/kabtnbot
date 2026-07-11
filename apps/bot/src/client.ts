@@ -20,9 +20,9 @@ export function createClient(): Client {
 
   return new Client({
     intents,
-    // Partials so messageReactionAdd/messageDelete still fire for messages that aren't in
-    // the cache (e.g. sent before the bot restarted) — otherwise reactions on older
-    // messages are silently dropped.
+    // Partials so messageReactionAdd still fires for messages that aren't in
+    // the cache (e.g. sent before the bot restarted) — otherwise reactions on
+    // older messages are silently dropped.
     partials: [Partials.Message, Partials.Reaction],
   });
 }

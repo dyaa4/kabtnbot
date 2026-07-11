@@ -7,7 +7,7 @@ import { transcribe } from './stt.js';
 import { pcmToWav } from './wav.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
 import { playSpeech, type VoiceSession, getSession } from './sessions.js';
-import { S } from '../../lib/strings.js';
+import { t } from '../../lib/strings.js';
 
 const SAMPLE_RATE = 48000;
 const OPUS_CHANNELS = 2;
@@ -25,7 +25,8 @@ function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
 export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
   if (session.listening) return true;
   if (await isListenQuotaExceeded(guild.id)) {
-    await playSpeech(guild.id, S.listenQuotaExhausted).catch(() => {});
+    const { language } = await getCachedGuildConfig(guild.id);
+    await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
     return false;
   }
   session.listening = true;
@@ -122,13 +123,12 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
 
     try {
       await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
+      const config = await getCachedGuildConfig(guild.id);
       if (await isListenQuotaExceeded(guild.id)) {
         stopListening(session);
-        await playSpeech(guild.id, S.listenQuotaExhausted).catch(() => {});
+        await playSpeech(guild.id, t(config.language).listenQuotaExhausted).catch(() => {});
         return;
       }
-
-      const config = await getCachedGuildConfig(guild.id);
       const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word, config.language);
       console.log(`[Voice ${guild.id}] STT="${text}"`);
 
@@ -153,7 +153,7 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
           // ...and always a text reply so the answer is visible without TTS.
           const { resolveModerationChannel } = await import('../protection/voice-mod.js');
           await resolveModerationChannel(guild, config.protection.log_channel_id)
-            ?.send(`🤖 ${answer}`)
+            ?.send(`🤖 ${answer}`.slice(0, 2000))
             .catch(() => {});
         }
       }

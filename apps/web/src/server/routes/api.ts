@@ -49,7 +49,9 @@ const ConfigPatch = z
         enabled: z.boolean().optional(),
         channel_id: z.string().nullable().optional(),
         message: z.string().max(2000).optional(),
-        banner_url: z.string().url().nullable().optional(),
+        // https only — the bot's welcome-image renderer refuses non-https URLs
+        // at send time, so accepting http here would just break banners silently.
+        banner_url: z.string().url().startsWith('https://', 'banner_url must be https').nullable().optional(),
         auto_role_id: z.string().nullable().optional(),
         farewell_enabled: z.boolean().optional(),
         farewell_message: z.string().max(2000).optional(),
@@ -235,7 +237,7 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
-  registerStatsRoutes(router, rest); // grown in Task 8
+  registerStatsRoutes(router, rest);
   registerAssetRoutes(router, rest);
   registerBotProfileRoutes(router, rest);
 
@@ -253,10 +255,13 @@ async function hasPremiumAccess(guildId: string, res: { locals: { session?: unkn
   return guildConfig.premium.active;
 }
 
-// Discord REST results (member list + guild counts) are cached in-memory per guild, mirroring
-// the TTL-cache pattern in guild-access.ts, so the stats route doesn't hammer Discord on every load.
+// Discord REST results (member list + guild counts) are cached in-memory per guild,
+// mirroring the PROMISE-cache pattern in guild-access.ts: caching the in-flight
+// promise (not just the resolved value) makes concurrent cold-cache requests —
+// e.g. /stats + /voice-log firing together on dashboard load — share ONE Discord
+// call instead of stampeding a paginated member fetch into a 429.
 const STATS_TTL_MS = 5 * 60_000;
-const statsCache = new Map<string, { at: number; value: unknown }>();
+const statsCache = new Map<string, { at: number; value: Promise<unknown> }>();
 
 export function clearStatsCache(): void {
   statsCache.clear();
@@ -264,11 +269,19 @@ export function clearStatsCache(): void {
 
 function statsCached<T>(key: string, compute: () => Promise<T>): Promise<T> {
   const hit = statsCache.get(key);
-  if (hit && Date.now() - hit.at < STATS_TTL_MS) return Promise.resolve(hit.value as T);
-  return compute().then((value) => {
-    statsCache.set(key, { at: Date.now(), value });
-    return value;
+  if (hit && Date.now() - hit.at < STATS_TTL_MS) return hit.value as Promise<T>;
+  // Sweep expired entries — member arrays are large, and entries for guilds
+  // nobody revisits would otherwise sit in memory forever.
+  for (const [k, v] of statsCache) {
+    if (Date.now() - v.at >= STATS_TTL_MS) statsCache.delete(k);
+  }
+  const value = compute();
+  statsCache.set(key, { at: Date.now(), value });
+  // A failed fetch must not be served for the next 5 minutes.
+  value.catch(() => {
+    if (statsCache.get(key)?.value === value) statsCache.delete(key);
   });
+  return value;
 }
 
 function dateKeyOf(d: Date): string {

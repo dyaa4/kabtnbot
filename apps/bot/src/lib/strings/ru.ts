@@ -74,4 +74,6 @@ export const ru = {
   voiceResumed: 'Снова слушаю 🎙️ — скажи «{wake}» и команду.',
   voicePing: 'Задержка {ms} мс.',
   voiceKicked: '{name} исключён из войса.',
+  voiceWarnSpoken: 'Эй {name}, следи за словами — это предупреждение. Повторишь — будешь удалён.',
+  voiceKickedSpoken: '{name}, ты был удалён из войса за неподобающие выражения.',
 } as const satisfies Record<keyof typeof ar, string>;

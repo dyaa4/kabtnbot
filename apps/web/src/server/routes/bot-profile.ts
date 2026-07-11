@@ -4,6 +4,8 @@ import { z } from 'zod';
 import type { BotMember, DiscordRest } from '../discord-rest.js';
 import { DiscordApiError } from '../discord-rest.js';
 import { requireGuildAccess } from '../guild-access.js';
+import { isSuperAdmin } from '../config.js';
+import type { Session } from '../session.js';
 import { apiError } from '../app.js';
 import { sniffImageType, imageDimensions, imageTooLarge } from '../image-sniff.js';
 
@@ -91,19 +93,25 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
       }
       const dataUri = `data:${type};base64,${body.toString('base64')}`;
 
-      // Try the per-guild bot avatar first; if Discord ignores the field (older
-      // API behavior), fall back to the global bot avatar and tell the client.
+      // Try the per-guild bot avatar first. The GLOBAL fallback rebrands the
+      // bot in EVERY guild, so it is reserved for the super-admin — a guild
+      // admin must never be able to change how the bot looks for other guilds.
+      const mayEditGlobal = isSuperAdmin((res.locals.session as Session).uid);
       let scope: 'guild' | 'global';
       try {
         const member = await rest.editBotMember(req.params.guildId, { avatar: dataUri });
         if (member.avatar) {
           scope = 'guild';
-        } else {
+        } else if (mayEditGlobal) {
           await rest.editBotUser({ avatar: dataUri });
           scope = 'global';
+        } else {
+          apiError(res, 400, 'GUILD_AVATAR_UNSUPPORTED', 'Discord does not support a per-guild avatar for this bot');
+          return;
         }
       } catch (err) {
         if (!(err instanceof DiscordApiError)) throw err;
+        if (!mayEditGlobal) throw err;
         await rest.editBotUser({ avatar: dataUri });
         scope = 'global';
       }

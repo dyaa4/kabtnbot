@@ -58,7 +58,13 @@ export function SettingsTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
-  const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
+  // No focus-refetch: the form resets from cfg.data, so a refetch while the
+  // admin is mid-edit would silently wipe their edits.
+  const cfg = useQuery({
+    queryKey: ['config', guildId],
+    queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`),
+    refetchOnWindowFocus: false,
+  });
 
   const patch = useMutation({
     mutationFn: (body: object) => api(`/api/guilds/${guildId}/config`, { method: 'PATCH', body: JSON.stringify(body) }),

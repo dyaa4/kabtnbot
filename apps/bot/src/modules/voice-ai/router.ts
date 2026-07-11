@@ -1,7 +1,7 @@
 import type { Guild } from 'discord.js';
 import { getGuildConfig } from '@gamebot/db';
 import {
-  matchCustomFlows, matchBuiltinExtraTriggers, isSpeakerAllowed,
+  matchCustomFlows, matchBuiltinExtraTriggers, isSpeakerAllowed, normalizeText,
   type BuiltinCommandKey, type BuiltinOverrides, type CommandFlow, type GuildCommandFlows, type Language,
 } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
@@ -28,12 +28,15 @@ interface CommandPatterns {
 
 // Voice command triggers per bot language — STT transcribes in the guild's
 // configured language, so we match that language's keywords.
+// The query arrives NORMALIZED (parseWakeWord folds ة→ه, ى→ي, alef forms; see
+// normalizeText), so Arabic patterns must be written in normalized spelling —
+// an unnormalized ة here can never match.
 const COMMANDS: Record<Language, CommandPatterns> = {
   ar: {
-    leave: /^(اطلع|خروج|اخرج|طش|غادر|غادر القناة)$/i,
+    leave: /^(اطلع|خروج|اخرج|طش|غادر|غادر القناه)$/i,
     stop: /^(اسكت|قف|توقف|اخرس)$/i,
-    help: /^(ساعد|الاوامر|اوامر|وش تسوي|مساعدة)$/i,
-    ping: /^(السرعة|سرعة|سرعه|بطء|بنق)$/i,
+    help: /^(ساعد|الاوامر|اوامر|وش تسوي|مساعده)$/i,
+    ping: /^(السرعه|سرعه|بطء|بنق)$/i,
     say: /^قل\s+(.+)$/i,
     kick: /^(?:اطرد|كك)\s*(.*)$/i,
   },
@@ -104,20 +107,21 @@ function matchBuiltin(
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
 ): Promise<string> {
-  const q = query.trim();
+  // parseWakeWord already normalizes in the voice path; normalizing again here
+  // is idempotent and keeps the built-in patterns matching for any caller.
+  const q = normalizeText(query.trim());
   const config = await getGuildConfig(guild.id);
   const strings = t(config.language);
   const cmds = COMMANDS[config.language] ?? COMMANDS.ar;
-  // Command flows are a premium feature: without premium, custom flows,
-  // built-in overrides and the LLM intent fallback are all inert — the
-  // built-ins behave exactly like stock.
-  const flows: GuildCommandFlows = config.premium.active
-    ? await getCachedCommandFlows(guild.id)
-    : { flows: [], builtin_overrides: {}, folders: [] };
+  // No premium gate on EXECUTION: the flow editor (web) is premium-gated, and
+  // its super-admin bypass means flows can exist for non-premium guilds —
+  // gating here too would leave those flows silently dead. Premium enforcement
+  // is deferred until the payment system exists.
+  const flows: GuildCommandFlows = await getCachedCommandFlows(guild.id);
   const speaker = guild.members.cache.get(speakerId);
   const speakerRoleIds = speaker ? [...speaker.roles.cache.keys()] : [];
 
-  const runFlow = async (flow: CommandFlow, args: string): Promise<string> => {
+  const runFlow = async (flow: CommandFlow, args: string, aiQuotaPrepaid = false): Promise<string> => {
     if (!isSpeakerAllowed(flow.conditions, speakerId, speakerRoleIds)) {
       return strings.commandNotAllowed;
     }
@@ -126,7 +130,7 @@ export async function routeVoiceCommand(
     }
     if (!checkCooldown(`${guild.id}:${flow.id}:${speakerId}`, flow.cooldown_seconds)) return '';
     const ctx: ExecContext = {
-      guild, invokerId: speakerId, utterance: q, args, source: 'voice', session, config,
+      guild, invokerId: speakerId, utterance: q, args, source: 'voice', session, config, aiQuotaPrepaid,
     };
     return (await executeActions(flow.actions, ctx)).reply;
   };
@@ -174,12 +178,15 @@ export async function routeVoiceCommand(
         if (!targetId) return strings.kickNoMatch;
 
         const target = guild.members.cache.get(targetId);
+        // Guard the cache miss explicitly — `target?.voice.disconnect()` would
+        // be a silent no-op and we'd still announce a kick that never happened.
+        if (!target) return strings.kickNoMatch;
         try {
-          await target?.voice.disconnect();
+          await target.voice.disconnect();
         } catch {
           return strings.kickFailed;
         }
-        return fmt(strings.voiceKicked, { name: target?.displayName ?? '' });
+        return fmt(strings.voiceKicked, { name: target.displayName });
       }
     }
   }
@@ -196,7 +203,9 @@ export async function routeVoiceCommand(
     const matchedId = await classifyIntent(q, candidates).catch(() => null);
     if (matchedId) {
       const flow = flows.flows.find((f) => f.id === matchedId);
-      if (flow) return runFlow(flow, q);
+      // aiQuotaPrepaid: the consume above already paid for this question — an
+      // ai_reply action in the flow must not charge a second unit.
+      if (flow) return runFlow(flow, q, true);
     }
   }
 

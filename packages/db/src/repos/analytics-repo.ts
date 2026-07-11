@@ -1,4 +1,5 @@
 import { UsageModel, MemberSnapshotModel } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
 function dateKeyOf(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -21,11 +22,11 @@ function cutoffKey(days: number): string {
 }
 
 export async function recordMemberSnapshot(guildId: string, count: number, dateKey: string): Promise<void> {
-  await MemberSnapshotModel.updateOne(
+  await retryOnDupKey(() => MemberSnapshotModel.updateOne(
     { guild_id: guildId, date: dateKey },
     { $set: { member_count: count } },
     { upsert: true },
-  );
+  ));
 }
 
 export async function memberSnapshots(

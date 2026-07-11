@@ -45,6 +45,9 @@ export const welcomeTestCommand: Command = {
     }
     const status = lines.join('\n');
 
-    await interaction.editReply({ content: `${content}\n\n${status}`, files });
+    // content alone may already sit at Discord's 2000-char cap; keep the
+    // diagnostic status intact and trim the preview instead.
+    const preview = content.slice(0, Math.max(0, 2000 - status.length - 2));
+    await interaction.editReply({ content: `${preview}\n\n${status}`.slice(0, 2000), files });
   },
 };

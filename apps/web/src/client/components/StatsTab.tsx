@@ -99,6 +99,23 @@ export function StatsTab({ guildId }: { guildId: string }) {
 
   if (stats.isLoading) return <StatsSkeleton />;
 
+  // A failed fetch must not render as an innocently "empty" dashboard — that
+  // is indistinguishable from a genuinely inactive server.
+  if (stats.isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-rose-400/20 bg-rose-400/5 p-12 text-center backdrop-blur-md">
+        <p className="text-sm text-slate-300">{t('error.generic')}</p>
+        <button
+          type="button"
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50"
+          onClick={() => void stats.refetch()}
+        >
+          ↻
+        </button>
+      </div>
+    );
+  }
+
   const data = stats.data;
   const memberSeries = data?.memberSeries ?? [];
   const messagesSeries = data?.messagesDaily ?? [];

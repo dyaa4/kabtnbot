@@ -156,20 +156,34 @@ export function FlowCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canvasKey]);
 
-  const onNodeDragStop = (_e: unknown, node: Node) => {
-    const position = { x: Math.round(node.position.x), y: Math.round(node.position.y) };
+  // Persist EVERY dragged node, not just the grabbed one — a multi-select drag
+  // (Ctrl-click several, drag one) moves them all in React Flow's store, and
+  // any unpersisted position snaps back on the next structure remount/save.
+  // All updates fold into ONE change call so none overwrites the others.
+  const onNodeDragStop = (_e: unknown, node: Node, nodes?: Node[]) => {
+    const moved = nodes && nodes.length > 0 ? nodes : [node];
+    const posOf = (n: Node) => ({ x: Math.round(n.position.x), y: Math.round(n.position.y) });
     if (flow && onFlowChange) {
-      if (node.id === 'trigger') onFlowChange({ ...flow, layout: { ...flow.layout, trigger: position } });
-      else if (node.id === 'condition') onFlowChange({ ...flow, layout: { ...flow.layout, condition: position } });
-      else {
-        onFlowChange({
-          ...flow,
-          actions: flow.actions.map((a) => (a.id === node.id ? ({ ...a, pos: position } as FlowAction) : a)),
-        });
+      let next = flow;
+      for (const n of moved) {
+        const position = posOf(n);
+        if (n.id === 'trigger') next = { ...next, layout: { ...next.layout, trigger: position } };
+        else if (n.id === 'condition') next = { ...next, layout: { ...next.layout, condition: position } };
+        else {
+          next = {
+            ...next,
+            actions: next.actions.map((a) => (a.id === n.id ? ({ ...a, pos: position } as FlowAction) : a)),
+          };
+        }
       }
+      onFlowChange(next);
     } else if (builtin) {
-      const slot = node.id === 'trigger' ? 'trigger' : node.id === 'condition' ? 'condition' : 'action';
-      builtin.onChange({ ...builtin.override, layout: { ...builtin.override.layout, [slot]: position } });
+      let layout = builtin.override.layout;
+      for (const n of moved) {
+        const slot = n.id === 'trigger' ? 'trigger' : n.id === 'condition' ? 'condition' : 'action';
+        layout = { ...layout, [slot]: posOf(n) };
+      }
+      builtin.onChange({ ...builtin.override, layout });
     }
   };
 

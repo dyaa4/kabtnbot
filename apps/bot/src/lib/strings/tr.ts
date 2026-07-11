@@ -74,4 +74,6 @@ export const tr = {
   voiceResumed: 'Tekrar dinliyorum 🎙️ — "{wake}" deyip komutunu söyle.',
   voicePing: 'Gecikme {ms} ms.',
   voiceKicked: '{name} sesten atıldı.',
+  voiceWarnSpoken: 'Hey {name}, diline dikkat et — bu bir uyarı. Tekrarlarsan sesten atılırsın.',
+  voiceKickedSpoken: '{name}, uygunsuz sözler nedeniyle sesten atıldın.',
 } as const satisfies Record<keyof typeof ar, string>;

@@ -33,7 +33,9 @@ async function answer(interaction: Parameters<Command['execute']>[0], speakOut: 
     await interaction.editReply(strings.aiFailed);
     return;
   }
-  await interaction.editReply(text || strings.aiFailed);
+  // max_tokens 1024 can exceed Discord's 2000-char message limit; an oversize
+  // editReply throws AFTER the quota was consumed and the answer generated.
+  await interaction.editReply(text ? text.slice(0, 2000) : strings.aiFailed);
   if (speakOut && getSession(interaction.guildId)) {
     await playSpeech(interaction.guildId, text).catch(() => {});
   }

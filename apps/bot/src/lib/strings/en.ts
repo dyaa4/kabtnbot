@@ -74,4 +74,7 @@ export const en = {
   voiceResumed: 'Listening again 🎙️ — say "{wake}" followed by your command.',
   voicePing: 'Latency is {ms} ms.',
   voiceKicked: 'Kicked {name} from voice.',
+  // spoken moderation lines (TTS, routed by bot language like all replies)
+  voiceWarnSpoken: 'Hey {name}, watch your language — this is a warning. Repeating it will get you removed.',
+  voiceKickedSpoken: '{name}, you were removed from voice for inappropriate language.',
 } as const satisfies Record<keyof typeof ar, string>;

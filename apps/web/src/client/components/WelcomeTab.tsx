@@ -62,7 +62,13 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
-  const cfg = useQuery({ queryKey: ['config', guildId], queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`) });
+  // No focus-refetch: the effect below resets the whole form from cfg.data,
+  // so a refetch while the admin is mid-edit would silently wipe their edits.
+  const cfg = useQuery({
+    queryKey: ['config', guildId],
+    queryFn: () => api<GuildConfigResp>(`/api/guilds/${guildId}/config`),
+    refetchOnWindowFocus: false,
+  });
   // The logged-in admin stands in for the joining member in the preview.
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
 
@@ -110,8 +116,20 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         credentials: 'same-origin',
       });
       if (!res.ok) throw new Error(`delete ${res.status}`);
+      // Also clear a legacy banner_url: the preview (and the bot) fall back to
+      // it, so deleting only the uploaded asset would bring the old URL banner
+      // right back as if Remove had done nothing.
+      if (cfg.data?.welcome.banner_url) {
+        await api(`/api/guilds/${guildId}/config`, {
+          method: 'PATCH',
+          body: JSON.stringify({ welcome: { banner_url: null } }),
+        });
+      }
     },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ['banner', guildId] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['banner', guildId] });
+      void qc.invalidateQueries({ queryKey: ['config', guildId] });
+    },
     onError: () => toast.error(t('error.generic')),
   });
 

@@ -7,14 +7,16 @@ const baseConfig = (premiumActive: boolean) => ({
     enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [], personality_enabled: false,
   },
   quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
-  // Command flows are premium — most tests run WITH premium so flows apply.
   premium: { active: premiumActive, listen_minutes_override: null, ai_questions_override: null },
 });
 
 vi.mock('@gamebot/db', () => ({
   getGuildConfig: vi.fn(async () => baseConfig(true)),
+  getGuildConfigRead: vi.fn(async () => baseConfig(true)),
   getUsage: vi.fn(async () => ({ listen_seconds: 0, ai_questions: 0 })),
   incrementAiQuestions: vi.fn(async () => {}),
+  consumeAiQuestion: vi.fn(async () => 1),
+  refundAiQuestion: vi.fn(async () => {}),
   incrementListenSeconds: vi.fn(async () => {}),
   getCommandFlows: vi.fn(async () => GuildCommandFlowsSchema.parse({})),
 }));
@@ -134,18 +136,18 @@ describe('routeVoiceCommand', () => {
     expect(reply).toContain('42');
   });
 
-  it('without premium, custom flows and overrides are inert (stock built-ins only)', async () => {
+  it('flows apply even without premium (execution gate deferred until payments)', async () => {
     vi.mocked(getGuildConfig).mockResolvedValue(baseConfig(false) as never);
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
       flows: [{
         id: 'f1', name: 'Shadow', triggers: ['السرعة'],
         actions: [{ id: 'a1', type: 'speak_tts', text: 'مرحبا' }],
       }],
-      builtin_overrides: { ping: { enabled: false } },
     }));
-    // custom flow does NOT shadow, disabled override does NOT apply → stock ping answers
+    // The editor (web) is premium-gated with a super-admin bypass; saved flows
+    // must therefore run regardless of the guild's premium flag.
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker');
-    expect(reply).toContain('42');
+    expect(reply).toContain('مرحبا');
     vi.mocked(getGuildConfig).mockResolvedValue(baseConfig(true) as never);
   });
 

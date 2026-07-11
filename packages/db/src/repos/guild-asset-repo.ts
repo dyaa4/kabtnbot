@@ -1,7 +1,8 @@
 import { GuildAssetModel, type GuildAssetDoc, type GuildAssetKind } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
-// Mongo's document limit is 16 MB; cap assets well below it so the config
-// document metadata never pushes a write over the limit.
+// Assets live in their own collection (one doc per guild+kind); cap them well
+// below Mongo's 16 MB document limit so a write can never hit it.
 export const MAX_ASSET_BYTES = 8 * 1024 * 1024;
 
 export interface GuildAsset {
@@ -18,11 +19,11 @@ export async function putGuildAsset(
 ): Promise<void> {
   if (data.length === 0) throw new Error('asset is empty');
   if (data.length > MAX_ASSET_BYTES) throw new Error('asset exceeds size limit');
-  await GuildAssetModel.updateOne(
+  await retryOnDupKey(() => GuildAssetModel.updateOne(
     { guild_id: guildId, kind },
     { $set: { content_type: contentType, data } },
     { upsert: true },
-  );
+  ));
 }
 
 export async function getGuildAsset(guildId: string, kind: GuildAssetKind): Promise<GuildAsset | null> {

@@ -20,6 +20,10 @@ export function signSession(s: Session): string {
 export function verifySession(token: string): Session | null {
   try {
     const p = jwt.verify(token, config.SESSION_SECRET) as jwt.JwtPayload & Session;
+    // A validly-signed token with a missing/foreign-shaped payload (e.g. from an
+    // older session format) must read as "not logged in", not crash downstream
+    // when the encrypted access token gets decrypted.
+    if (typeof p.uid !== 'string' || typeof p.uname !== 'string' || typeof p.eat !== 'string') return null;
     return { uid: p.uid, uname: p.uname, avatar: p.avatar ?? null, eat: p.eat };
   } catch {
     return null;

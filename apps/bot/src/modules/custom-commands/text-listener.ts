@@ -10,10 +10,11 @@ import { checkCooldown } from './cooldown.js';
 async function handleMessage(msg: Message): Promise<void> {
   if (!msg.guild || msg.author.bot || !msg.member || !msg.content) return;
 
-  // Command flows are premium — non-premium guilds never match text triggers.
+  // No premium gate on EXECUTION: the editor (web) is what's premium-gated,
+  // and the super-admin bypass there means flows can exist for non-premium
+  // guilds — gating here too would leave those flows silently dead. Premium
+  // enforcement is deferred until the payment system exists.
   const config = await getCachedGuildConfig(msg.guild.id);
-  if (!config.premium.active) return;
-
   const flows = await getCachedCommandFlows(msg.guild.id);
   // Fast skip before any matching work — most guilds define no text triggers.
   if (!flows.flows.some((f) => f.enabled && f.sources.text)) return;

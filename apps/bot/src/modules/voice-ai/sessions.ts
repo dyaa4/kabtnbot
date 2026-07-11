@@ -4,7 +4,7 @@ import {
   type VoiceConnection, type AudioPlayer,
 } from '@discordjs/voice';
 import { Readable } from 'stream';
-import type { VoiceBasedChannel } from 'discord.js';
+import type { VoiceBasedChannel, VoiceState } from 'discord.js';
 import type OpusScript from 'opusscript';
 import { synthesizeSpeech } from './tts.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
@@ -18,6 +18,8 @@ export interface VoiceSession {
   subscriptions: Map<string, { decoder: OpusScript; stream: Readable }>;
   /** Detaches this session's client-level voiceStateUpdate listener (set by startListening). */
   removeVoiceHandler?: () => void;
+  /** Detaches the listener that tracks the bot being dragged to another channel. */
+  removeBotMoveHandler?: () => void;
 }
 
 const sessions = new Map<string, VoiceSession>();
@@ -83,6 +85,18 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
     listening: false,
     subscriptions: new Map(),
   };
+
+  // Keep channelId in sync when an admin drags the bot to another channel —
+  // otherwise new speakers there are never subscribed, kick targets resolve
+  // against the old channel, and the deafen-rejoin would teleport the bot back.
+  const onBotMove = (_old: VoiceState, next: VoiceState) => {
+    if (next.guild.id !== channel.guildId || next.id !== channel.client.user?.id) return;
+    const live = sessions.get(channel.guildId);
+    if (live && next.channelId) live.channelId = next.channelId;
+  };
+  channel.client.on('voiceStateUpdate', onBotMove);
+  session.removeBotMoveHandler = () => channel.client.removeListener('voiceStateUpdate', onBotMove);
+
   sessions.set(channel.guildId, session);
   return session;
 }
@@ -90,7 +104,12 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
 export function leaveGuildVoice(guildId: string): boolean {
   const session = sessions.get(guildId);
   sessions.delete(guildId);
+  // The flag must drop BEFORE the connection dies: an in-flight utterance
+  // handler checks it after STT returns and would otherwise re-subscribe on
+  // the destroyed connection, leaking a decoder per voice-leave.
+  if (session) session.listening = false;
   session?.removeVoiceHandler?.();
+  session?.removeBotMoveHandler?.();
   for (const { decoder, stream } of session?.subscriptions.values() ?? []) {
     stream.destroy();
     decoder.delete();

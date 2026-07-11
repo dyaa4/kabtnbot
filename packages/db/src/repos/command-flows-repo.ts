@@ -1,5 +1,6 @@
 import { GuildCommandFlowsSchema, type GuildCommandFlows } from '@gamebot/shared';
 import { CommandFlowsModel } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
 /**
  * Read-only fetch: stored flows or schema defaults, WITHOUT creating a
@@ -17,10 +18,10 @@ export async function getCommandFlows(guildId: string): Promise<GuildCommandFlow
  */
 export async function putCommandFlows(guildId: string, data: unknown): Promise<GuildCommandFlows> {
   const parsed = GuildCommandFlowsSchema.parse(data);
-  await CommandFlowsModel.updateOne(
+  await retryOnDupKey(() => CommandFlowsModel.updateOne(
     { guild_id: guildId },
     { $set: { data: parsed } },
     { upsert: true },
-  );
+  ));
   return parsed;
 }

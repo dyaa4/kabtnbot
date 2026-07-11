@@ -18,9 +18,12 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
   const [nickname, setNickname] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // No focus-refetch: the nickname field resets from profile.data, so a
+  // refetch while the admin is mid-edit would silently wipe their input.
   const profile = useQuery({
     queryKey: ['bot-profile', guildId],
     queryFn: () => api<BotProfileResp>(`/api/guilds/${guildId}/bot-profile`),
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

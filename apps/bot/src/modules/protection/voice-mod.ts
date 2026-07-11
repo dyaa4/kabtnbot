@@ -96,10 +96,10 @@ export async function handleTranscriptModeration(
   console.log(`[Mod ${guild.id}] matched word="${matched}" user=${userId} strike=${state.count} action=${action}`);
   if (action === 'cooldown') return true;
 
-  const member = guild.members.cache.get(userId);
-  const name = member?.displayName ?? 'عضو';
-  const channel = resolveModerationChannel(guild, config.protection.log_channel_id);
   const strings = t(config.language);
+  const member = guild.members.cache.get(userId);
+  const name = member?.displayName ?? strings.unknownMember;
+  const channel = resolveModerationChannel(guild, config.protection.log_channel_id);
 
   // First offense within the window → warn only. A single noisy transcription
   // can't cost an innocent member their seat; only a repeat escalates.
@@ -107,8 +107,7 @@ export async function handleTranscriptModeration(
     await channel
       ?.send(fmt(strings.voiceWarnNotice, { user: `<@${userId}>` }))
       .catch((e) => console.error('[Mod] send failed (needs Send Messages perm?):', (e as Error)?.message ?? e));
-    // Spoken line stays Arabic on purpose: the voice assistant (TTS) is Arabic-only.
-    await playSpeech(guild.id, `يا ${name}، انتبه لألفاظك، هذا تحذير. التكرار سيؤدي إلى إخراجك.`).catch(() => {});
+    await playSpeech(guild.id, fmt(strings.voiceWarnSpoken, { name })).catch(() => {});
     return true;
   }
 
@@ -138,6 +137,6 @@ export async function handleTranscriptModeration(
   // Keep the strike record (do NOT clear it): the cooldown it carries is what
   // stops duplicate/echoed transcripts of this same utterance from kicking
   // again. It goes stale on its own after STRIKE_WINDOW_MS.
-  if (kicked) await playSpeech(guild.id, `يا ${name}، تم إخراجك بسبب الألفاظ غير اللائقة.`).catch(() => {});
+  if (kicked) await playSpeech(guild.id, fmt(strings.voiceKickedSpoken, { name })).catch(() => {});
   return true;
 }

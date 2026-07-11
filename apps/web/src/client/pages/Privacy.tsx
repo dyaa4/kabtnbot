@@ -2,13 +2,13 @@ import { LegalPage, type LegalContent } from './LegalPage.js';
 
 const ar: LegalContent = {
   title: 'سياسة الخصوصية',
-  updated: 'آخر تحديث: 6 يوليو 2026',
+  updated: 'آخر تحديث: 11 يوليو 2026',
   sections: [
     {
       heading: '1. البيانات التي نجمعها',
       paragraphs: [
         'إعدادات السيرفر: معرف السيرفر وكل ما تضبطه في لوحة التحكم (كلمة التنبيه، قوائم الكلمات، قنوات الترحيب والسجل، الرول الإداري، وغيرها).',
-        'عدادات النشاط: عدد الرسائل، عدد التفاعلات، ودقائق الصوت لكل عضو يومياً — أرقام فقط، ولا نخزّن نص أي رسالة في قاعدة بياناتنا.',
+        'عدادات النشاط: عدد الرسائل، عدد التفاعلات، ودقائق الصوت لكل عضو يومياً — أرقام فقط.',
         'سجل الحضور الصوتي: وقت دخول وخروج الأعضاء من الرومات الصوتية ومعرف الروم — بيانات وصفية فقط، دون أي تسجيل للصوت.',
         'الصور المرفوعة: بانر الترحيب وصورة البوت التي يرفعها مدير السيرفر تُخزَّن في قاعدة بياناتنا.',
         'عند تسجيل الدخول للوحة التحكم: معرفك في Discord واسم المستخدم والصورة الرمزية عبر Discord OAuth، وملف تعريف ارتباط واحد للجلسة.',
@@ -18,7 +18,8 @@ const ar: LegalContent = {
       heading: '2. محتوى الرسائل',
       paragraphs: [
         'عند تفعيل «حماية النصوص» يقرأ البوت محتوى الرسائل لحظياً لفحصها فقط، ولا يخزّنه لدينا. عند حذف رسالة مخالفة قد يُنشر مقتطف منها في قناة السجل التي اختارها مدير سيرفرك — هذا يبقى داخل سيرفركم.',
-        'إذا كانت حماية النصوص معطلة فالبوت لا يقرأ محتوى الرسائل إطلاقاً.',
+        'سجل الرسائل (ميزة برو): عند تفعيله تُخزَّن أحدث رسائل القنوات (الكاتب والقناة والنص) لمدة أقصاها 7 أيام ثم تُحذف تلقائياً، ويطّلع عليها مديرو سيرفرك فقط عبر لوحة التحكم. إزالة البوت أو تعطيل الميزة يوقف أي تخزين جديد فوراً.',
+        'إذا كانت حماية النصوص وسجل الرسائل معطلين فالبوت لا يقرأ محتوى الرسائل إطلاقاً.',
       ],
     },
     {
@@ -36,7 +37,7 @@ const ar: LegalContent = {
     {
       heading: '5. مدة الاحتفاظ',
       paragraphs: [
-        'عدادات الاستخدام اليومية: 90 يوماً. عدادات النشاط: 120 يوماً. سجل الحضور الصوتي: 90 يوماً. لقطات عدد الأعضاء: 400 يوماً — تُحذف تلقائياً بعدها.',
+        'عدادات الاستخدام اليومية: 90 يوماً. عدادات النشاط: 120 يوماً. سجل الحضور الصوتي: 90 يوماً. سجل الرسائل: 7 أيام. لقطات عدد الأعضاء: 400 يوماً — تُحذف تلقائياً بعدها.',
         'الإعدادات والصور المرفوعة تبقى ما دام البوت مستخدماً، وتُحذف عند طلبك.',
       ],
     },
@@ -58,13 +59,13 @@ const ar: LegalContent = {
 
 const en: LegalContent = {
   title: 'Privacy Policy',
-  updated: 'Last updated: July 6, 2026',
+  updated: 'Last updated: July 11, 2026',
   sections: [
     {
       heading: '1. Data we collect',
       paragraphs: [
         'Server settings: the guild ID and everything you configure in the dashboard (wake word, word lists, welcome/log channels, admin role, and so on).',
-        'Activity counters: per-member daily message counts, reaction counts and voice minutes — numbers only; we never store the text of any message in our database.',
+        'Activity counters: per-member daily message counts, reaction counts and voice minutes — numbers only.',
         'Voice presence log: when members join and leave voice channels and the channel ID — metadata only, no audio is ever recorded.',
         'Uploaded images: the welcome banner and bot avatar uploaded by a server admin are stored in our database.',
         'When you sign in to the dashboard: your Discord ID, username and avatar via Discord OAuth, plus a single session cookie.',
@@ -74,7 +75,8 @@ const en: LegalContent = {
       heading: '2. Message content',
       paragraphs: [
         'When text protection is enabled, the bot reads message content transiently to scan it — it is not stored by us. When a violating message is deleted, a snippet may be posted to the log channel your server admin chose; that stays inside your server.',
-        'If text protection is disabled, the bot does not read message content at all.',
+        'Chat log (Pro feature): when enabled, recent channel messages (author, channel and text) are stored for up to 7 days and then deleted automatically. Only your server admins can view them in the dashboard; removing the bot or disabling the feature immediately stops new collection.',
+        'If text protection and the chat log are disabled, the bot does not read message content at all.',
       ],
     },
     {
@@ -92,7 +94,7 @@ const en: LegalContent = {
     {
       heading: '5. Retention',
       paragraphs: [
-        'Daily usage counters: 90 days. Activity counters: 120 days. Voice presence log: 90 days. Member-count snapshots: 400 days — all deleted automatically afterwards.',
+        'Daily usage counters: 90 days. Activity counters: 120 days. Voice presence log: 90 days. Chat log: 7 days. Member-count snapshots: 400 days — all deleted automatically afterwards.',
         'Settings and uploaded images are kept while the bot is in use and deleted on request.',
       ],
     },

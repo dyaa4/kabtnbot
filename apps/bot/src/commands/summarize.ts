@@ -57,6 +57,7 @@ export const summarizeCommand: Command = {
       await interaction.editReply(strings.aiFailed);
       return;
     }
-    await interaction.editReply(`${strings.summaryHeader}\n${text || strings.aiFailed}`);
+    // Cap at Discord's 2000-char message limit — the model can produce more.
+    await interaction.editReply(`${strings.summaryHeader}\n${text || strings.aiFailed}`.slice(0, 2000));
   },
 };

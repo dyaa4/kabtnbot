@@ -1,5 +1,6 @@
 import { activityScore } from '@gamebot/shared';
 import { ActivityDailyModel } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
 function cutoffKey(days: number): string {
   const d = new Date();
@@ -9,11 +10,11 @@ function cutoffKey(days: number): string {
 }
 
 async function bump(guildId: string, userId: string, dateKey: string, field: 'messages' | 'reactions' | 'voice_seconds', n: number): Promise<void> {
-  await ActivityDailyModel.updateOne(
+  await retryOnDupKey(() => ActivityDailyModel.updateOne(
     { guild_id: guildId, user_id: userId, date: dateKey },
     { $inc: { [field]: n } },
     { upsert: true, setDefaultsOnInsert: true },
-  );
+  ));
 }
 
 export const recordMessage = (g: string, u: string, d: string) => bump(g, u, d, 'messages', 1);

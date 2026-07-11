@@ -10,6 +10,19 @@ export function elapsedSeconds(prevMs: number, nowMs: number): number {
 export const voiceJoinTimes = new Map<string, number>();
 
 export function registerActivityTracking(client: Client, now: () => number = Date.now): void {
+  // Seed members already sitting in voice at startup (mirrors voice-log's
+  // reconcile): without this, anyone who stays in voice across a bot restart
+  // has no join entry and accrues ZERO voice seconds for the whole session.
+  client.once('clientReady', () => {
+    for (const guild of client.guilds.cache.values()) {
+      for (const [, vs] of guild.voiceStates.cache) {
+        if (!vs.channelId || vs.member?.user.bot) continue;
+        const key = `${guild.id}:${vs.id}`;
+        if (!voiceJoinTimes.has(key)) voiceJoinTimes.set(key, now());
+      }
+    }
+  });
+
   client.on('messageCreate', (msg) => {
     if (!msg.guildId || msg.author.bot) return;
     // Runs independently of text protection (which may delete the message afterwards), so

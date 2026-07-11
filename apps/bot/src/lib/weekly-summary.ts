@@ -72,7 +72,10 @@ export async function runSummarySweep(client: Client, now: Date = new Date()): P
         voiceMinutes: Math.round(daily.reduce((sum, r) => sum + r.voice_seconds, 0) / 60),
       };
       const content = buildWeeklySummary(guild.name, totals, top, config.language);
-      await (channel as TextChannel).send({ content, allowedMentions: { parse: [] } }).catch(() => {});
+      // Mark as posted ONLY after a successful send — swallowing a transient
+      // send failure here would silently skip the recap for the whole week
+      // (the hourly sweep retries as long as the KV mark is absent).
+      await (channel as TextChannel).send({ content, allowedMentions: { parse: [] } });
       await setKv(kvKey, dateKey);
     } catch (err) {
       console.error('[summary]', guild.id, err);

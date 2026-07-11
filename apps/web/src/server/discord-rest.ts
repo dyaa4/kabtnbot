@@ -39,10 +39,8 @@ export interface DiscordRest {
     boostTier: number;
     boostCount: number;
   } | null>;
-  deleteChannel(channelId: string): Promise<void>;
   /** Makes the bot leave a guild (DELETE /users/@me/guilds/:id with the bot token). */
   leaveGuild(guildId: string): Promise<void>;
-  clearMessageComponents(channelId: string, messageId: string): Promise<void>;
   getBotMember(guildId: string): Promise<BotMember | null>;
   editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember>;
   editBotUser(patch: { avatar: string }): Promise<void>;
@@ -86,15 +84,18 @@ export async function discordFetch(url: string, init: RequestInit): Promise<Resp
   return fetch(url, init);
 }
 
+// `nullOnMissing` maps BOTH 404 (unknown guild) and 403 (bot lacks access —
+// e.g. kicked but the session cache hasn't caught up) to null: for every call
+// site "the bot can't see this resource" is one condition, not two.
 async function discordJson<T>(
   url: string,
   init: RequestInit,
-  allow404 = false,
+  nullOnMissing = false,
   userToken = false,
 ): Promise<T | null> {
   const res = await discordFetch(url, init);
   if (userToken && res.status === 401) throw new DiscordAuthError();
-  if (allow404 && (res.status === 404 || res.status === 403)) return null;
+  if (nullOnMissing && (res.status === 404 || res.status === 403)) return null;
   if (!res.ok) throw new Error(`Discord ${res.status} for ${url}`);
   return (await res.json()) as T;
 }
@@ -249,18 +250,13 @@ export function createDiscordRest(): DiscordRest {
         boostCount: g.premium_subscription_count ?? 0,
       };
     },
-    async deleteChannel(channelId) {
-      await fetch(`${API}/channels/${channelId}`, { method: 'DELETE', headers: bot }).catch(() => {});
-    },
     async leaveGuild(guildId) {
-      await fetch(`${API}/users/@me/guilds/${guildId}`, { method: 'DELETE', headers: bot }).catch(() => {});
-    },
-    async clearMessageComponents(channelId, messageId) {
-      await fetch(`${API}/channels/${channelId}/messages/${messageId}`, {
-        method: 'PATCH',
-        headers: { ...bot, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ components: [] }),
-      }).catch(() => {});
+      // Must NOT swallow failures: the admin routes record the guild as left
+      // and report success after this call — a swallowed 429/network error
+      // would leave the bot in a guild the owner believes was evicted.
+      const res = await discordFetch(`${API}/users/@me/guilds/${guildId}`, { method: 'DELETE', headers: bot });
+      // 404 = already not a member; that's the desired end state.
+      if (!res.ok && res.status !== 404) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
     },
     async getBotMember(guildId) {
       return discordJson<BotMember>(

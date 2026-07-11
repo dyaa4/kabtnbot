@@ -71,9 +71,8 @@ describe('matchesProfanity', () => {
     expect(matchesProfanity('يا كسك', [])).toBe(true);
     expect(matchesProfanity('انت كس', [])).toBe(true);
   });
-  it('custom words match as substrings anywhere in the text (admin opted in)', () => {
+  it('custom words of 3+ letters match as substrings anywhere in the text (admin opted in)', () => {
     // inside another word / written together
-    expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(true);
     expect(matchesProfanity('he said fuckyou loudly', ['fuckyou'])).toBe(true);
     expect(matchesProfanity('xxspamwordxx', ['spamword'])).toBe(true);
     // normalization still applies to both sides
@@ -81,7 +80,13 @@ describe('matchesProfanity', () => {
     // clean text stays clean
     expect(matchesProfanity('good game everyone', ['spamword'])).toBe(false);
   });
-  it('single-character custom entries fall back to boundary matching', () => {
+  it('custom entries under 3 letters fall back to boundary matching', () => {
+    // A two-letter Arabic root as a substring would swallow innocent gaming
+    // words (كس inside بوكس "punch", فكس "fix") — the known false-kick class.
+    expect(matchesProfanity('ضربته بوكس قوي', ['كس'])).toBe(false);
+    expect(matchesProfanity('هاتفي مكسور', ['كس'])).toBe(false);
+    expect(matchesProfanity('انت كس', ['كس'])).toBe(true); // standalone token still matches
+    expect(matchesProfanity('يا كسك', ['كس'])).toBe(true); // clitic suffix still matches
     expect(matchesProfanity('باب مفتوح', ['ب'])).toBe(false); // no substring explosion
     expect(matchesProfanity('قال ب صوت عالي', ['ب'])).toBe(true); // standalone token still matches
   });

@@ -5,6 +5,7 @@ import { connectDb, disconnectDb, getGuildAsset } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
+import { superAdminIds } from '../config.js';
 import { encryptToken } from '../crypto.js';
 import { clearAccessCache } from '../guild-access.js';
 import { pngHeader } from '../testing/image-fixtures.js';
@@ -177,7 +178,7 @@ describe('bot-profile routes', () => {
     expect(rest.globalAvatar).toBeNull();
   });
 
-  it('falls back to the global avatar when the guild avatar is not applied', async () => {
+  it('refuses the global-avatar fallback for a regular guild admin (cross-tenant write)', async () => {
     const { app, cookie, rest } = setup();
     rest.supportsGuildAvatar = false;
     const res = await request(app)
@@ -185,9 +186,27 @@ describe('bot-profile routes', () => {
       .set('Cookie', cookie)
       .set('Content-Type', 'image/png')
       .send(PNG);
-    expect(res.status).toBe(200);
-    expect(res.body.scope).toBe('global');
-    expect(rest.globalAvatar).toContain('data:image/png;base64,');
+    expect(res.status).toBe(400);
+    expect(res.body.error.code).toBe('GUILD_AVATAR_UNSUPPORTED');
+    expect(rest.globalAvatar).toBeNull();
+  });
+
+  it('falls back to the global avatar for the super-admin when the guild avatar is not applied', async () => {
+    const { app, cookie, rest } = setup();
+    rest.supportsGuildAvatar = false;
+    superAdminIds.push('u1'); // session uid from setup()
+    try {
+      const res = await request(app)
+        .put('/api/guilds/g1/bot-profile/avatar')
+        .set('Cookie', cookie)
+        .set('Content-Type', 'image/png')
+        .send(PNG);
+      expect(res.status).toBe(200);
+      expect(res.body.scope).toBe('global');
+      expect(rest.globalAvatar).toContain('data:image/png;base64,');
+    } finally {
+      superAdminIds.splice(superAdminIds.indexOf('u1'), 1);
+    }
   });
 
   it('rejects webp avatars (Discord unsupported)', async () => {

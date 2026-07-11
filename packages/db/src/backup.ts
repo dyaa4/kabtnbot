@@ -1,3 +1,4 @@
+import { GuildConfigSchema } from '@gamebot/shared';
 import { GuildConfigModel, GuildAssetModel, KvModel, type GuildAssetDoc, type KvDoc } from './models.js';
 
 /**
@@ -51,7 +52,15 @@ export interface RestoreCounts {
 export async function importBackup(data: BackupData): Promise<RestoreCounts> {
   if (data.version !== 1) throw new Error(`Unsupported backup version: ${String(data.version)}`);
   for (const c of data.guild_configs) {
-    await GuildConfigModel.updateOne({ guild_id: c.guild_id }, { $set: { config: c.config } }, { upsert: true });
+    // Every read path uses .parse — restoring an invalid config blob would make
+    // getGuildConfig throw on EVERY call for that guild (bot + dashboard both
+    // brick). This is the only path that can write an unvalidated config, so
+    // validate here and fail the restore loudly instead.
+    const parsed = GuildConfigSchema.safeParse(c.config);
+    if (!parsed.success) {
+      throw new Error(`Backup config for guild ${c.guild_id} is invalid: ${parsed.error.issues[0]?.message ?? 'unknown'}`);
+    }
+    await GuildConfigModel.updateOne({ guild_id: c.guild_id }, { $set: { config: parsed.data } }, { upsert: true });
   }
   for (const a of data.guild_assets) {
     await GuildAssetModel.updateOne(

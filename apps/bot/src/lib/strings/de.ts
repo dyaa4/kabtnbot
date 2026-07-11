@@ -74,4 +74,6 @@ export const de = {
   voiceResumed: 'Ich höre wieder zu 🎙️ — sag "{wake}" und dann deinen Befehl.',
   voicePing: 'Die Latenz beträgt {ms} ms.',
   voiceKicked: '{name} aus dem Voice entfernt.',
+  voiceWarnSpoken: 'Hey {name}, achte auf deine Ausdrucksweise — das ist eine Verwarnung. Bei Wiederholung wirst du entfernt.',
+  voiceKickedSpoken: '{name}, du wurdest wegen unangemessener Ausdrucksweise aus dem Voice entfernt.',
 } as const satisfies Record<keyof typeof ar, string>;

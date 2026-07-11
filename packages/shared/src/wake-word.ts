@@ -17,6 +17,10 @@ export function parseWakeWord(text: string, wakeWord: string): string | null {
   const escaped = w
     .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     .replace(/ /g, '\\s*');
-  const m = t.match(new RegExp(`^${escaped}[\\s,،.!؟]*(.*)$`, 'i'));
-  return m ? m[1].trim() : null;
+  // The wake word must be a whole word: either the utterance ends right after
+  // it, or a space/punctuation follows. Without this boundary a short wake
+  // word matches as a raw prefix inside longer words (wake "بوت" would fire
+  // on "بوتات جديدة") and feeds garbage args to the AI.
+  const m = t.match(new RegExp(`^${escaped}(?:[\\s,،.!؟]+(.*))?$`, 'i'));
+  return m ? (m[1] ?? '').trim() : null;
 }

@@ -1,4 +1,5 @@
 import { GuildDirectoryModel } from '../models.js';
+import { retryOnDupKey } from '../retry.js';
 
 export interface DirectoryEntry {
   guild_id: string;
@@ -13,11 +14,12 @@ export interface DirectoryEntry {
  * syncs (only set on first insert); `left_at` is cleared since the bot is present.
  */
 export async function recordGuildPresence(guildId: string, name: string, memberCount: number): Promise<void> {
-  await GuildDirectoryModel.updateOne(
+  // guildCreate can race the ready-sync for the same guild — retry the loser.
+  await retryOnDupKey(() => GuildDirectoryModel.updateOne(
     { guild_id: guildId },
     { $set: { name, member_count: memberCount, left_at: null }, $setOnInsert: { joined_at: new Date(), blocked: false } },
     { upsert: true },
-  );
+  ));
 }
 
 export async function recordGuildLeave(guildId: string): Promise<void> {
@@ -36,7 +38,7 @@ export async function listActiveGuilds(): Promise<DirectoryEntry[]> {
 }
 
 export async function setGuildBlocked(guildId: string, blocked: boolean): Promise<void> {
-  await GuildDirectoryModel.updateOne({ guild_id: guildId }, { $set: { blocked } }, { upsert: true });
+  await retryOnDupKey(() => GuildDirectoryModel.updateOne({ guild_id: guildId }, { $set: { blocked } }, { upsert: true }));
 }
 
 export async function isGuildBlocked(guildId: string): Promise<boolean> {

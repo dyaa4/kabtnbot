@@ -48,6 +48,12 @@ function createGeminiProvider(): AIProvider {
     name: 'gemini',
     async generateResponse(prompt, opts) {
       const chat = model.startChat({
+        // Pass sampling overrides through — the intent classifier relies on
+        // temperature 0 staying deterministic even on the Gemini fallback.
+        generationConfig: {
+          maxOutputTokens: opts.maxTokens ?? 1024,
+          temperature: opts.temperature ?? 0.6,
+        },
         history: [
           { role: 'user', parts: [{ text: `System: ${opts.systemPrompt}` }] },
           { role: 'model', parts: [{ text: 'Understood.' }] },

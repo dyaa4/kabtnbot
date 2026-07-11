@@ -24,14 +24,16 @@ export function buildApp(deps: AppDeps): Express {
   // Trust the first hop (TLS-terminating reverse proxy) so the rate limiter sees the real
   // client IP and secure cookies are set correctly behind HTTPS termination.
   app.set('trust proxy', 1);
-  app.use(express.json());
+  // Default 100 KB would reject a full command-flows document (50 flows with
+  // long send_message texts is legitimately several hundred KB).
+  app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });
 
-  registerRoutes(app, deps); // grown in Tasks 5–8
+  registerRoutes(app, deps);
 
   app.use('/api', (_req, res) => apiError(res, 404, 'NOT_FOUND', 'Unknown API route'));
 
@@ -49,7 +51,7 @@ export function buildApp(deps: AppDeps): Express {
       return;
     }
     if ((err as { type?: string }).type === 'entity.too.large') {
-      apiError(res, 413, 'TOO_LARGE', 'File exceeds the size limit');
+      apiError(res, 413, 'TOO_LARGE', 'Request body exceeds the size limit');
       return;
     }
     console.error('[Web] Unhandled:', err);
@@ -59,7 +61,6 @@ export function buildApp(deps: AppDeps): Express {
   return app;
 }
 
-// Route registration point; Tasks 5–8 append registrations here.
 function registerRoutes(app: Express, deps: AppDeps): void {
   app.use('/auth', authRouter(deps.rest));
   app.use('/api/admin', adminRouter(deps.rest));

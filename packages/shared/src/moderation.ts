@@ -78,12 +78,14 @@ export function findProfanity(text: string, customWords: string[]): string | nul
   const builtin = BUILTIN_PROFANITY.find((w) => boundaryHit(n, normalizeText(w)));
   if (builtin) return builtin;
   // Admin custom words match anywhere in the text (contains) — the admin chose
-  // them deliberately, and the dashboard promises containment. Single-character
-  // entries keep boundary matching so they can't blanket-match every word.
+  // them deliberately, and the dashboard promises containment. Entries under 3
+  // letters keep boundary matching for the same reason the built-ins do: a
+  // two-letter Arabic root as a substring swallows innocent gaming words
+  // (كس inside بوكس "punch", فكس "fix") — the known false-kick incident class.
   const custom = customWords.find((w) => {
     const nw = normalizeText(w);
     if (!nw) return false;
-    if (nw.length < 2) return boundaryHit(n, nw);
+    if (nw.length < 3) return boundaryHit(n, nw);
     return new RegExp(bodyOf(nw), 'u').test(n);
   });
   return custom ?? null;

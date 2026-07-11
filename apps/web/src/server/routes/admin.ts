@@ -50,7 +50,10 @@ export function adminRouter(rest: DiscordRest): Router {
         return;
       }
       await setGuildBlocked(req.params.id, parsed.data.value);
-      // Blocking also removes the bot now; the bot refuses to rejoin while blocked.
+      // Blocking also removes the bot now; the bot refuses to rejoin while
+      // blocked. leaveGuild throws on failure, so a Discord error surfaces to
+      // the admin instead of a false {ok:true} — the block flag above is
+      // already persisted either way.
       if (parsed.data.value) {
         await rest.leaveGuild(req.params.id);
         await recordGuildLeave(req.params.id);

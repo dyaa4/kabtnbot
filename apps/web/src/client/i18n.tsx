@@ -40,7 +40,10 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('gb_lang', lang);
   }, [lang]);
 
-  const t = (key: string): string => dicts[lang][key] ?? dicts.ar[key] ?? key;
+  // Fallback order: English before Arabic — a key missing from a non-Arabic
+  // locale should not surface Arabic text to a German/English user. (The
+  // locale-parity test keeps all files in sync, so this is a safety net.)
+  const t = (key: string): string => dicts[lang][key] ?? dicts.en[key] ?? dicts.ar[key] ?? key;
 
   return <I18nContext.Provider value={{ lang, setLang, t }}>{children}</I18nContext.Provider>;
 }

@@ -43,6 +43,13 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   const [draft, setDraft] = useState<GuildCommandFlows | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
 
+  // A guild switch must drop the previous guild's draft — otherwise stale
+  // flows could be saved into the newly selected guild.
+  useEffect(() => {
+    setDraft(null);
+    setSelection(null);
+  }, [guildId]);
+
   // Initialize the draft ONCE from the first load — later refetches would
   // otherwise silently wipe unsaved edits.
   useEffect(() => {
@@ -72,6 +79,22 @@ export function CommandsTab({ guildId }: { guildId: string }) {
         <span className="text-4xl">💎</span>
         <h3 className="text-lg font-semibold text-amber-200">{t('commands.premium.title')}</h3>
         <p className="max-w-md text-sm text-slate-400">{t('commands.premium.body')}</p>
+      </div>
+    );
+  }
+
+  // Non-premium failures (500, network) must not leave the skeleton up forever.
+  if (flowsQuery.isError) {
+    return (
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-rose-400/20 bg-rose-400/5 p-12 text-center backdrop-blur-md">
+        <p className="text-sm text-slate-300">{t('error.generic')}</p>
+        <button
+          type="button"
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50"
+          onClick={() => void flowsQuery.refetch()}
+        >
+          ↻
+        </button>
       </div>
     );
   }

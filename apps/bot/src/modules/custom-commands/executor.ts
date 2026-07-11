@@ -20,6 +20,12 @@ export interface ExecContext {
   session?: VoiceSession;
   /** Text source only: mentioned user ids take priority for spoken_name targets. */
   mentionedUserIds?: string[];
+  /**
+   * Set when the caller already consumed one AI-quota unit for this question
+   * (the router's LLM intent fallback) — the first ai_reply action must not
+   * charge a second unit for the same question.
+   */
+  aiQuotaPrepaid?: boolean;
   config: GuildConfig;
 }
 
@@ -141,7 +147,8 @@ export async function executeActions(
           break;
         }
         case 'ai_reply': {
-          if (!(await tryConsumeAiQuestion(ctx.guild.id))) { replies.push(strings.aiQuotaExhausted); break; }
+          if (ctx.aiQuotaPrepaid) ctx.aiQuotaPrepaid = false;
+          else if (!(await tryConsumeAiQuestion(ctx.guild.id))) { replies.push(strings.aiQuotaExhausted); break; }
           const answer = await getAIProvider()
             .generateResponse(ctx.args || ctx.utterance, {
               systemPrompt: action.system_prompt,
