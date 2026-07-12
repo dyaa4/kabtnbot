@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   GuildCommandFlowsSchema,
@@ -48,6 +48,27 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   const [draft, setDraft] = useState<GuildCommandFlows | null>(null);
   const [selection, setSelection] = useState<Selection>(null);
+
+  // The editor is sized to EXACTLY fill the viewport below the page chrome
+  // (header + tab nav), and page scrolling is locked while it fits — the
+  // canvas gets the whole screen, nothing scrolls except the sidebar.
+  const rootRef = useRef<HTMLFormElement>(null);
+  const [editorHeight, setEditorHeight] = useState<number>();
+  useEffect(() => {
+    const measure = () => {
+      if (!rootRef.current) return;
+      window.scrollTo(0, 0);
+      const avail = window.innerHeight - rootRef.current.getBoundingClientRect().top - 12;
+      setEditorHeight(Math.max(560, avail));
+      document.body.style.overflow = avail >= 560 ? 'hidden' : '';
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('resize', measure);
+      document.body.style.overflow = '';
+    };
+  }, [draft === null]);
 
   // A guild switch must drop the previous guild's draft — otherwise stale
   // flows could be saved into the newly selected guild.
@@ -169,15 +190,18 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   return (
     // Break out of the layout's max-w-4xl: the flow editor needs the whole
     // viewport width (centered, capped at 1700px). left-1/2 + -translate-x-1/2
-    // centers a wider-than-parent block in both LTR and RTL.
+    // centers a wider-than-parent block in both LTR and RTL. The measured
+    // height makes the whole editor fit the viewport with no page scroll.
     <form
+      ref={rootRef}
       onSubmit={onSubmit}
-      className="relative left-1/2 grid w-[min(100vw-2rem,1700px)] -translate-x-1/2 gap-4"
+      style={{ height: editorHeight ?? 'calc(100vh - 230px)' }}
+      className="relative left-1/2 flex w-[min(100vw-2rem,1700px)] -translate-x-1/2 flex-col gap-3"
     >
-      <div className="flex flex-col gap-4 lg:flex-row">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <FolderSidebar draft={draft} selection={selection} onSelect={setSelection} onChange={setDraft} />
 
-        <div className="min-w-0 flex-1 space-y-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           {selectedFlow && (
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
               <input
@@ -260,20 +284,26 @@ export function CommandsTab({ guildId }: { guildId: string }) {
           )}
 
           {selectedFlow ? (
-            <FlowCanvas guildId={guildId} flow={selectedFlow} onFlowChange={updateFlow} />
+            <div className="min-h-0 flex-1">
+              <FlowCanvas guildId={guildId} flow={selectedFlow} onFlowChange={updateFlow} />
+            </div>
           ) : selectedBuiltin ? (
-            <FlowCanvas
-              guildId={guildId}
-              builtin={{
-                key: selectedBuiltin,
-                override: overrideOf(selectedBuiltin),
-                onChange: (next) => updateOverride(selectedBuiltin, next),
-              }}
-            />
+            <div className="min-h-0 flex-1">
+              <FlowCanvas
+                guildId={guildId}
+                builtin={{
+                  key: selectedBuiltin,
+                  override: overrideOf(selectedBuiltin),
+                  onChange: (next) => updateOverride(selectedBuiltin, next),
+                }}
+              />
+            </div>
           ) : selectedSlash ? (
-            <SlashCommandPanel guildId={guildId} draft={draft} cmd={selectedSlash} onChange={setDraft} />
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <SlashCommandPanel guildId={guildId} draft={draft} cmd={selectedSlash} onChange={setDraft} />
+            </div>
           ) : (
-            <div className="flex h-[calc(100vh-240px)] min-h-[560px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
+            <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
               <div>
                 <h3 className="text-lg font-semibold text-slate-200">{t('commands.start.title')}</h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>

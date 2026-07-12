@@ -80,7 +80,7 @@ export function FolderSidebar({
   const folders = ['', ...draft.folders];
 
   return (
-    <aside className="w-64 shrink-0 space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md">
+    <aside className="max-h-56 w-full shrink-0 space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md lg:h-full lg:max-h-none lg:w-64">
       <div className="flex items-center justify-between px-1 text-xs font-semibold text-amber-300">
         <span>💎 Pro</span>
       </div>

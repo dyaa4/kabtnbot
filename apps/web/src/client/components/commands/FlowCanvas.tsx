@@ -101,10 +101,13 @@ export function FlowCanvas({
     if (!fullscreen) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setFullscreen(false);
     window.addEventListener('keydown', onKey);
+    // Restore the PREVIOUS value on exit — the commands tab locks page scroll
+    // itself, and blindly resetting to '' would undo that lock.
+    const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       window.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
+      document.body.style.overflow = prevOverflow;
     };
   }, [fullscreen]);
 
@@ -195,7 +198,7 @@ export function FlowCanvas({
       className={
         fullscreen
           ? 'fixed inset-0 z-50 bg-slate-950'
-          : 'h-[calc(100vh-240px)] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40'
+          : 'h-full overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40'
       }
     >
       <CanvasContext.Provider value={ctx}>
