@@ -72,6 +72,13 @@ export const CommandFlowSchema = z.object({
   conditions: FlowConditionsSchema,
   actions: z.array(FlowActionSchema).min(1).max(5),
   cooldown_seconds: z.number().int().min(0).max(3600).default(5),
+  // Expose this flow as a per-guild Discord slash command under this name;
+  // '' = not exposed. Discord command names: 1-32 chars, lowercase, no spaces
+  // (\p{Ll} lowercase ASCII/Latin, \p{Lo} covers Arabic and other unicase scripts).
+  slash_name: z
+    .string()
+    .regex(/^$|^[-_\p{Ll}\p{Lo}\p{N}]{1,32}$/u, 'slash_name: lowercase letters/digits/-/_ only, max 32')
+    .default(''),
   // Canvas positions of the fixed nodes (actions carry their own pos).
   layout: z
     .object({
@@ -134,12 +141,29 @@ export const SlashOverridesSchema = z
   .default({});
 export type SlashOverrides = z.infer<typeof SlashOverridesSchema>;
 
-export const GuildCommandFlowsSchema = z.object({
-  flows: z.array(CommandFlowSchema).max(50).default([]),
-  builtin_overrides: BuiltinOverridesSchema,
-  slash_overrides: SlashOverridesSchema,
-  folders: z.array(z.string().min(1).max(40)).max(20).default([]),
-});
+/** Option name for the optional free-text argument on flow slash commands. */
+export const SLASH_TEXT_OPTION = 'text';
+
+export const GuildCommandFlowsSchema = z
+  .object({
+    flows: z.array(CommandFlowSchema).max(50).default([]),
+    builtin_overrides: BuiltinOverridesSchema,
+    slash_overrides: SlashOverridesSchema,
+    folders: z.array(z.string().min(1).max(40)).max(20).default([]),
+  })
+  .superRefine((doc, ctx) => {
+    // Slash names must be unique and must not shadow the bot's own commands.
+    const seen = new Set<string>();
+    doc.flows.forEach((flow, i) => {
+      if (!flow.slash_name) return;
+      if ((SLASH_COMMAND_KEYS as readonly string[]).includes(flow.slash_name)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['flows', i, 'slash_name'], message: `"/${flow.slash_name}" is a built-in command name` });
+      } else if (seen.has(flow.slash_name)) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['flows', i, 'slash_name'], message: `duplicate slash command "/${flow.slash_name}"` });
+      }
+      seen.add(flow.slash_name);
+    });
+  });
 export type GuildCommandFlows = z.infer<typeof GuildCommandFlowsSchema>;
 
 // ---------------------------------------------------------------------------

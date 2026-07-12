@@ -242,6 +242,7 @@
   "commands.enabled": "Activée",
   "commands.deleteCommand": "Supprimer la commande",
   "commands.deleteFolder": "Supprimer le dossier",
+  "commands.slashExpose": "Afficher comme commande / dans Discord",
   "commands.start.title": "Crée une commande en un clic",
   "commands.start.hint": "Choisis un modèle et adapte-le — la phrase de déclenchement, qui peut l'utiliser et ce qui se passe. Les commandes vocales système et les commandes Discord (/) se règlent dans la barre latérale.",
   "commands.start.blank": "Partir de zéro",

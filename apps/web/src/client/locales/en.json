@@ -242,6 +242,7 @@
   "commands.enabled": "Enabled",
   "commands.deleteCommand": "Delete command",
   "commands.deleteFolder": "Delete folder",
+  "commands.slashExpose": "Show as / command in Discord",
   "commands.start.title": "Create a command in one click",
   "commands.start.hint": "Pick a template and tweak it — the trigger phrase, who may use it, and what happens. Voice system commands and Discord (/) commands are configured from the sidebar list.",
   "commands.start.blank": "Start from scratch",

@@ -28,6 +28,11 @@ const DEFAULT_OVERRIDE: BuiltinOverride = {
 const INPUT_CLASS =
   'rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
 
+// Discord slash-command names: lowercase, no spaces, letters/digits/-/_ (Arabic ok).
+function sanitizeSlashName(s: string): string {
+  return s.toLowerCase().replace(/\s+/g, '-').replace(/[^-_\p{Ll}\p{Lo}\p{N}]/gu, '').slice(0, 32);
+}
+
 export function CommandsTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
@@ -145,6 +150,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },
       actions: [action],
       cooldown_seconds: 5,
+      slash_name: '',
       layout: { trigger: { x: 0, y: 120 }, condition: { x: 320, y: 120 } },
     };
     setDraft({ ...draft, flows: [...draft.flows, flow] });
@@ -161,7 +167,13 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="grid gap-4">
+    // Break out of the layout's max-w-4xl: the flow editor needs the whole
+    // viewport width (centered, capped at 1700px). left-1/2 + -translate-x-1/2
+    // centers a wider-than-parent block in both LTR and RTL.
+    <form
+      onSubmit={onSubmit}
+      className="relative left-1/2 grid w-[min(100vw-2rem,1700px)] -translate-x-1/2 gap-4"
+    >
       <div className="flex flex-col gap-4 lg:flex-row">
         <FolderSidebar draft={draft} selection={selection} onSelect={setSelection} onChange={setDraft} />
 
@@ -194,6 +206,31 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 />
                 {t('commands.enabled')}
               </label>
+              <label className="flex items-center gap-1.5 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={selectedFlow.slash_name !== ''}
+                  onChange={(e) =>
+                    updateFlow({
+                      ...selectedFlow,
+                      slash_name: e.target.checked ? sanitizeSlashName(selectedFlow.name) || 'command' : '',
+                    })
+                  }
+                />
+                {t('commands.slashExpose')}
+              </label>
+              {selectedFlow.slash_name !== '' && (
+                <span dir="ltr" className="flex items-center gap-0.5 font-mono text-sm text-cyan-300">
+                  /
+                  <input
+                    dir="ltr"
+                    className={`${INPUT_CLASS} w-36 font-mono`}
+                    value={selectedFlow.slash_name}
+                    maxLength={32}
+                    onChange={(e) => updateFlow({ ...selectedFlow, slash_name: sanitizeSlashName(e.target.value) })}
+                  />
+                </span>
+              )}
               <button
                 type="button"
                 className="ms-auto rounded-lg border border-rose-400/30 px-3 py-1.5 text-sm text-rose-300 hover:bg-rose-400/10"
@@ -236,7 +273,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
           ) : selectedSlash ? (
             <SlashCommandPanel guildId={guildId} draft={draft} cmd={selectedSlash} onChange={setDraft} />
           ) : (
-            <div className="flex h-[75vh] min-h-[560px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
+            <div className="flex h-[calc(100vh-240px)] min-h-[560px] flex-col items-center justify-center gap-6 rounded-2xl border border-dashed border-white/10 p-8 text-center">
               <div>
                 <h3 className="text-lg font-semibold text-slate-200">{t('commands.start.title')}</h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>

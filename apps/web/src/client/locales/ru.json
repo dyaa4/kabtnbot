@@ -242,6 +242,7 @@
   "commands.enabled": "Включена",
   "commands.deleteCommand": "Удалить команду",
   "commands.deleteFolder": "Удалить папку",
+  "commands.slashExpose": "Показать как /-команду в Discord",
   "commands.start.title": "Создай команду в один клик",
   "commands.start.hint": "Выбери шаблон и настрой его — фразу-триггер, кто может использовать и что произойдёт. Голосовые системные команды и команды Discord (/) настраиваются в боковой панели.",
   "commands.start.blank": "Начать с нуля",

@@ -242,6 +242,7 @@
   "commands.enabled": "Etkin",
   "commands.deleteCommand": "Komutu sil",
   "commands.deleteFolder": "Klasörü sil",
+  "commands.slashExpose": "Discord'da / komutu olarak göster",
   "commands.start.title": "Tek tıkla komut oluştur",
   "commands.start.hint": "Bir şablon seç ve düzenle — tetik cümlesi, kimler kullanabilir ve ne olacak. Sesli sistem komutları ile Discord (/) komutları kenar çubuğundan ayarlanır.",
   "commands.start.blank": "Sıfırdan başla",

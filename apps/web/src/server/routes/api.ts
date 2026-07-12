@@ -213,7 +213,19 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 403, 'PREMIUM_REQUIRED', 'Command flows require premium');
         return;
       }
-      res.json(await putCommandFlows(req.params.guildId, req.body));
+      const saved = await putCommandFlows(req.params.guildId, req.body);
+      // Mirror flows with a slash_name into Discord's per-guild slash commands
+      // (PUT replaces the guild set, so removals disappear too). Best-effort:
+      // a Discord hiccup must not fail the save itself.
+      await rest
+        .setGuildCommands(
+          req.params.guildId,
+          saved.flows
+            .filter((f) => f.enabled && f.slash_name)
+            .map((f) => ({ name: f.slash_name, description: f.name })),
+        )
+        .catch((err) => console.error('[slash-sync]', req.params.guildId, err));
+      res.json(saved);
     } catch (err) {
       if (err instanceof z.ZodError) {
         apiError(res, 400, 'VALIDATION', err.issues[0]?.message ?? 'Invalid flows');

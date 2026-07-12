@@ -80,6 +80,10 @@ export class FakeDiscordRest implements DiscordRest {
   async leaveGuild(guildId: string) {
     this.leftGuilds.push(guildId);
   }
+  guildCommands = new Map<string, { name: string; description: string }[]>();
+  async setGuildCommands(guildId: string, commands: { name: string; description: string }[]) {
+    this.guildCommands.set(guildId, commands);
+  }
   async getBotMember(guildId: string): Promise<BotMember | null> {
     if (!this.botGuilds.has(guildId)) return null;
     const p = this.botProfiles.get(guildId) ?? { nick: null, avatar: null };

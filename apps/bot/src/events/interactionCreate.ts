@@ -43,7 +43,12 @@ export function onInteractionCreate(client: Client): void {
     try {
       if (interaction.isChatInputCommand()) {
         const cmd = registerCommands().get(interaction.commandName);
-        if (!cmd) return;
+        if (!cmd) {
+          // Not one of ours → a custom flow registered as a guild slash command.
+          const { runFlowSlashCommand } = await import('../modules/custom-commands/slash-runner.js');
+          await runFlowSlashCommand(interaction);
+          return;
+        }
         const refusal = await slashRefusal(interaction);
         if (refusal) {
           await interaction.reply({ content: refusal, flags: MessageFlags.Ephemeral });

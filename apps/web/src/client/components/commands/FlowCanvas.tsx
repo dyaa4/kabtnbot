@@ -195,7 +195,7 @@ export function FlowCanvas({
       className={
         fullscreen
           ? 'fixed inset-0 z-50 bg-slate-950'
-          : 'h-[75vh] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40'
+          : 'h-[calc(100vh-240px)] min-h-[560px] overflow-hidden rounded-2xl border border-white/10 bg-slate-950/40'
       }
     >
       <CanvasContext.Provider value={ctx}>

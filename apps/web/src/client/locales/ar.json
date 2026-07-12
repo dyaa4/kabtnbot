@@ -242,6 +242,7 @@
   "commands.enabled": "مفعّل",
   "commands.deleteCommand": "حذف الأمر",
   "commands.deleteFolder": "حذف المجلد",
+  "commands.slashExpose": "أظهره كأمر / في ديسكورد",
   "commands.start.title": "أنشئ أمراً بضغطة واحدة",
   "commands.start.hint": "اختر قالباً وعدّله — عبارة التشغيل، من يستخدمه، وماذا يحدث. أوامر النظام الصوتية وأوامر ديسكورد (/) تُضبط من القائمة الجانبية.",
   "commands.start.blank": "ابدأ من الصفر",

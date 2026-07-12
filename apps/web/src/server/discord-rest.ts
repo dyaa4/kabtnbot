@@ -41,6 +41,12 @@ export interface DiscordRest {
   } | null>;
   /** Makes the bot leave a guild (DELETE /users/@me/guilds/:id with the bot token). */
   leaveGuild(guildId: string): Promise<void>;
+  /**
+   * Replaces the guild-scoped slash commands (custom flows exposed as
+   * /commands). Global commands are registered separately by the bot and are
+   * unaffected. An empty list clears all guild-scoped commands.
+   */
+  setGuildCommands(guildId: string, commands: { name: string; description: string }[]): Promise<void>;
   getBotMember(guildId: string): Promise<BotMember | null>;
   editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember>;
   editBotUser(patch: { avatar: string }): Promise<void>;
@@ -257,6 +263,22 @@ export function createDiscordRest(): DiscordRest {
       const res = await discordFetch(`${API}/users/@me/guilds/${guildId}`, { method: 'DELETE', headers: bot });
       // 404 = already not a member; that's the desired end state.
       if (!res.ok && res.status !== 404) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+    },
+    async setGuildCommands(guildId, commands) {
+      const body = commands.map((c) => ({
+        name: c.name,
+        description: c.description.slice(0, 100) || c.name,
+        type: 1, // CHAT_INPUT
+        options: [
+          // One optional free-text argument, read by the bot as {args}.
+          { type: 3, name: 'text', description: 'نص إضافي / extra text', required: false },
+        ],
+      }));
+      const res = await discordFetch(
+        `${API}/applications/${config.DISCORD_CLIENT_ID}/guilds/${guildId}/commands`,
+        { method: 'PUT', headers: { ...bot, 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
+      );
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
     },
     async getBotMember(guildId) {
       return discordJson<BotMember>(
