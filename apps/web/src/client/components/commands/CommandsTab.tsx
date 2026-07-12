@@ -57,7 +57,9 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   useEffect(() => {
     const measure = () => {
       if (!rootRef.current) return;
-      window.scrollTo(0, 0);
+      // Vertical only — resetting the horizontal position too would anchor an
+      // RTL page to its LEFT edge if anything overflows sideways.
+      window.scrollTo({ top: 0 });
       const avail = window.innerHeight - rootRef.current.getBoundingClientRect().top - 12;
       setEditorHeight(Math.max(560, avail));
       document.body.style.overflow = avail >= 560 ? 'hidden' : '';
@@ -189,14 +191,15 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   return (
     // Break out of the layout's max-w-4xl: the flow editor needs the whole
-    // viewport width (centered, capped at 1700px). left-1/2 + -translate-x-1/2
-    // centers a wider-than-parent block in both LTR and RTL. The measured
-    // height makes the whole editor fit the viewport with no page scroll.
+    // viewport width (centered, capped at 1700px). Symmetric negative margins
+    // expand the block equally on both sides of its centered parent — unlike a
+    // left/translate trick this is direction-agnostic (RTL-safe) and cannot
+    // drift sideways. The measured height makes it fit with no page scroll.
     <form
       ref={rootRef}
       onSubmit={onSubmit}
       style={{ height: editorHeight ?? 'calc(100vh - 230px)' }}
-      className="relative left-1/2 flex w-[min(100vw-2rem,1700px)] -translate-x-1/2 flex-col gap-3"
+      className="mx-[calc((100%-min(100vw-2rem,1700px))/2)] flex w-[min(100vw-2rem,1700px)] flex-col gap-3"
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <FolderSidebar draft={draft} selection={selection} onSelect={setSelection} onChange={setDraft} />
