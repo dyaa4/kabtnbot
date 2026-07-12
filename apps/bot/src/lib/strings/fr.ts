@@ -20,6 +20,8 @@ export const fr = {
   kickFailed: "Impossible d'expulser le membre, vérifie mes permissions.",
   commandNotAllowed: "❌ Tu n'as pas le droit d'utiliser cette commande.",
   slashDisabled: '❌ Cette commande est désactivée sur ce serveur.',
+  dmFailed: "Impossible d'envoyer le MP (ses MP sont peut-être fermés).",
+  dmInactiveStarted: 'Envoi de MP à {count} membres inactifs.',
   settingsSaved: '✅ Paramètre enregistré.',
   settingsTitle: '⚙️ Paramètres du serveur',
   settingsFieldVoice: '🎙️ Vocal',

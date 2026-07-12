@@ -20,6 +20,8 @@ export const en = {
   kickFailed: "Couldn't kick the member, check my permissions.",
   commandNotAllowed: '❌ You are not allowed to use this command.',
   slashDisabled: '❌ This command is disabled in this server.',
+  dmFailed: "Couldn't send the DM (their DMs may be closed).",
+  dmInactiveStarted: 'Sending DMs to {count} inactive members.',
   settingsSaved: '✅ Setting saved.',
   settingsTitle: '⚙️ Server settings',
   settingsFieldVoice: '🎙️ Voice',

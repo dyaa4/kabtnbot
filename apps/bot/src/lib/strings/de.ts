@@ -20,6 +20,8 @@ export const de = {
   kickFailed: 'Konnte das Mitglied nicht entfernen, prüfe meine Berechtigungen.',
   commandNotAllowed: '❌ Du darfst diesen Befehl nicht verwenden.',
   slashDisabled: '❌ Dieser Befehl ist auf diesem Server deaktiviert.',
+  dmFailed: 'DM konnte nicht gesendet werden (DMs evtl. geschlossen).',
+  dmInactiveStarted: 'Sende DMs an {count} inaktive Mitglieder.',
   settingsSaved: '✅ Einstellung gespeichert.',
   settingsTitle: '⚙️ Server-Einstellungen',
   settingsFieldVoice: '🎙️ Sprache',

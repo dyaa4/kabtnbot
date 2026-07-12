@@ -22,6 +22,13 @@ export const recordReaction = (g: string, u: string, d: string) => bump(g, u, d,
 export const addVoiceSeconds = (g: string, u: string, d: string, s: number) =>
   s > 0 ? bump(g, u, d, 'voice_seconds', Math.round(s)) : Promise.resolve();
 
+/** User ids with ANY recorded activity (message/reaction/voice) in the window. */
+export async function activeUserIds(guildId: string, days: number): Promise<string[]> {
+  return ActivityDailyModel.find({ guild_id: guildId, date: { $gte: cutoffKey(days) } }).distinct(
+    'user_id',
+  ) as Promise<string[]>;
+}
+
 export async function topActive(
   guildId: string,
   days: number,

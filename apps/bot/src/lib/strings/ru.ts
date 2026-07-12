@@ -20,6 +20,8 @@ export const ru = {
   kickFailed: 'Не смог кикнуть участника, проверь мои права.',
   commandNotAllowed: '❌ Тебе нельзя использовать эту команду.',
   slashDisabled: '❌ Эта команда отключена на этом сервере.',
+  dmFailed: 'Не удалось отправить ЛС (возможно, ЛС закрыты).',
+  dmInactiveStarted: 'Отправляю ЛС {count} неактивным участникам.',
   settingsSaved: '✅ Настройка сохранена.',
   settingsTitle: '⚙️ Настройки сервера',
   settingsFieldVoice: '🎙️ Голос',

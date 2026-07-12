@@ -21,6 +21,8 @@ export const ar = {
   kickFailed: 'ما قدرت أطرد العضو، تأكد من صلاحياتي.',
   commandNotAllowed: '❌ هذا الأمر غير مسموح لك.',
   slashDisabled: '❌ هذا الأمر معطّل في هذا السيرفر.',
+  dmFailed: 'تعذّر إرسال الرسالة الخاصة (قد تكون الخاصات مقفلة).',
+  dmInactiveStarted: 'بدأت إرسال رسائل خاصة لـ {count} عضو غائب.',
   // settings
   settingsSaved: '✅ انحفظ الإعداد.',
   settingsTitle: '⚙️ إعدادات السيرفر',

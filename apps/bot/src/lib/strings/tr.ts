@@ -20,6 +20,8 @@ export const tr = {
   kickFailed: 'Üyeyi atamadım, izinlerimi kontrol et.',
   commandNotAllowed: '❌ Bu komutu kullanma iznin yok.',
   slashDisabled: '❌ Bu komut bu sunucuda devre dışı.',
+  dmFailed: 'DM gönderilemedi (DM kutusu kapalı olabilir).',
+  dmInactiveStarted: '{count} pasif üyeye DM gönderiliyor.',
   settingsSaved: '✅ Ayar kaydedildi.',
   settingsTitle: '⚙️ Sunucu ayarları',
   settingsFieldVoice: '🎙️ Ses',

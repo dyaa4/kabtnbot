@@ -21,6 +21,7 @@ export const ConditionNode = memo(function ConditionNode() {
   return (
     <div className="w-72 rounded-2xl border border-violet-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(139,92,246,0.5)]">
       <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-violet-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-400/20 text-[11px] font-bold">2</span>
         <span>🛡️</span>
         {t('commands.condition.title')}
       </div>

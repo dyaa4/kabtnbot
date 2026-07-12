@@ -41,6 +41,11 @@ export const FlowActionSchema = z.discriminatedUnion('type', [
   z.object({ ...actionBase, type: z.literal('role_add'), target: Target, role_id: z.string().min(1) }),
   z.object({ ...actionBase, type: z.literal('role_remove'), target: Target, role_id: z.string().min(1) }),
   z.object({ ...actionBase, type: z.literal('ai_reply'), system_prompt: z.string().min(1).max(2000) }),
+  // {user}/{args} like other texts; DMs additionally support {member} = recipient name.
+  z.object({ ...actionBase, type: z.literal('dm_user'), target: Target, text: z.string().min(1).max(1000) }),
+  // DMs every member with no message/voice activity in the last `days` days
+  // (capped and throttled bot-side so one command can't mass-spam).
+  z.object({ ...actionBase, type: z.literal('dm_inactive_members'), days: z.number().int().min(1).max(90).default(14), text: z.string().min(1).max(1000) }),
 ]);
 export type FlowAction = z.infer<typeof FlowActionSchema>;
 export type FlowActionType = FlowAction['type'];

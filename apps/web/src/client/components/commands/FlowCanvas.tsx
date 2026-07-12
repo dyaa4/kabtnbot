@@ -45,8 +45,9 @@ const nodeTypes = {
 } as unknown as NodeTypes;
 
 const ACTION_TYPES: FlowActionType[] = [
-  'speak_tts', 'send_message', 'ai_reply', 'voice_leave', 'voice_stop_listening',
-  'voice_disconnect_user', 'voice_move_user', 'timeout_user', 'role_add', 'role_remove',
+  'speak_tts', 'send_message', 'ai_reply', 'dm_user', 'dm_inactive_members',
+  'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user',
+  'timeout_user', 'role_add', 'role_remove',
 ];
 
 export function defaultAction(type: FlowActionType, index: number): FlowAction {
@@ -70,6 +71,10 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
       return { ...base, type, target: 'speaker', role_id: '' };
     case 'ai_reply':
       return { ...base, type, system_prompt: '' };
+    case 'dm_user':
+      return { ...base, type, target: 'speaker', text: '' };
+    case 'dm_inactive_members':
+      return { ...base, type, days: 14, text: '' };
   }
 }
 

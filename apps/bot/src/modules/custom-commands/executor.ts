@@ -1,5 +1,6 @@
 import type { Guild, GuildMember, TextChannel } from 'discord.js';
 import { PermissionFlagsBits } from 'discord.js';
+import { activeUserIds } from '@gamebot/db';
 import type { FlowAction, GuildConfig } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
@@ -144,6 +145,33 @@ export async function executeActions(
           }
           const op = action.type === 'role_add' ? member.roles.add(role) : member.roles.remove(role);
           await op.then(() => undefined, () => replies.push(strings.kickFailed));
+          break;
+        }
+        case 'dm_user': {
+          const member = resolveTargetMember(action.target, ctx);
+          if (!member) { replies.push(strings.kickNoMatch); break; }
+          if (member.user.bot) break;
+          const text = expand(action.text, ctx).replaceAll('{member}', member.displayName).slice(0, 2000);
+          await member.send({ content: text }).catch(() => replies.push(strings.dmFailed));
+          break;
+        }
+        case 'dm_inactive_members': {
+          // "Inactive" = no recorded message/reaction/voice activity in the window.
+          const active = new Set(await activeUserIds(ctx.guild.id, action.days));
+          const allMembers = await ctx.guild.members.fetch().catch(() => ctx.guild.members.cache);
+          const targets = [...allMembers.values()]
+            .filter((m) => !m.user.bot && !active.has(m.id))
+            .slice(0, 50); // hard cap per run — this must never become a spam cannon
+          const text = expand(action.text, ctx);
+          // Fire-and-forget with a generous throttle: 50 sequential DMs would
+          // otherwise block the reply for a minute and poke Discord's limits.
+          void (async () => {
+            for (const m of targets) {
+              await m.send({ content: text.replaceAll('{member}', m.displayName).slice(0, 2000) }).catch(() => {});
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          })();
+          replies.push(fmt(strings.dmInactiveStarted, { count: targets.length }));
           break;
         }
         case 'ai_reply': {

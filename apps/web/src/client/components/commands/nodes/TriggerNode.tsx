@@ -63,10 +63,12 @@ export const TriggerNode = memo(function TriggerNode() {
 
   return (
     <div className="w-72 rounded-2xl border border-cyan-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)]">
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-cyan-300">
+      <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-cyan-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/20 text-[11px] font-bold">1</span>
         <span>🎙️</span>
         {t('commands.trigger.title')}
       </div>
+      <p className="mb-3 text-xs text-slate-500">{t('commands.trigger.sub')}</p>
 
       {builtin || !flow ? (
         <>

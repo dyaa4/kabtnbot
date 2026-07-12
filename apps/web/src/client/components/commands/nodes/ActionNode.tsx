@@ -140,6 +140,40 @@ function Params({
           onChange={(e) => update({ system_prompt: e.target.value } as Partial<FlowAction>)}
         />
       );
+    case 'dm_user':
+      return (
+        <>
+          <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
+          <textarea
+            className={`${INPUT_CLASS} nowheel mt-2 h-20`}
+            maxLength={1000}
+            value={action.text}
+            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('commands.action.textHint')}</p>
+        </>
+      );
+    case 'dm_inactive_members':
+      return (
+        <>
+          <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.action.days')}</label>
+          <input
+            type="number"
+            min={1}
+            max={90}
+            className={INPUT_CLASS}
+            value={action.days}
+            onChange={(e) => update({ days: Math.min(90, Math.max(1, Number(e.target.value) || 1)) } as Partial<FlowAction>)}
+          />
+          <textarea
+            className={`${INPUT_CLASS} nowheel mt-2 h-20`}
+            maxLength={1000}
+            value={action.text}
+            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('commands.action.dmInactiveHint')}</p>
+        </>
+      );
   }
 }
 
@@ -180,6 +214,7 @@ export const ActionNode = memo(function ActionNode({
     <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-[11px] font-bold">3</span>
           <span>⚡</span>
           {t(`commands.action.${action.type}`)}
         </div>
