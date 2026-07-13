@@ -1,8 +1,8 @@
 import { memo, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { CommandFlow, FlowAction } from '@gamebot/shared';
+import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
-import { useCanvas } from '../FlowCanvas.js';
+import { ACTION_GROUPS, defaultAction, useCanvas } from '../FlowCanvas.js';
 import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
 import { MemberSearchBox } from '../UserSearchSelect.js';
@@ -268,7 +268,8 @@ export const ActionNode = memo(function ActionNode({
     );
   }
 
-  const action = flow.actions.find((a) => a.id === data.actionId);
+  const index = flow.actions.findIndex((a) => a.id === data.actionId);
+  const action = flow.actions[index];
   if (!action) return null;
 
   const update = (patch: Partial<FlowAction>) =>
@@ -280,20 +281,98 @@ export const ActionNode = memo(function ActionNode({
       ? () => change({ actions: flow.actions.filter((a) => a.id !== action.id) } as Partial<CommandFlow>)
       : undefined;
 
+  // Swap execution order with the chain neighbor — positions swap too so the
+  // nodes trade places on the canvas instead of the edges crossing.
+  const move = (dir: -1 | 1) => {
+    const j = index + dir;
+    if (j < 0 || j >= flow.actions.length) return;
+    const actions = [...flow.actions];
+    const a = actions[index];
+    const b = actions[j];
+    actions[index] = { ...b, pos: a.pos } as FlowAction;
+    actions[j] = { ...a, pos: b.pos } as FlowAction;
+    change({ actions } as Partial<CommandFlow>);
+  };
+
+  const duplicate = () => {
+    if (flow.actions.length >= 5) return;
+    const copy = { ...action, id: crypto.randomUUID(), pos: { x: action.pos.x + 48, y: action.pos.y + 200 } } as FlowAction;
+    const actions = [...flow.actions];
+    actions.splice(index + 1, 0, copy);
+    change({ actions } as Partial<CommandFlow>);
+  };
+
+  // Change the type in place: fresh defaults for the new type, but keep the
+  // node identity/position and carry over text/target when both types use it.
+  const changeType = (type: FlowActionType) => {
+    if (type === action.type) return;
+    const next = { ...defaultAction(type, index), id: action.id, pos: action.pos } as FlowAction;
+    for (const key of ['text', 'target'] as const) {
+      if (key in action && key in next) {
+        (next as Record<string, unknown>)[key] = (action as Record<string, unknown>)[key];
+      }
+    }
+    change({ actions: flow.actions.map((a) => (a.id === action.id ? next : a)) } as Partial<CommandFlow>);
+  };
+
+  const toolBtnClass = (enabled: boolean) =>
+    `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-cyan-200' : 'cursor-default text-slate-700'}`;
+
   return (
     <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-[11px] font-bold">3</span>
-          <span>⚡</span>
-          {t(`commands.action.${action.type}`)}
-        </div>
+      <div className="mb-2 flex items-center gap-1.5">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-[11px] font-bold text-emerald-300">
+          {3 + index}
+        </span>
+        <span>⚡</span>
+        <select
+          aria-label={t('commands.action.changeType')}
+          title={t('commands.action.changeType')}
+          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-emerald-300 hover:border-white/10 focus:border-cyan-400/50 focus:outline-none"
+          value={action.type}
+          onChange={(e) => changeType(e.target.value as FlowActionType)}
+        >
+          {ACTION_GROUPS.map(([group, types]) => (
+            <optgroup key={group} label={t(`commands.action.group.${group}`)}>
+              {types.map((type) => (
+                <option key={type} value={type} className="bg-slate-900 text-slate-200">
+                  {t(`commands.action.${type}`)}
+                </option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
+        {flow.actions.length > 1 && (
+          <>
+            <button type="button" className={toolBtnClass(index > 0)} disabled={index === 0} onClick={() => move(-1)} title={t('commands.action.moveEarlier')}>
+              ←
+            </button>
+            <button
+              type="button"
+              className={toolBtnClass(index < flow.actions.length - 1)}
+              disabled={index === flow.actions.length - 1}
+              onClick={() => move(1)}
+              title={t('commands.action.moveLater')}
+            >
+              →
+            </button>
+          </>
+        )}
+        <button
+          type="button"
+          className={toolBtnClass(flow.actions.length < 5)}
+          disabled={flow.actions.length >= 5}
+          onClick={duplicate}
+          title={flow.actions.length >= 5 ? t('commands.action.max') : t('commands.action.duplicate')}
+        >
+          ⧉
+        </button>
         {remove && (
           <button
             type="button"
-            className="nodrag rounded-lg px-1.5 text-slate-500 hover:bg-rose-400/10 hover:text-rose-300"
+            className="nodrag rounded-lg px-1 text-sm text-slate-500 hover:bg-rose-400/10 hover:text-rose-300"
             onClick={remove}
-            title="×"
+            title={t('commands.action.remove')}
           >
             ✕
           </button>

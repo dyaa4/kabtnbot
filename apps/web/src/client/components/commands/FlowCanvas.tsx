@@ -4,10 +4,13 @@ import {
   ReactFlowProvider,
   Background,
   Controls,
+  MiniMap,
   Panel,
+  useReactFlow,
   type Edge,
   type Node,
   type NodeTypes,
+  type XYPosition,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { BuiltinCommandKey, BuiltinOverride, CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
@@ -44,10 +47,12 @@ const nodeTypes = {
   action: ActionNode,
 } as unknown as NodeTypes;
 
-const ACTION_TYPES: FlowActionType[] = [
-  'speak_tts', 'send_message', 'ai_reply', 'dm_user', 'dm_inactive_members',
-  'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user',
-  'timeout_user', 'role_add', 'role_remove',
+// Action types grouped for the pickers (add-action select + in-node type
+// select) — the group order mirrors how often each family is used.
+export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
+  ['messages', ['speak_tts', 'send_message', 'ai_reply', 'dm_user', 'dm_inactive_members']],
+  ['voice', ['voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user']],
+  ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
 
 export function defaultAction(type: FlowActionType, index: number): FlowAction {
@@ -76,6 +81,31 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
     case 'dm_inactive_members':
       return { ...base, type, days: 14, text: '' };
   }
+}
+
+const PANEL_BTN_CLASS =
+  'rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50 focus:border-cyan-400/50 focus:outline-none';
+
+// Lives inside <ReactFlow> so it can reach the internal store: the canvas is
+// uncontrolled, so persisting tidy positions alone would not move anything
+// until the next structure remount — the store must be updated too.
+function ArrangeButton({ arrange }: { arrange: () => Record<string, XYPosition> }) {
+  const rf = useReactFlow();
+  const { t } = useI18n();
+  return (
+    <button
+      type="button"
+      className={PANEL_BTN_CLASS}
+      title={t('commands.canvas.arrange')}
+      onClick={() => {
+        const pos = arrange();
+        rf.setNodes((ns) => ns.map((n) => (pos[n.id] ? { ...n, position: pos[n.id] } : n)));
+        requestAnimationFrame(() => void rf.fitView({ padding: 0.15, maxZoom: 1 }));
+      }}
+    >
+      🧹 {t('commands.canvas.arrange')}
+    </button>
+  );
 }
 
 function chainEdges(ids: string[]): Edge[] {
@@ -195,6 +225,30 @@ export function FlowCanvas({
     }
   };
 
+  // Tidy layout: one straight left-to-right chain on the 320px grid the
+  // default positions already use. Persists through the normal change path
+  // and returns the map so ArrangeButton can move the live store nodes.
+  const arrange = (): Record<string, XYPosition> => {
+    const pos: Record<string, XYPosition> = { trigger: { x: 0, y: 120 }, condition: { x: 320, y: 120 } };
+    if (flow && onFlowChange) {
+      flow.actions.forEach((a, i) => {
+        pos[a.id] = { x: 640 + i * 320, y: 120 };
+      });
+      onFlowChange({
+        ...flow,
+        layout: { trigger: pos.trigger, condition: pos.condition },
+        actions: flow.actions.map((a) => ({ ...a, pos: pos[a.id] }) as FlowAction),
+      });
+    } else if (builtin) {
+      pos['builtin-action'] = { x: 640, y: 120 };
+      builtin.onChange({
+        ...builtin.override,
+        layout: { trigger: pos.trigger, condition: pos.condition, action: pos['builtin-action'] },
+      });
+    }
+    return pos;
+  };
+
   return (
     // React Flow's coordinate system is LTR — pin the canvas to LTR even when
     // the surrounding dashboard renders RTL (Arabic).
@@ -224,12 +278,21 @@ export function FlowCanvas({
           >
             <Background gap={24} color="rgba(255,255,255,0.06)" />
             <Controls showInteractive={false} />
+            <MiniMap
+              pannable
+              zoomable
+              style={{ width: 140, height: 90 }}
+              className="!m-2 rounded-lg border border-white/10 !bg-slate-900"
+              maskColor="rgba(2,6,23,0.6)"
+              nodeColor={(n) => (n.type === 'trigger' ? '#22d3ee' : n.type === 'condition' ? '#8b5cf6' : '#34d399')}
+            />
             <Panel position="top-right" className="flex items-center gap-2">
               {flow && onFlowChange && (
                 <select
                   className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 focus:border-cyan-400/50 focus:outline-none"
                   value=""
                   disabled={flow.actions.length >= 5}
+                  title={flow.actions.length >= 5 ? t('commands.action.max') : t('commands.action.add')}
                   onChange={(e) => {
                     if (!e.target.value) return;
                     onFlowChange({
@@ -239,18 +302,23 @@ export function FlowCanvas({
                   }}
                 >
                   <option value="">＋ {t('commands.action.add')}</option>
-                  {ACTION_TYPES.map((type) => (
-                    <option key={type} value={type}>
-                      {t(`commands.action.${type}`)}
-                    </option>
+                  {ACTION_GROUPS.map(([group, types]) => (
+                    <optgroup key={group} label={t(`commands.action.group.${group}`)}>
+                      {types.map((type) => (
+                        <option key={type} value={type}>
+                          {t(`commands.action.${type}`)}
+                        </option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               )}
+              <ArrangeButton arrange={arrange} />
               <button
                 type="button"
                 onClick={() => setFullscreen((f) => !f)}
                 title={fullscreen ? t('commands.canvas.exitFullscreen') : t('commands.canvas.fullscreen')}
-                className="rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50 focus:border-cyan-400/50 focus:outline-none"
+                className={PANEL_BTN_CLASS}
               >
                 {fullscreen ? '✕ ' + t('commands.canvas.exitFullscreen') : '⛶ ' + t('commands.canvas.fullscreen')}
               </button>

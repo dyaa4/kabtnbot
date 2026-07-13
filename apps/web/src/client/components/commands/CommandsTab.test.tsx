@@ -39,6 +39,24 @@ const FLOWS = {
   folders: ['audio'],
 };
 
+// Two-action flow for the canvas toolbar tests (reorder/duplicate/type).
+const FLOWS_TWO = {
+  flows: [
+    {
+      ...FLOWS.flows[0],
+      id: 'f2',
+      name: 'Zwei Aktionen',
+      folder: '',
+      actions: [
+        { id: 'a1', type: 'speak_tts', text: 'hallo', pos: { x: 640, y: 120 } },
+        { id: 'a2', type: 'send_message', channel_id: 'c1', text: 'hi', pos: { x: 960, y: 120 } },
+      ],
+    },
+  ],
+  builtin_overrides: {},
+  folders: [],
+};
+
 function mockFetch(flows: unknown) {
   vi.stubGlobal(
     'fetch',
@@ -99,6 +117,55 @@ describe('CommandsTab', () => {
     const putCalls = () =>
       (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT');
     expect(putCalls()).toHaveLength(0);
+  });
+
+  it('action nodes are numbered by chain order and reorder via the toolbar', async () => {
+    mockFetch(FLOWS_TWO);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    const selects = (await screen.findAllByLabelText('Change action type')) as HTMLSelectElement[];
+    expect(selects.map((s) => s.value)).toEqual(['speak_tts', 'send_message']);
+    // step badges continue after trigger(1) + condition(2)
+    expect(screen.getByText('3')).toBeTruthy();
+    expect(screen.getByText('4')).toBeTruthy();
+
+    // move the SECOND action earlier — chain order flips
+    await user.click(screen.getAllByTitle('Run earlier')[1]);
+    await waitFor(() => {
+      const after = screen.getAllByLabelText('Change action type') as HTMLSelectElement[];
+      expect(after.map((s) => s.value)).toEqual(['send_message', 'speak_tts']);
+    });
+  });
+
+  it('duplicating an action inserts a copy right after it', async () => {
+    mockFetch(FLOWS_TWO);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    await user.click((await screen.findAllByTitle('Duplicate action'))[0]);
+    await waitFor(() => {
+      const after = screen.getAllByLabelText('Change action type') as HTMLSelectElement[];
+      expect(after.map((s) => s.value)).toEqual(['speak_tts', 'speak_tts', 'send_message']);
+    });
+  });
+
+  it('changing an action type in place keeps shared fields', async () => {
+    mockFetch(FLOWS_TWO);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    const selects = (await screen.findAllByLabelText('Change action type')) as HTMLSelectElement[];
+    // speak_tts → dm_user: the text carries over into the DM body
+    await user.selectOptions(selects[0], 'dm_user');
+    await waitFor(() => {
+      const after = screen.getAllByLabelText('Change action type') as HTMLSelectElement[];
+      expect(after.map((s) => s.value)).toEqual(['dm_user', 'send_message']);
+    });
+    expect(screen.getByDisplayValue('hallo')).toBeTruthy();
   });
 
   it('the scheduled template creates a schedule-enabled flow with the interval editor', async () => {
