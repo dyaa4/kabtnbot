@@ -79,5 +79,16 @@ describe('parseWakeWord', () => {
     it('containment respects the ≤2 extra letters cap', () => {
       expect(parseWakeWord('عربيتين جو', 'عرب')).toBeNull(); // 5 extra letters
     });
+
+    // Reverse containment: speakers habitually drop the "يا" vocative — the
+    // core of the wake word alone (≥3 letters, ≤2 letters missing) must wake.
+    it('the wake word core without the vocative still wakes', () => {
+      expect(parseWakeWord('عرب اسكت', 'يا عرب')).toBe('اسكت');
+      expect(parseWakeWord('كابتن اطلع', 'يا كابتن')).toBe('اطلع');
+    });
+    it('a tiny fragment of the wake word does not wake', () => {
+      expect(parseWakeWord('كاب اطلع', 'يا كابتن')).toBeNull(); // 5 letters missing
+      expect(parseWakeWord('يا اطلع', 'يا كابتن')).toBeNull(); // fragment under 3 letters
+    });
   });
 });

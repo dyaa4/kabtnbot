@@ -16,12 +16,15 @@ export async function transcribe(audioBuffer: Buffer, wakeWordHint: string, lang
     return '';
   }
   const makeFile = () => new File([audioBuffer as BlobPart], 'voice.wav', { type: 'audio/wav' });
-  const base = { model: 'whisper-large-v3', language, response_format: 'json' } as const;
+  // temperature 0 = deterministic greedy decoding — measurably fewer invented
+  // words on short, noisy Discord utterances than the default sampling.
+  const base = { model: 'whisper-large-v3', language, response_format: 'json', temperature: 0 } as const;
   try {
     const result = await groq.audio.transcriptions.create({
       ...base,
       file: makeFile(),
-      // Prompt only with the wake word so commands still transcribe well. Do NOT seed
+      // Prompt with the wake word + the guild's real command phrases so Whisper
+      // biases toward the exact words it must recognize. Do NOT seed
       // polite/greeting phrases here: Whisper biases decoding toward the prompt, and
       // greetings steer it away from emitting the profane words moderation must catch.
       prompt: wakeWordHint,

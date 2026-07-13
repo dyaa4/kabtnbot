@@ -51,6 +51,9 @@ function fuzzyBudget(len: number): number {
  *   always matches, regardless of budget — Whisper almost never emits a short
  *   wake word ("عرب") bare; it produces "العرب" / "عربي" / "أعرب". Pure
  *   insertions only, so 1-edit lookalikes (غرب/قرب/حرب) stay silent.
+ * - reverse containment: a candidate (≥3 letters) that IS the wake word minus
+ *   ≤2 letters also matches — speakers habitually drop the "يا" vocative
+ *   ("كابتن اطلع" for wake word "يا كابتن").
  */
 function fuzzyWakeMatch(t: string, w: string): string | null {
   const wCompact = w.replace(/ /g, '');
@@ -65,9 +68,11 @@ function fuzzyWakeMatch(t: string, w: string): string | null {
     for (let span = 1; span <= Math.min(3, tokens.length - start); span++) {
       const cand = tokens.slice(start, start + span).join('');
       const extra = cand.length - wCompact.length;
-      const contained = wCompact.length >= 3 && extra >= 0 && extra <= 2 && cand.includes(wCompact);
+      const contained =
+        (wCompact.length >= 3 && extra >= 0 && extra <= 2 && cand.includes(wCompact)) ||
+        (cand.length >= 3 && extra < 0 && extra >= -2 && wCompact.includes(cand));
       if (!contained && Math.abs(extra) > budget) continue;
-      const dist = contained ? extra : levenshtein(cand, wCompact);
+      const dist = contained ? Math.abs(extra) : levenshtein(cand, wCompact);
       if (!contained) {
         if (dist > budget) continue;
         if (dist >= 2 && cand[0] !== wCompact[0]) continue;

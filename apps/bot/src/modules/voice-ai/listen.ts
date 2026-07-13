@@ -1,8 +1,9 @@
 import OpusScript from 'opusscript';
 import { EndBehaviorType } from '@discordjs/voice';
 import type { Guild, VoiceState } from 'discord.js';
-import { parseWakeWord } from '@gamebot/shared';
+import { parseWakeWord, type GuildCommandFlows } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { transcribe } from './stt.js';
 import { pcmToWav } from './wav.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
@@ -20,6 +21,19 @@ function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
   try {
     session.connection.rejoin({ channelId: session.channelId, selfDeaf: deaf, selfMute: false });
   } catch { /* connection already destroyed (leave path) */ }
+}
+
+/**
+ * Whisper biases decoding toward its prompt, so seed it with the EXACT words
+ * it must recognize: the wake word plus the guild's enabled trigger phrases.
+ * Capped well under Whisper's 224-token prompt limit.
+ */
+export function sttHint(wakeWord: string, flows: GuildCommandFlows | null): string {
+  const phrases = (flows?.flows ?? [])
+    .filter((f) => f.enabled && f.sources.voice)
+    .flatMap((f) => f.triggers)
+    .slice(0, 12);
+  return [wakeWord, ...phrases].join('، ').slice(0, 300);
 }
 
 export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
@@ -158,7 +172,12 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
         await playSpeech(guild.id, t(config.language).listenQuotaExhausted).catch(() => {});
         return;
       }
-      const text = await transcribe(pcmToWav(mono, SAMPLE_RATE, 1), config.voice.wake_word, config.language);
+      const flows = await getCachedCommandFlows(guild.id).catch((): GuildCommandFlows | null => null);
+      const text = await transcribe(
+        pcmToWav(mono, SAMPLE_RATE, 1),
+        sttHint(config.voice.wake_word, flows),
+        config.language,
+      );
       console.log(`[Voice ${guild.id}] STT="${text}"`);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
