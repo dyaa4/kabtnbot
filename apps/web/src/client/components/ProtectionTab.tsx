@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { TriangleAlert } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -71,6 +72,16 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
 
   const form = useForm<ProtectionValues>({ resolver: zodResolver(ProtectionForm) });
 
+  // The bot reports which text features it ACTUALLY runs with — without the
+  // Message Content intent, text protection and anti-spam look enabled here
+  // but silently receive empty message content and do nothing.
+  const botStatus = useQuery({
+    queryKey: ['bot-status'],
+    queryFn: () => api<{ features: { text_protection: boolean } | null }>('/api/status'),
+    staleTime: 30_000,
+  });
+  const textDormant = botStatus.data?.features != null && !botStatus.data.features.text_protection;
+
   useEffect(() => {
     if (cfg.data) {
       form.reset({
@@ -114,6 +125,15 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <h3 className="mb-4 text-lg font-semibold">{t('protection.title')}</h3>
+        {textDormant && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-blue-400/30 bg-blue-400/5 p-4">
+            <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-blue-300" />
+            <div>
+              <p className="text-sm font-semibold text-blue-200">{t('protection.dormant.title')}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-400">{t('protection.dormant.body')}</p>
+            </div>
+          </div>
+        )}
         <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...form.register('enabled')} />
           <span>{t('protection.enabled')}</span>
