@@ -70,6 +70,14 @@ describe('routeVoiceCommand', () => {
     expect(reply).toContain('42');
   });
 
+  it('acknowledges a bare wake word instead of staying silent', async () => {
+    // "يا كابتن" + a >500ms pause splits the utterance: the first STT chunk is
+    // the wake word alone (query ''). Silence here reads as "bot ignored me".
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), '', 'u-speaker');
+    expect(reply).toBe(S.wakeAck);
+    expect(reply.length).toBeGreaterThan(0);
+  });
+
   it('returns help text', async () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد', 'u-speaker');
     expect(reply.length).toBeGreaterThan(0);

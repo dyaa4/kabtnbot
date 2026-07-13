@@ -74,6 +74,21 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   });
   session.subscriptions.set(userId, { decoder, stream });
 
+  // 'end' and 'error' can both fire on the same stream, and by then the map
+  // may already hold a NEWER subscription for this user (immediate
+  // re-subscribe below). Each cleanup therefore only touches ITS OWN entry
+  // and frees the decoder exactly once — otherwise a stale handler would tear
+  // down the fresh subscription and duplicate streams would double-transcribe.
+  let decoderFreed = false;
+  const freeDecoder = () => {
+    if (decoderFreed) return;
+    decoderFreed = true;
+    decoder.delete();
+  };
+  const unsubscribeSelf = () => {
+    if (session.subscriptions.get(userId)?.stream === stream) session.subscriptions.delete(userId);
+  };
+
   stream.on('data', (chunk: Buffer) => {
     if (!session.listening) { stream.destroy(); return; }
     try {
@@ -86,17 +101,31 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     onUtteranceEnd().catch((err) => console.error(`[Listen ${guild.id}]`, err));
   });
   stream.on('error', () => {
-    session.subscriptions.delete(userId);
-    decoder.delete();
+    unsubscribeSelf();
+    freeDecoder();
     if (session.listening) subscribeToUser(session, guild, userId);
   });
 
   async function onUtteranceEnd(): Promise<void> {
-    session.subscriptions.delete(userId);
-    if (!session.listening || totalFrames === 0) { decoder.delete(); return; }
+    unsubscribeSelf();
+    if (!session.listening) { freeDecoder(); return; }
+    if (totalFrames === 0) {
+      // Nothing decoded (codec hiccup / empty stream). Re-subscribe anyway —
+      // returning without it left the bot permanently deaf to THIS member
+      // until they rejoined: the classic "ignores my wake word" report.
+      freeDecoder();
+      subscribeToUser(session, guild, userId);
+      return;
+    }
 
     const raw = Buffer.concat(pcmFrames);
-    decoder.delete();
+    freeDecoder();
+
+    // Re-subscribe IMMEDIATELY, before STT/routing/TTS (seconds of work) —
+    // this closure keeps its own buffered frames, and a fresh subscription
+    // captures anything said meanwhile. Without it, a wake word spoken while
+    // the bot was still processing the previous utterance was simply lost.
+    subscribeToUser(session, guild, userId);
 
     // stereo → mono downmix
     const monoLen = raw.length >> 1;
@@ -133,14 +162,9 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       console.log(`[Voice ${guild.id}] STT="${text}"`);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
-      if (await handleTranscriptModeration(guild, session, userId, text)) {
-        // moderated → skip wake-word handling, but re-subscribe if the member is still
-        // in the channel (i.e. was warned, not kicked) so a second offense can escalate.
-        if (session.listening && guild.members.cache.get(userId)?.voice.channelId === session.channelId) {
-          subscribeToUser(session, guild, userId);
-        }
-        return;
-      }
+      // moderated → skip wake-word handling (already re-subscribed above; a
+      // subscription to a kicked member is inert and cleared on stop).
+      if (await handleTranscriptModeration(guild, session, userId, text)) return;
 
       const query = parseWakeWord(text, config.voice.wake_word);
       console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
@@ -160,7 +184,5 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     } catch (err) {
       console.error(`[Listen ${guild.id}]`, err);
     }
-
-    if (session.listening) subscribeToUser(session, guild, userId);
   }
 }

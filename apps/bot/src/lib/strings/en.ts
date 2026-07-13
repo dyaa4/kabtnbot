@@ -14,6 +14,7 @@ export const en = {
   aiQuotaExhausted: "⏳ Today's AI questions for this server are used up.",
   ttsFailed: '❌ Text-to-speech failed.',
   aiFailed: "😅 Couldn't answer right now, try again in a bit.",
+  wakeAck: "Yes? I'm listening — go ahead.",
   voiceHelp: 'Commands: leave, quiet, speed, kick + name, say + text, or ask me anything.',
   kickNeedsAdmin: '❌ Voice-kicking members requires Manage Server permission or the admin role.',
   kickNoMatch: "❓ Couldn't tell who you mean, please be more specific.",

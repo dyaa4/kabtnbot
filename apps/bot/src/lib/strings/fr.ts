@@ -14,6 +14,7 @@ export const fr = {
   aiQuotaExhausted: '⏳ Les questions IA quotidiennes de ce serveur sont épuisées.',
   ttsFailed: '❌ La synthèse vocale a échoué.',
   aiFailed: '😅 Je ne peux pas répondre pour le moment, réessaie dans un instant.',
+  wakeAck: "Oui ? Je t'écoute — vas-y.",
   voiceHelp: 'Commandes : sors, silence, vitesse, expulse + nom, dis + texte, ou pose-moi une question.',
   kickNeedsAdmin: '❌ Expulser des membres à la voix nécessite Gérer le serveur ou le rôle admin.',
   kickNoMatch: "❓ Je n'ai pas compris de qui tu parles, précise le nom.",

@@ -14,6 +14,7 @@ export const tr = {
   aiQuotaExhausted: '⏳ Bu sunucunun günlük yapay zekâ soruları bitti.',
   ttsFailed: '❌ Metin okuma başarısız oldu.',
   aiFailed: '😅 Şu an yanıt veremiyorum, birazdan tekrar dene.',
+  wakeAck: 'Evet? Dinliyorum — buyur.',
   voiceHelp: 'Komutlar: çık, sus, hız, at + isim, söyle + metin, ya da bana bir şey sor.',
   kickNeedsAdmin: '❌ Sesle üye atmak Sunucuyu Yönet izni veya yönetici rolü gerektirir.',
   kickNoMatch: '❓ Kimi kastettiğini anlayamadım, ismi daha net söyle.',

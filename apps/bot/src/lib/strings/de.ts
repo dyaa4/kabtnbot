@@ -14,6 +14,7 @@ export const de = {
   aiQuotaExhausted: '⏳ Die täglichen KI-Fragen dieses Servers sind aufgebraucht.',
   ttsFailed: '❌ Sprachausgabe fehlgeschlagen.',
   aiFailed: '😅 Ich kann gerade nicht antworten, versuch es gleich nochmal.',
+  wakeAck: 'Ja? Ich höre — sag deinen Befehl.',
   voiceHelp: 'Befehle: raus, leise, Tempo, kick + Name, sag + Text, oder frag mich irgendwas.',
   kickNeedsAdmin: '❌ Mitglieder per Stimme zu kicken erfordert „Server verwalten" oder die Admin-Rolle.',
   kickNoMatch: '❓ Ich konnte nicht erkennen, wen du meinst — sag den Namen deutlicher.',

@@ -191,7 +191,10 @@ export async function routeVoiceCommand(
     }
   }
 
-  if (!q) return '';
+  // Bare wake word (a pause split the utterance after "يا كابتن"): a short
+  // acknowledgment beats silence — the speaker knows they were heard and
+  // repeats the request. Placed after the matchers so '' can never run a flow.
+  if (!q) return strings.wakeAck;
 
   // 3+4 share ONE quota consume: the intent classification and the free-form
   // answer are alternatives, not two questions.
