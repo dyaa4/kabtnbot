@@ -23,6 +23,7 @@ export const en = {
   slashDisabled: '❌ This command is disabled in this server.',
   dmFailed: "Couldn't send the DM (their DMs may be closed).",
   dmInactiveStarted: 'Sending DMs to {count} inactive members.',
+  dmBulkStarted: 'Sending the DM to {count} members.',
   spamDmNotice: '🧹 Your repeated messages in {server} were removed — posting the same message in several channels counts as spam.',
   spamLogDeleted: '🧹 Spam: removed a message from {user} posted across {count} channels.',
   settingsSaved: '✅ Setting saved.',

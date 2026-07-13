@@ -1,13 +1,13 @@
 import { ArrowLeft, ArrowRight, AtSign, Copy, MessageSquareText, Timer, User, X, Zap } from 'lucide-react';
-import { memo, useRef, useState } from 'react';
+import { memo, useRef, useState, type ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { ACTION_GROUPS, defaultAction, useCanvas } from '../FlowCanvas.js';
 import { IntervalPicker } from '../IntervalPicker.js';
 import { builtinNameKey } from '../builtin-meta.js';
-import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
-import { MemberSearchBox, SingleMemberSelect } from '../UserSearchSelect.js';
+import { MultiSelect, useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
+import { MemberSearchBox, SingleMemberSelect, UserSearchSelect } from '../UserSearchSelect.js';
 
 // Friendly placeholder chips: localized label + icon; clicking inserts the
 // raw token the bot understands ({user}/{args}/{mention}) at the cursor.
@@ -18,7 +18,7 @@ const PLACEHOLDERS = [
 ] as const;
 
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-sky-400/50 focus:outline-none';
 
 /**
  * Message textarea with one-click placeholder chips ({user}/{args}/{mention})
@@ -35,7 +35,7 @@ function MessageField({
   value: string;
   maxLength: number;
   onChange: (v: string) => void;
-  hint: string;
+  hint?: string;
 }) {
   const { t } = useI18n();
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -50,7 +50,7 @@ function MessageField({
   };
 
   const chipClass =
-    'nodrag inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-blue-400/40 hover:text-blue-200';
+    'nodrag inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-sky-400/40 hover:text-sky-200';
 
   return (
     <>
@@ -69,7 +69,7 @@ function MessageField({
         ))}
         <button
           type="button"
-          className={`${chipClass} ${mentionOpen ? 'border-blue-400/50 text-blue-200' : ''}`}
+          className={`${chipClass} ${mentionOpen ? 'border-sky-400/50 text-sky-200' : ''}`}
           onClick={() => setMentionOpen((o) => !o)}
         >
           <AtSign className="h-3 w-3" /> {t('commands.action.mentionMember')}
@@ -86,7 +86,7 @@ function MessageField({
           />
         </div>
       )}
-      <p className="mt-1 text-xs text-slate-500">{hint}</p>
+      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
     </>
   );
 }
@@ -98,11 +98,16 @@ function TargetPicker({
   target,
   userId,
   update,
+  memberOptionLabel,
+  memberPicker,
 }: {
   guildId: string;
   target: TargetValue;
   userId: string;
   update: (patch: Partial<FlowAction>) => void;
+  /** dm_user overrides: option text + a multi member/role picker. */
+  memberOptionLabel?: string;
+  memberPicker?: ReactNode;
 }) {
   const { t } = useI18n();
   return (
@@ -116,15 +121,17 @@ function TargetPicker({
       >
         <option value="speaker">{t('commands.action.target.speaker')}</option>
         <option value="spoken_name">{t('commands.action.target.spokenName')}</option>
-        <option value="member">{t('commands.action.target.member')}</option>
+        <option value="member">{memberOptionLabel ?? t('commands.action.target.member')}</option>
       </select>
       {target === 'member' && (
         <div className="mt-1.5">
-          <SingleMemberSelect
-            guildId={guildId}
-            value={userId}
-            onChange={(target_user_id) => update({ target_user_id } as Partial<FlowAction>)}
-          />
+          {memberPicker ?? (
+            <SingleMemberSelect
+              guildId={guildId}
+              value={userId}
+              onChange={(target_user_id) => update({ target_user_id } as Partial<FlowAction>)}
+            />
+          )}
         </div>
       )}
     </>
@@ -178,7 +185,6 @@ function Params({
           value={action.text}
           maxLength={500}
           onChange={(text) => update({ text } as Partial<FlowAction>)}
-          hint={t('commands.action.textHint')}
         />
       );
     case 'send_message':
@@ -190,7 +196,6 @@ function Params({
             value={action.text}
             maxLength={2000}
             onChange={(text) => update({ text } as Partial<FlowAction>)}
-            hint={t('commands.action.textHint')}
           />
         </>
       );
@@ -244,13 +249,36 @@ function Params({
     case 'dm_user':
       return (
         <>
-          <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />
+          <TargetPicker
+            guildId={guildId}
+            target={action.target}
+            userId={action.target_user_id}
+            update={update}
+            memberOptionLabel={t('commands.action.target.members')}
+            memberPicker={
+              <>
+                <label className="mb-1 block text-xs text-slate-400">{t('commands.action.dm.members')}</label>
+                <UserSearchSelect
+                  guildId={guildId}
+                  values={action.target_user_ids}
+                  onChange={(target_user_ids) => update({ target_user_ids } as Partial<FlowAction>)}
+                />
+                <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.action.dm.roles')}</label>
+                <MultiSelect
+                  options={roles.data ?? []}
+                  values={action.target_role_ids}
+                  onChange={(target_role_ids) => update({ target_role_ids } as Partial<FlowAction>)}
+                  prefix="@"
+                  placeholder={t('commands.condition.roles')}
+                />
+              </>
+            }
+          />
           <MessageField
             guildId={guildId}
             value={action.text}
             maxLength={1000}
             onChange={(text) => update({ text } as Partial<FlowAction>)}
-            hint={t('commands.action.textHint')}
           />
         </>
       );
@@ -288,13 +316,13 @@ export const ActionNode = memo(function ActionNode({
 
   if (data.builtinAction || !flow) {
     return (
-      <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
-        <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
+      <div className="w-72 rounded-2xl border border-sky-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]">
+        <div className="flex items-center gap-2 text-sm font-semibold text-sky-300">
           <Zap className="h-4 w-4 shrink-0" />
           {builtin ? t(builtinNameKey(builtin.key)) : ''}
         </div>
         <p className="mt-2 text-xs text-slate-500">{t('commands.builtin.actionLabel')}</p>
-        <Handle type="target" position={Position.Left} className="!bg-blue-400" />
+        <Handle type="target" position={Position.Left} className="!bg-sky-400" />
       </div>
     );
   }
@@ -347,19 +375,19 @@ export const ActionNode = memo(function ActionNode({
   };
 
   const toolBtnClass = (enabled: boolean) =>
-    `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-blue-200' : 'cursor-default text-slate-700'}`;
+    `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-sky-200' : 'cursor-default text-slate-700'}`;
 
   return (
-    <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
+    <div className="w-72 rounded-2xl border border-sky-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]">
       <div className="mb-2 flex items-center gap-1.5">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-[11px] font-bold text-blue-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-400/20 text-[11px] font-bold text-sky-300">
           {3 + index}
         </span>
         <Zap className="h-4 w-4 shrink-0" />
         <select
           aria-label={t('commands.action.changeType')}
           title={t('commands.action.changeType')}
-          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-blue-300 hover:border-white/10 focus:border-blue-400/50 focus:outline-none"
+          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-sky-300 hover:border-white/10 focus:border-sky-400/50 focus:outline-none"
           value={action.type}
           onChange={(e) => changeType(e.target.value as FlowActionType)}
         >
@@ -401,7 +429,7 @@ export const ActionNode = memo(function ActionNode({
         {remove && (
           <button
             type="button"
-            className="nodrag rounded-lg px-1 text-sm text-slate-500 hover:bg-blue-400/10 hover:text-blue-200"
+            className="nodrag rounded-lg px-1 text-sm text-slate-500 hover:bg-sky-400/10 hover:text-sky-200"
             onClick={remove}
             title={t('commands.action.remove')}
           >
@@ -415,7 +443,7 @@ export const ActionNode = memo(function ActionNode({
           is on, so the section stays hidden otherwise. */}
       {flow.schedule.enabled && (
         <div className="mt-3 border-t border-white/10 pt-2">
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-blue-300">
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-sky-300">
             <input
               type="checkbox"
               className="nodrag"
@@ -435,8 +463,8 @@ export const ActionNode = memo(function ActionNode({
         </div>
       )}
 
-      <Handle type="target" position={Position.Left} className="!bg-blue-400" />
-      <Handle type="source" position={Position.Right} className="!bg-blue-400" />
+      <Handle type="target" position={Position.Left} className="!bg-sky-400" />
+      <Handle type="source" position={Position.Right} className="!bg-sky-400" />
     </div>
   );
 });

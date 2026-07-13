@@ -52,7 +52,16 @@ export const FlowActionSchema = z.discriminatedUnion('type', [
   z.object({ ...actionBase, type: z.literal('role_remove'), ...targetedBase, role_id: z.string().min(1) }),
   z.object({ ...actionBase, type: z.literal('ai_reply'), system_prompt: z.string().min(1).max(2000) }),
   // {user}/{args} like other texts; DMs additionally support {member} = recipient name.
-  z.object({ ...actionBase, type: z.literal('dm_user'), ...targetedBase, text: z.string().min(1).max(1000) }),
+  // With target 'member' the DM can go to several picked members AND/OR every
+  // member holding one of the picked roles (capped + throttled bot-side).
+  z.object({
+    ...actionBase,
+    type: z.literal('dm_user'),
+    ...targetedBase,
+    target_user_ids: z.array(z.string()).max(50).default([]),
+    target_role_ids: z.array(z.string()).max(10).default([]),
+    text: z.string().min(1).max(1000),
+  }),
   // DMs every member with no message/voice activity in the last `days` days
   // (capped and throttled bot-side so one command can't mass-spam).
   z.object({ ...actionBase, type: z.literal('dm_inactive_members'), days: z.number().int().min(1).max(90).default(14), text: z.string().min(1).max(1000) }),
@@ -127,7 +136,12 @@ export const CommandFlowSchema = CommandFlowBase.superRefine((flow, ctx) => {
     ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['schedule', 'channel_id'], message: 'scheduled flow needs an output channel' });
   }
   flow.actions.forEach((action, i) => {
-    if ('target' in action && action.target === 'member' && !action.target_user_id) {
+    if (!('target' in action) || action.target !== 'member') return;
+    // dm_user may target picked members and/or whole roles; every other
+    // targeted action needs exactly one picked member.
+    const hasMulti =
+      action.type === 'dm_user' && (action.target_user_ids.length > 0 || action.target_role_ids.length > 0);
+    if (!action.target_user_id && !hasMulti) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['actions', i, 'target_user_id'], message: 'pick the member this action targets' });
     }
   });

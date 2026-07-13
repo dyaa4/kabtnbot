@@ -1,6 +1,7 @@
 import { LayoutGrid, Maximize2, Minimize2 } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
+  MarkerType,
   ReactFlow,
   ReactFlowProvider,
   Background,
@@ -79,7 +80,7 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
     case 'ai_reply':
       return { ...base, type, system_prompt: '' };
     case 'dm_user':
-      return { ...base, type, ...targeted, text: '' };
+      return { ...base, type, ...targeted, target_user_ids: [], target_role_ids: [], text: '' };
     case 'dm_inactive_members':
       return { ...base, type, days: 14, text: '' };
   }
@@ -116,7 +117,9 @@ function chainEdges(ids: string[]): Edge[] {
     source: id,
     target: ids[i + 1],
     animated: true,
-    style: { stroke: 'rgba(59,130,246,0.6)' },
+    style: { stroke: 'rgba(59,130,246,0.7)', strokeWidth: 1.5 },
+    // Arrowhead so the execution direction is obvious at a glance.
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: 'rgba(96,165,250,0.95)' },
   }));
 }
 
@@ -271,6 +274,7 @@ export function FlowCanvas({
             defaultEdges={edges}
             nodeTypes={nodeTypes}
             onNodeDragStop={onNodeDragStop}
+            proOptions={{ hideAttribution: true }}
             nodesConnectable={false}
             deleteKeyCode={null}
             fitView
@@ -286,7 +290,7 @@ export function FlowCanvas({
               style={{ width: 140, height: 90 }}
               className="!m-2 rounded-lg border border-white/10 !bg-slate-900"
               maskColor="rgba(2,6,23,0.6)"
-              nodeColor={(n) => (n.type === 'trigger' ? '#60a5fa' : n.type === 'condition' ? '#3b82f6' : '#93c5fd')}
+              nodeColor={(n) => (n.type === 'action' ? '#38bdf8' : '#3b82f6')}
             />
             <Panel position="top-right" className="flex items-center gap-2">
               {flow && onFlowChange && (

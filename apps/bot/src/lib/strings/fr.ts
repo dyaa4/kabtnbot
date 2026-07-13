@@ -23,6 +23,7 @@ export const fr = {
   slashDisabled: '❌ Cette commande est désactivée sur ce serveur.',
   dmFailed: "Impossible d'envoyer le MP (ses MP sont peut-être fermés).",
   dmInactiveStarted: 'Envoi de MP à {count} membres inactifs.',
+  dmBulkStarted: 'Envoi du MP à {count} membres.',
   spamDmNotice: '🧹 Tes messages répétés sur {server} ont été supprimés — poster le même message dans plusieurs salons est considéré comme du spam.',
   spamLogDeleted: '🧹 Spam : message de {user} supprimé dans {count} salons.',
   settingsSaved: '✅ Paramètre enregistré.',

@@ -23,6 +23,7 @@ export const de = {
   slashDisabled: '❌ Dieser Befehl ist auf diesem Server deaktiviert.',
   dmFailed: 'DM konnte nicht gesendet werden (DMs evtl. geschlossen).',
   dmInactiveStarted: 'Sende DMs an {count} inaktive Mitglieder.',
+  dmBulkStarted: 'Sende die DM an {count} Mitglieder.',
   spamDmNotice: '🧹 Deine wiederholten Nachrichten in {server} wurden entfernt — dieselbe Nachricht in mehreren Kanälen zu posten gilt als Spam.',
   spamLogDeleted: '🧹 Spam: Nachricht von {user} in {count} Kanälen entfernt.',
   settingsSaved: '✅ Einstellung gespeichert.',

@@ -179,11 +179,42 @@ export async function executeActions(
           break;
         }
         case 'dm_user': {
-          const member = await resolveTargetMember(action, ctx);
-          if (!member) { replies.push(strings.kickNoMatch); break; }
-          if (member.user.bot) break;
-          const text = expand(action.text, ctx).replaceAll('{member}', member.displayName).slice(0, 2000);
-          await member.send({ content: text }).catch(() => replies.push(strings.dmFailed));
+          // 'member' may fan out to several picked members + whole roles.
+          const multi =
+            action.target === 'member' &&
+            (action.target_user_ids.length > 0 || action.target_role_ids.length > 0);
+          if (!multi) {
+            const member = await resolveTargetMember(action, ctx);
+            if (!member) { replies.push(strings.kickNoMatch); break; }
+            if (member.user.bot) break;
+            const text = expand(action.text, ctx).replaceAll('{member}', member.displayName).slice(0, 2000);
+            await member.send({ content: text }).catch(() => replies.push(strings.dmFailed));
+            break;
+          }
+
+          const ids = new Set<string>(action.target_user_ids);
+          if (action.target_user_id) ids.add(action.target_user_id);
+          if (action.target_role_ids.length > 0) {
+            const all = await ctx.guild.members.fetch().catch(() => ctx.guild.members.cache);
+            for (const m of all.values()) {
+              if (!m.user.bot && action.target_role_ids.some((r) => m.roles.cache.has(r))) ids.add(m.id);
+            }
+          }
+          const targets: GuildMember[] = [];
+          for (const id of [...ids].slice(0, 50)) { // hard cap — never a spam cannon
+            const m = ctx.guild.members.cache.get(id) ?? (await ctx.guild.members.fetch(id).catch(() => null));
+            if (m && !m.user.bot) targets.push(m);
+          }
+          const text = expand(action.text, ctx);
+          // Fire-and-forget with a throttle, same shape as dm_inactive_members —
+          // dozens of sequential DMs must not block the reply or poke rate limits.
+          void (async () => {
+            for (const m of targets) {
+              await m.send({ content: text.replaceAll('{member}', m.displayName).slice(0, 2000) }).catch(() => {});
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          })();
+          replies.push(fmt(strings.dmBulkStarted, { count: targets.length }));
           break;
         }
         case 'dm_inactive_members': {

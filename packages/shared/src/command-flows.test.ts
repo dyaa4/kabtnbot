@@ -121,6 +121,21 @@ describe('GuildCommandFlowsSchema', () => {
     expect(() => CommandFlowSchema.parse(withRepeat(20000))).toThrow();
   });
 
+  it('dm_user may target picked members and/or roles instead of a single member', () => {
+    const dm = (extra: object) => ({
+      id: 'x', name: 'DM', triggers: ['hi'],
+      actions: [{ id: 'a', type: 'dm_user', text: 'hey', target: 'member', ...extra }],
+    });
+    expect(CommandFlowSchema.parse(dm({ target_user_ids: ['u1', 'u2'] })).actions[0]).toMatchObject({
+      target_user_ids: ['u1', 'u2'],
+    });
+    expect(CommandFlowSchema.parse(dm({ target_role_ids: ['r1'] })).actions[0]).toMatchObject({
+      target_role_ids: ['r1'],
+    });
+    // nothing picked at all → invalid
+    expect(() => CommandFlowSchema.parse(dm({}))).toThrow();
+  });
+
   it("target 'member' requires a picked member id", () => {
     const dm = (extra: object) => ({
       id: 'x', name: 'DM', triggers: ['hi'],
