@@ -1,7 +1,11 @@
 import { ScheduleRunModel } from '../models.js';
 import { retryOnDupKey } from '../retry.js';
 
-/** last_run_at per flow id for one guild (missing = never initialized). */
+/**
+ * last_run_at per schedule key for one guild (missing = never initialized).
+ * Key = flow id for the flow's base batch, `flowId:actionId` for actions
+ * running on their own repeat interval.
+ */
 export async function getScheduleRuns(guildId: string): Promise<Map<string, Date>> {
   const docs = await ScheduleRunModel.find({ guild_id: guildId }).lean();
   return new Map(docs.map((d) => [d.flow_id, d.last_run_at]));

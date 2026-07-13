@@ -1,6 +1,6 @@
 import type { Client, Guild, TextChannel } from 'discord.js';
 import { getScheduleRuns, setScheduleRun } from '@gamebot/db';
-import type { CommandFlow } from '@gamebot/shared';
+import type { CommandFlow, FlowAction } from '@gamebot/shared';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { getSession, playSpeech } from '../voice-ai/sessions.js';
@@ -20,29 +20,57 @@ export const SCHEDULER_TICK_MS = 60_000;
 const SCHEDULED_AI_INPUT = 'Write the scheduled post now, following your instructions.';
 
 /**
- * Pure partition of a guild's flows: `due` = interval elapsed since last run;
- * `init` = scheduled but never seen before (gets a last-run stamp WITHOUT
+ * One independently-timed run: either a flow's base batch (all actions
+ * without their own cadence, on the flow interval) or a single action that
+ * set `repeat_minutes` (its own interval, tracked under `flowId:actionId`).
+ */
+export interface ScheduledUnit {
+  key: string;
+  flow: CommandFlow;
+  actions: FlowAction[];
+  every_minutes: number;
+}
+
+export function scheduledUnits(flows: CommandFlow[]): ScheduledUnit[] {
+  const units: ScheduledUnit[] = [];
+  for (const flow of flows) {
+    if (!flow.enabled || !flow.schedule.enabled || !flow.schedule.channel_id) continue;
+    const base = flow.actions.filter((a) => a.repeat_minutes === 0);
+    if (base.length > 0) {
+      units.push({ key: flow.id, flow, actions: base, every_minutes: flow.schedule.every_minutes });
+    }
+    for (const action of flow.actions) {
+      if (action.repeat_minutes > 0) {
+        units.push({ key: `${flow.id}:${action.id}`, flow, actions: [action], every_minutes: action.repeat_minutes });
+      }
+    }
+  }
+  return units;
+}
+
+/**
+ * Pure partition of a guild's scheduled units: `due` = interval elapsed since
+ * last run; `init` = never seen before (gets a last-run stamp WITHOUT
  * executing, so enabling a schedule doesn't fire instantly on save).
  */
 export function partitionScheduled(
   flows: CommandFlow[],
   lastRuns: Map<string, Date>,
   now: Date,
-): { due: CommandFlow[]; init: CommandFlow[] } {
-  const due: CommandFlow[] = [];
-  const init: CommandFlow[] = [];
-  for (const flow of flows) {
-    if (!flow.enabled || !flow.schedule.enabled || !flow.schedule.channel_id) continue;
-    const last = lastRuns.get(flow.id);
-    if (!last) init.push(flow);
-    else if (now.getTime() - last.getTime() >= flow.schedule.every_minutes * 60_000) due.push(flow);
+): { due: ScheduledUnit[]; init: ScheduledUnit[] } {
+  const due: ScheduledUnit[] = [];
+  const init: ScheduledUnit[] = [];
+  for (const unit of scheduledUnits(flows)) {
+    const last = lastRuns.get(unit.key);
+    if (!last) init.push(unit);
+    else if (now.getTime() - last.getTime() >= unit.every_minutes * 60_000) due.push(unit);
   }
   return { due, init };
 }
 
-async function runFlow(guild: Guild, flow: CommandFlow, now: Date): Promise<void> {
+async function runUnit(guild: Guild, unit: ScheduledUnit, now: Date): Promise<void> {
   // Stamp BEFORE executing — a slow action must not double-fire on the next tick.
-  await setScheduleRun(guild.id, flow.id, now);
+  await setScheduleRun(guild.id, unit.key, now);
 
   const config = await getCachedGuildConfig(guild.id);
   const session = getSession(guild.id);
@@ -55,10 +83,10 @@ async function runFlow(guild: Guild, flow: CommandFlow, now: Date): Promise<void
     session,
     config,
   };
-  const { reply } = await executeActions(flow.actions, ctx);
+  const { reply } = await executeActions(unit.actions, ctx);
   if (!reply) return;
 
-  const channel = guild.channels.cache.get(flow.schedule.channel_id);
+  const channel = guild.channels.cache.get(unit.flow.schedule.channel_id);
   if (channel?.isTextBased()) {
     const userIds = [...reply.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]).slice(0, 25);
     await (channel as TextChannel)
@@ -76,10 +104,10 @@ export async function runScheduleSweep(client: Client, now: Date = new Date()): 
 
       const lastRuns = await getScheduleRuns(guild.id);
       const { due, init } = partitionScheduled(flows, lastRuns, now);
-      for (const flow of init) await setScheduleRun(guild.id, flow.id, now);
-      for (const flow of due) {
-        await runFlow(guild, flow, now).catch((err) =>
-          console.error(`[Scheduler ${guild.id}] flow ${flow.id}:`, err),
+      for (const unit of init) await setScheduleRun(guild.id, unit.key, now);
+      for (const unit of due) {
+        await runUnit(guild, unit, now).catch((err) =>
+          console.error(`[Scheduler ${guild.id}] ${unit.key}:`, err),
         );
       }
     } catch (err) {

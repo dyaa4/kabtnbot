@@ -3,6 +3,7 @@ import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowSchedule } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { useCanvas } from '../FlowCanvas.js';
+import { IntervalPicker } from '../IntervalPicker.js';
 import { useTextChannels } from '../pickers.js';
 
 const INPUT_CLASS =
@@ -58,15 +59,6 @@ function PhraseChips({
   );
 }
 
-// every_minutes shown as the largest unit that divides it evenly, so "1440"
-// reads as "1 day" and editing keeps the chosen unit.
-function intervalParts(minutes: number): { value: number; unit: 'minutes' | 'hours' | 'days' } {
-  if (minutes % 1440 === 0) return { value: minutes / 1440, unit: 'days' };
-  if (minutes % 60 === 0) return { value: minutes / 60, unit: 'hours' };
-  return { value: minutes, unit: 'minutes' };
-}
-const UNIT_MINUTES = { minutes: 1, hours: 60, days: 1440 } as const;
-
 function ScheduleSection({
   guildId,
   schedule,
@@ -78,13 +70,6 @@ function ScheduleSection({
 }) {
   const { t } = useI18n();
   const channels = useTextChannels(guildId);
-  const { value, unit } = intervalParts(schedule.every_minutes);
-
-  const setInterval = (v: number, u: 'minutes' | 'hours' | 'days') => {
-    // Clamp to the schema's 5 min – 7 days window.
-    const minutes = Math.min(10080, Math.max(5, Math.round(v) * UNIT_MINUTES[u]));
-    onChange({ ...schedule, every_minutes: minutes });
-  };
 
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
@@ -101,24 +86,7 @@ function ScheduleSection({
       {schedule.enabled && (
         <>
           <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.every')}</label>
-          <div className="flex gap-1.5">
-            <input
-              type="number"
-              min={1}
-              className={`${INPUT_CLASS} w-20`}
-              value={value}
-              onChange={(e) => setInterval(Math.max(1, Number(e.target.value) || 1), unit)}
-            />
-            <select
-              className={INPUT_CLASS}
-              value={unit}
-              onChange={(e) => setInterval(value, e.target.value as 'minutes' | 'hours' | 'days')}
-            >
-              <option value="minutes">{t('commands.schedule.minutes')}</option>
-              <option value="hours">{t('commands.schedule.hours')}</option>
-              <option value="days">{t('commands.schedule.days')}</option>
-            </select>
-          </div>
+          <IntervalPicker minutes={schedule.every_minutes} onChange={(every_minutes) => onChange({ ...schedule, every_minutes })} />
           <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.channel')}</label>
           <select
             className={INPUT_CLASS}

@@ -45,7 +45,7 @@ export function FolderSidebar({
           match_mode: 'exact',
           llm_fallback: true,
           conditions: { role_ids: [], user_ids: [], channel_ids: [] },
-          actions: [{ id: crypto.randomUUID(), type: 'speak_tts', text: '', pos: { x: 640, y: 120 } }],
+          actions: [{ id: crypto.randomUUID(), type: 'speak_tts', text: '', pos: { x: 640, y: 120 }, repeat_minutes: 0 }],
           cooldown_seconds: 5,
           slash_name: '',
           layout: { trigger: { x: 0, y: 120 }, condition: { x: 320, y: 120 } },

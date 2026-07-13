@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "Daha önce çalıştır",
   "commands.action.moveLater": "Daha sonra çalıştır",
   "commands.action.max": "En fazla 5 eyleme ulaşıldı",
+  "commands.action.repeat": "Bu adım için özel aralık",
+  "commands.action.repeatHint": "Otomasyonun zamanlama aralığında çalışır. Bu adıma kendi temposunu vermek için etkinleştirin, örn. bu mesaj her 5 dakikada bir.",
   "commands.canvas.arrange": "Düzeni topla",
   "commands.canvas.fullscreen": "Tam ekran",
   "commands.canvas.exitFullscreen": "Tam ekrandan çık",

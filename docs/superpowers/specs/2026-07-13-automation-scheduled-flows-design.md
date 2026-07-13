@@ -54,6 +54,23 @@ schedule: z.object({
 - All six locale files: `tabs.commands` → Automation etc., new keys for the
   schedule section.
 
+## Per-step intervals (follow-up, same day)
+
+Owner: a step should be able to run on its own cadence ("this message every
+5 minutes") instead of only the flow-wide interval.
+
+- Schema: every action gets `repeat_minutes` (0 = default, run with the flow's
+  schedule interval; 5–10080 = own cadence). Old flows parse unchanged.
+- Scheduler: flows expand into **units** — one base batch (all actions with
+  `repeat_minutes: 0`, keyed `flowId`, on `schedule.every_minutes`) plus one
+  unit per self-timed action (keyed `flowId:actionId`, on its own interval).
+  Same init-without-firing + stamp-before-execute rules per unit; the
+  `schedule_runs` collection stores composite keys in `flow_id` unchanged.
+- Per-step intervals are only active while the flow schedule is enabled — that
+  keeps the "schedule ⇒ output channel" validation the single source of truth.
+- UI: action nodes on scheduled flows get a "⏱ own interval" toggle +
+  IntervalPicker (extracted from the trigger's schedule section, shared).
+
 ## Testing
 
 - shared: schedule-only flow valid; no-trigger + no-schedule invalid; schedule

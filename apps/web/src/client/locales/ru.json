@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "Выполнять раньше",
   "commands.action.moveLater": "Выполнять позже",
   "commands.action.max": "Достигнут максимум — 5 действий",
+  "commands.action.repeat": "Собственный интервал для этого шага",
+  "commands.action.repeatHint": "Выполняется с интервалом расписания автоматизации. Включите, чтобы задать шагу свой ритм, например это сообщение каждые 5 минут.",
   "commands.canvas.arrange": "Упорядочить",
   "commands.canvas.fullscreen": "Во весь экран",
   "commands.canvas.exitFullscreen": "Выйти из полноэкранного режима",

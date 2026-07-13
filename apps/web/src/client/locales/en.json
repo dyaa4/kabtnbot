@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "Run earlier",
   "commands.action.moveLater": "Run later",
   "commands.action.max": "Maximum of 5 actions reached",
+  "commands.action.repeat": "Own interval for this step",
+  "commands.action.repeatHint": "Runs at the schedule interval of the automation. Enable to give this step its own timing, e.g. this message every 5 minutes.",
   "commands.canvas.arrange": "Tidy up",
   "commands.canvas.fullscreen": "Fullscreen",
   "commands.canvas.exitFullscreen": "Exit fullscreen",

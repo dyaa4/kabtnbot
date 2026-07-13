@@ -3,6 +3,7 @@ import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { ACTION_GROUPS, defaultAction, useCanvas } from '../FlowCanvas.js';
+import { IntervalPicker } from '../IntervalPicker.js';
 import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
 import { MemberSearchBox } from '../UserSearchSelect.js';
@@ -306,7 +307,7 @@ export const ActionNode = memo(function ActionNode({
   // node identity/position and carry over text/target when both types use it.
   const changeType = (type: FlowActionType) => {
     if (type === action.type) return;
-    const next = { ...defaultAction(type, index), id: action.id, pos: action.pos } as FlowAction;
+    const next = { ...defaultAction(type, index), id: action.id, pos: action.pos, repeat_minutes: action.repeat_minutes } as FlowAction;
     for (const key of ['text', 'target'] as const) {
       if (key in action && key in next) {
         (next as Record<string, unknown>)[key] = (action as Record<string, unknown>)[key];
@@ -379,6 +380,31 @@ export const ActionNode = memo(function ActionNode({
         )}
       </div>
       <Params guildId={guildId} action={action} update={update} />
+
+      {/* Own cadence for this step — only meaningful while the flow schedule
+          is on, so the section stays hidden otherwise. */}
+      {flow.schedule.enabled && (
+        <div className="mt-3 border-t border-white/10 pt-2">
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+            <input
+              type="checkbox"
+              className="nodrag"
+              checked={action.repeat_minutes > 0}
+              onChange={(e) => update({ repeat_minutes: e.target.checked ? 60 : 0 } as Partial<FlowAction>)}
+            />
+            ⏱ {t('commands.action.repeat')}
+          </label>
+          {action.repeat_minutes > 0 ? (
+            <div className="mt-1.5">
+              <label className="mb-1 block text-xs text-slate-400">{t('commands.schedule.every')}</label>
+              <IntervalPicker minutes={action.repeat_minutes} onChange={(repeat_minutes) => update({ repeat_minutes } as Partial<FlowAction>)} />
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-slate-500">{t('commands.action.repeatHint')}</p>
+          )}
+        </div>
+      )}
+
       <Handle type="target" position={Position.Left} className="!bg-emerald-400" />
       <Handle type="source" position={Position.Right} className="!bg-emerald-400" />
     </div>

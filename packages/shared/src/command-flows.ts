@@ -27,7 +27,15 @@ const idStr = z.string().min(1).max(40);
 // like the built-in kick).
 const Target = z.enum(['speaker', 'spoken_name']).default('speaker');
 
-const actionBase = { id: idStr, pos: NodePos.default({ x: 0, y: 0 }) };
+const actionBase = {
+  id: idStr,
+  pos: NodePos.default({ x: 0, y: 0 }),
+  // Own cadence for this step within a scheduled flow: 0 = run together with
+  // the flow's schedule interval; >0 = run independently every N minutes
+  // (same 5 min – 7 days window as the flow schedule). Ignored while the
+  // flow's schedule is disabled.
+  repeat_minutes: z.union([z.literal(0), z.number().int().min(5).max(10080)]).default(0),
+};
 
 export const FlowActionSchema = z.discriminatedUnion('type', [
   z.object({ ...actionBase, type: z.literal('voice_leave') }),

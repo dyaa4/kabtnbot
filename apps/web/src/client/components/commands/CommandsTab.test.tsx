@@ -168,6 +168,32 @@ describe('CommandsTab', () => {
     expect(screen.getByDisplayValue('hallo')).toBeTruthy();
   });
 
+  it('per-step interval section only shows on scheduled flows and toggles the picker', async () => {
+    // schedule disabled → no repeat section on the action node
+    mockFetch(FLOWS_TWO);
+    const user = userEvent.setup();
+    const { unmount } = renderTab();
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    await screen.findAllByLabelText('Change action type');
+    expect(screen.queryByLabelText(/Own interval/)).toBeNull();
+    unmount();
+
+    // schedule enabled → checkbox appears; enabling it shows the interval picker
+    mockFetch({
+      ...FLOWS_TWO,
+      flows: [{ ...FLOWS_TWO.flows[0], schedule: { enabled: true, every_minutes: 60, channel_id: 'c9' } }],
+    });
+    renderTab();
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    const toggles = (await screen.findAllByLabelText(/Own interval/)) as HTMLInputElement[];
+    expect(toggles).toHaveLength(2);
+    // one unit select so far (the flow schedule in the trigger node); enabling
+    // a per-step interval adds a second picker with the 60-min default (1 hour)
+    expect(screen.getAllByDisplayValue('hours')).toHaveLength(1);
+    await user.click(toggles[0]);
+    await waitFor(() => expect(screen.getAllByDisplayValue('hours')).toHaveLength(2));
+  });
+
   it('the scheduled template creates a schedule-enabled flow with the interval editor', async () => {
     mockFetch(EMPTY_FLOWS);
     const user = userEvent.setup();

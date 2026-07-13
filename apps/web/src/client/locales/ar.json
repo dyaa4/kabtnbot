@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "تنفيذ أبكر",
   "commands.action.moveLater": "تنفيذ لاحقًا",
   "commands.action.max": "تم بلوغ الحد الأقصى (5 إجراءات)",
+  "commands.action.repeat": "فاصل زمني خاص بهذه الخطوة",
+  "commands.action.repeatHint": "تعمل ضمن الفاصل الزمني لجدول الأتمتة. فعّلها لإعطاء هذه الخطوة إيقاعها الخاص، مثلاً هذه الرسالة كل 5 دقائق.",
   "commands.canvas.arrange": "ترتيب المخطط",
   "commands.canvas.fullscreen": "ملء الشاشة",
   "commands.canvas.exitFullscreen": "الخروج من ملء الشاشة",

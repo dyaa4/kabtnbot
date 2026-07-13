@@ -56,7 +56,7 @@ export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
 ];
 
 export function defaultAction(type: FlowActionType, index: number): FlowAction {
-  const base = { id: crypto.randomUUID(), pos: { x: 640 + index * 320, y: 120 } };
+  const base = { id: crypto.randomUUID(), pos: { x: 640 + index * 320, y: 120 }, repeat_minutes: 0 as const };
   switch (type) {
     case 'voice_leave':
     case 'voice_stop_listening':

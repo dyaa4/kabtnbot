@@ -101,6 +101,26 @@ describe('GuildCommandFlowsSchema', () => {
     ).toThrow();
   });
 
+  it('defaults repeat_minutes to 0 (step follows the flow schedule)', () => {
+    const parsed = CommandFlowSchema.parse({
+      id: 'x', name: 'Old', triggers: ['hi'],
+      actions: [{ id: 'a', type: 'voice_leave' }],
+    });
+    expect(parsed.actions[0].repeat_minutes).toBe(0);
+  });
+
+  it('accepts a per-action repeat interval within 5 min – 7 days, rejects below', () => {
+    const withRepeat = (repeat_minutes: number) => ({
+      id: 'x', name: 'R', triggers: [],
+      schedule: { enabled: true, every_minutes: 60, channel_id: 'c1' },
+      actions: [{ id: 'a', type: 'send_message', channel_id: 'c1', text: 'hi', repeat_minutes }],
+    });
+    expect(CommandFlowSchema.parse(withRepeat(5)).actions[0].repeat_minutes).toBe(5);
+    expect(CommandFlowSchema.parse(withRepeat(10080)).actions[0].repeat_minutes).toBe(10080);
+    expect(() => CommandFlowSchema.parse(withRepeat(3))).toThrow();
+    expect(() => CommandFlowSchema.parse(withRepeat(20000))).toThrow();
+  });
+
   it('rejects unknown action types', () => {
     expect(() =>
       GuildCommandFlowsSchema.parse({

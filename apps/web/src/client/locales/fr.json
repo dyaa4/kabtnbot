@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "Exécuter plus tôt",
   "commands.action.moveLater": "Exécuter plus tard",
   "commands.action.max": "Maximum de 5 actions atteint",
+  "commands.action.repeat": "Intervalle propre à cette étape",
+  "commands.action.repeatHint": "S'exécute à l'intervalle du planning de l'automatisation. Activez pour donner à cette étape son propre rythme, p. ex. ce message toutes les 5 minutes.",
   "commands.canvas.arrange": "Réorganiser",
   "commands.canvas.fullscreen": "Plein écran",
   "commands.canvas.exitFullscreen": "Quitter le plein écran",

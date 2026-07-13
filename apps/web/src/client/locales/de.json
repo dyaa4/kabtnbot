@@ -293,6 +293,8 @@
   "commands.action.moveEarlier": "Früher ausführen",
   "commands.action.moveLater": "Später ausführen",
   "commands.action.max": "Maximal 5 Aktionen erreicht",
+  "commands.action.repeat": "Eigenes Intervall für diesen Schritt",
+  "commands.action.repeatHint": "Läuft im Zeitplan-Intervall der Automatisierung. Aktivieren, um diesem Schritt einen eigenen Takt zu geben, z. B. diese Nachricht alle 5 Minuten.",
   "commands.canvas.arrange": "Aufräumen",
   "commands.canvas.fullscreen": "Vollbild",
   "commands.canvas.exitFullscreen": "Vollbild beenden",
