@@ -112,13 +112,8 @@ async function synthesizeElevenLabs(text: string): Promise<Buffer> {
   return runFfmpeg(Buffer.from(await resp.arrayBuffer()));
 }
 
-/** Languages we can actually speak. Arabic → Orpheus, English → PlayAI (Groq). */
-export function isSpeakableLanguage(language: string): boolean {
-  return language === 'ar' || language === 'en';
-}
-
 // Picks the Groq TTS model + voice for a language. Arabic uses the per-guild
-// Orpheus voice (lowercased ids like "fahad"); English uses the PlayAI model.
+// Orpheus voice (lowercased ids like "fahad"); English uses the English Orpheus model.
 function ttsParamsFor(language: string, voice?: string): { model: string; voice: string } | null {
   if (language === 'en') return { model: config.GROQ_TTS_MODEL_EN, voice: config.GROQ_TTS_VOICE_EN };
   if (language === 'ar') return { model: config.GROQ_TTS_MODEL, voice: (voice ?? config.GROQ_TTS_VOICE).toLowerCase() };
@@ -127,13 +122,17 @@ function ttsParamsFor(language: string, voice?: string): { model: string; voice:
 
 /**
  * Text → spoken audio (mp3 buffer) in the guild's bot language. Groq covers STT
- * + chat + TTS from one key: Orpheus for Arabic, PlayAI for English. Throws
- * TTS_UNSUPPORTED_LANGUAGE for other languages so callers fall back to text-only.
- * ElevenLabs stays an optional fallback if its key is still configured.
+ * + chat + TTS from one key: Orpheus for Arabic and English. Other languages
+ * are spoken via ElevenLabs (multilingual) when its key is configured;
+ * otherwise TTS_UNSUPPORTED_LANGUAGE is thrown so callers fall back to
+ * text-only. ElevenLabs also stays the fallback when Groq itself fails.
  */
 export async function synthesizeSpeech(text: string, opts: { language: string; voice?: string }): Promise<Buffer> {
   const params = ttsParamsFor(opts.language, opts.voice);
-  if (!params) throw new Error('TTS_UNSUPPORTED_LANGUAGE');
+  if (!params) {
+    if (!config.ELEVENLABS_API_KEY) throw new Error('TTS_UNSUPPORTED_LANGUAGE');
+    return synthesizeElevenLabs(text);
+  }
   if (config.GROQ_API_KEY) {
     try {
       return await synthesizeGroq(text, params.model, params.voice);

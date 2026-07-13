@@ -22,10 +22,14 @@ const Env = z.object({
   // Voices: Abdullah, Fahad, Sultan (m); Lulwa, Noura, Aisha (f).
   GROQ_TTS_MODEL: z.string().optional().default('canopylabs/orpheus-arabic-saudi'),
   GROQ_TTS_VOICE: z.string().optional().default('fahad'),
-  // English TTS: Orpheus is Arabic-only, so English replies use a separate Groq
-  // model/voice (PlayAI). Used when the guild's bot language is English.
-  GROQ_TTS_MODEL_EN: z.string().optional().default('playai-tts'),
-  GROQ_TTS_VOICE_EN: z.string().optional().default('Fritz-PlayAI'),
+  // English TTS: the Saudi Orpheus model is Arabic-only, so English replies use
+  // the English Orpheus model. Groq decommissioned PlayAI (2026) — a stale
+  // playai env value in prod is remapped so English TTS keeps working.
+  // Voices: autumn, diana, hannah (f); austin, daniel, troy (m).
+  GROQ_TTS_MODEL_EN: z.string().optional().default('canopylabs/orpheus-v1-english')
+    .transform((v) => (v === 'playai-tts' ? 'canopylabs/orpheus-v1-english' : v)),
+  GROQ_TTS_VOICE_EN: z.string().optional().default('troy')
+    .transform((v) => (v.endsWith('-PlayAI') ? 'troy' : v)),
   GEMINI_API_KEY: z.string().optional().default(''),
   // ElevenLabs is now an OPTIONAL fallback — only used if a key is still set.
   // Leave all three empty to run TTS purely on Groq Orpheus.

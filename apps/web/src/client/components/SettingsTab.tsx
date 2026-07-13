@@ -148,20 +148,24 @@ export function SettingsTab({ guildId }: { guildId: string }) {
             />
           </label>
           <p className="mb-3 text-xs text-slate-500">{t('settings.voice.wakeWord.hint')}</p>
-          <label className="mb-1 block">
-            <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
-            <select
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
-              {...voice.register('dialect')}
-            >
-              {DIALECTS.map((d) => (
-                <option key={d} value={d}>
-                  {t(`settings.dialect.${d}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
+          {botLanguage === 'ar' && (
+            <>
+              <label className="mb-1 block">
+                <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
+                <select
+                  className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+                  {...voice.register('dialect')}
+                >
+                  {DIALECTS.map((d) => (
+                    <option key={d} value={d}>
+                      {t(`settings.dialect.${d}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
+            </>
+          )}
           <label className="mb-1 block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.ttsVoice')}</span>
             <select

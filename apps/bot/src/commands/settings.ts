@@ -72,7 +72,8 @@ export const settingsCommand: Command = {
             value: [
               `${strings.labelEnabled}: ${config.voice.enabled ? strings.yes : strings.no}`,
               `${strings.labelWakeWord}: ${config.voice.wake_word}`,
-              `${strings.labelDialect}: ${strings[DIALECT_KEY[config.voice.dialect]]}`,
+              // Dialect only applies to Arabic voice replies — hide it otherwise.
+              ...(config.language === 'ar' ? [`${strings.labelDialect}: ${strings[DIALECT_KEY[config.voice.dialect]]}`] : []),
               `${strings.labelPersonality}: ${config.voice.personality_enabled ? strings.yes : strings.no}`,
             ].join('\n'),
           },

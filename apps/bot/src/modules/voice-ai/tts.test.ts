@@ -1,6 +1,19 @@
-import { describe, it, expect } from 'vitest';
-import { chunkText, wavPcm } from './tts.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { chunkText, wavPcm, synthesizeSpeech } from './tts.js';
 import { pcmToWav } from './wav.js';
+
+const mockConfig = vi.hoisted(() => ({
+  GROQ_API_KEY: 'gk',
+  GROQ_TTS_MODEL: 'orpheus',
+  GROQ_TTS_VOICE: 'fahad',
+  GROQ_TTS_MODEL_EN: 'playai-tts',
+  GROQ_TTS_VOICE_EN: 'Fritz-PlayAI',
+  ELEVENLABS_API_KEY: '',
+  ELEVENLABS_VOICE_ID: 'v1',
+  ELEVENLABS_MODEL_ID: 'eleven_flash_v2_5',
+}));
+
+vi.mock('../../config.js', () => ({ config: mockConfig }));
 
 describe('chunkText (Orpheus 200-char cap)', () => {
   it('keeps short text as a single chunk', () => {
@@ -24,6 +37,27 @@ describe('chunkText (Orpheus 200-char cap)', () => {
 
   it('returns no chunks for empty/whitespace text', () => {
     expect(chunkText('   ', 200)).toEqual([]);
+  });
+});
+
+describe('synthesizeSpeech language routing', () => {
+  beforeEach(() => {
+    mockConfig.ELEVENLABS_API_KEY = '';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('boom', { status: 500 })));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('throws TTS_UNSUPPORTED_LANGUAGE for non-Groq languages without ElevenLabs', async () => {
+    await expect(synthesizeSpeech('hallo', { language: 'de' })).rejects.toThrow('TTS_UNSUPPORTED_LANGUAGE');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('routes non-Groq languages to ElevenLabs when a key is configured', async () => {
+    mockConfig.ELEVENLABS_API_KEY = 'el-key';
+    // 500 response → the ElevenLabs error proves routing reached its endpoint.
+    await expect(synthesizeSpeech('hallo', { language: 'de' })).rejects.toThrow(/ElevenLabs 500/);
+    const url = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
+    expect(url).toContain('api.elevenlabs.io');
   });
 });
 

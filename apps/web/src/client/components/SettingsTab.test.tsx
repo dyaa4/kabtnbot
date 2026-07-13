@@ -145,6 +145,22 @@ describe('SettingsTab', () => {
     });
   });
 
+  it('hides the dialect picker when the bot language is not Arabic', async () => {
+    const user = userEvent.setup();
+    renderTab();
+    await screen.findByDisplayValue('يا بوت');
+
+    // Arabic (the loaded config) → dialect picker visible
+    expect(screen.getByLabelText(/اللهجة|Dialect/)).toBeTruthy();
+
+    await user.selectOptions(screen.getByLabelText(/لغة البوت|Bot language/), 'de');
+    expect(screen.queryByLabelText(/اللهجة|Dialect/)).toBeNull();
+
+    // switching back restores it
+    await user.selectOptions(screen.getByLabelText(/لغة البوت|Bot language/), 'ar');
+    expect(screen.getByLabelText(/اللهجة|Dialect/)).toBeTruthy();
+  });
+
   it('save button is disabled until something changes, then saves everything at once', async () => {
     const user = userEvent.setup();
     renderTab();
