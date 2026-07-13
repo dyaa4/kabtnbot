@@ -31,4 +31,35 @@ describe('parseWakeWord', () => {
   it('matches despite elongation (3+ repeated letters)', () => {
     expect(parseWakeWord('يا كابتننننن وزع', 'يا كابتن')).toBe('وزع');
   });
+
+  // Fuzzy tolerance: Whisper drops/substitutes single letters and prepends
+  // fillers. A near-miss must still wake the bot — with guards so ordinary
+  // chatter does not.
+  describe('fuzzy tolerance', () => {
+    it('tolerates one dropped letter', () => {
+      expect(parseWakeWord('يا كبتن اطلع', 'يا كابتن')).toBe('اطلع');
+    });
+    it('tolerates one substituted letter', () => {
+      expect(parseWakeWord('يا كابطن اسكت', 'يا كابتن')).toBe('اسكت');
+    });
+    it('tolerates up to two leading filler words', () => {
+      expect(parseWakeWord('اه يا كابتن اطلع', 'يا كابتن')).toBe('اطلع');
+      expect(parseWakeWord('طيب اه يا كابتن قف', 'يا كابتن')).toBe('قف');
+    });
+    it('tolerates the wake word split into extra tokens by STT', () => {
+      expect(parseWakeWord('يا كاب تن وزع', 'يا كابتن')).toBe('وزع');
+    });
+    it('still ignores unrelated words of similar length', () => {
+      expect(parseWakeWord('يا شباب كيفكم', 'يا كابتن')).toBeNull();
+    });
+    it('rejects a 2-edit near-miss whose first letter differs (talking ABOUT the bot)', () => {
+      expect(parseWakeWord('الكابتن راح', 'يا كابتن')).toBeNull();
+    });
+    it('keeps short wake words strict (no fuzzy budget)', () => {
+      expect(parseWakeWord('بولت اسكت', 'بوت')).toBeNull();
+    });
+    it('does not fire deep inside a sentence', () => {
+      expect(parseWakeWord('قلت له امس يا كابتن اطلع', 'يا كابتن')).toBeNull();
+    });
+  });
 });
