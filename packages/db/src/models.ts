@@ -205,6 +205,25 @@ export const CommandFlowsModel =
   (mongoose.models.CommandFlows as mongoose.Model<CommandFlowsDoc>) ??
   mongoose.model<CommandFlowsDoc>('CommandFlows', commandFlowsSchema);
 
+// Last-run bookkeeping for scheduled command flows, one doc per guild+flow.
+// Persisted (not in-memory) so a bot redeploy can't reset long intervals.
+export interface ScheduleRunDoc {
+  guild_id: string;
+  flow_id: string;
+  last_run_at: Date;
+}
+
+const scheduleRunSchema = new Schema<ScheduleRunDoc>({
+  guild_id: { type: String, required: true },
+  flow_id: { type: String, required: true },
+  last_run_at: { type: Date, required: true },
+});
+scheduleRunSchema.index({ guild_id: 1, flow_id: 1 }, { unique: true });
+
+export const ScheduleRunModel =
+  (mongoose.models.ScheduleRun as mongoose.Model<ScheduleRunDoc>) ??
+  mongoose.model<ScheduleRunDoc>('ScheduleRun', scheduleRunSchema);
+
 // Owner-facing directory of every guild the bot is in, plus a block flag the
 // super-admin panel toggles (a blocked guild is left and refused on rejoin).
 export interface GuildDirectoryDoc {

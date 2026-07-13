@@ -26,6 +26,7 @@ const FLOWS = {
       enabled: true,
       sources: { voice: true, text: false },
       triggers: ['geh raus'],
+      schedule: { enabled: false, every_minutes: 60, channel_id: '' },
       match_mode: 'exact',
       llm_fallback: true,
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },
@@ -86,17 +87,31 @@ describe('CommandsTab', () => {
     mockFetch(EMPTY_FLOWS);
     const user = userEvent.setup();
     renderTab();
-    await screen.findByText(/New command/);
+    await screen.findByText(/New automation/);
 
-    await user.click(screen.getAllByRole('button', { name: /New command/ })[0]);
-    // new command appears in the sidebar and the save bar arms
+    await user.click(screen.getAllByRole('button', { name: /New automation/ })[0]);
+    // new automation appears in the sidebar and the save bar arms
     await waitFor(() => expect(screen.getByText(/Unsaved|unsaved/i)).toBeTruthy());
 
-    // an empty new command (no trigger phrase, empty TTS text) must be rejected
-    // client-side by the shared Zod schema — no PUT goes out
+    // an empty new automation (no trigger phrase, empty TTS text) must be
+    // rejected client-side by the shared Zod schema — no PUT goes out
     await user.click(screen.getByRole('button', { name: /Save/ }));
     const putCalls = () =>
       (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT');
     expect(putCalls()).toHaveLength(0);
+  });
+
+  it('the scheduled template creates a schedule-enabled flow with the interval editor', async () => {
+    mockFetch(EMPTY_FLOWS);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByRole('button', { name: /Scheduled message/ }));
+    // trigger node shows the schedule section, already enabled with its interval + channel inputs
+    const toggle = (await screen.findByLabelText(/Scheduled run/)) as HTMLInputElement;
+    expect(toggle.checked).toBe(true);
+    expect(screen.getByText(/Output channel/)).toBeTruthy();
+    // 1440 min template default reads as "1 day"
+    expect((screen.getByDisplayValue('1') as HTMLInputElement).type).toBe('number');
   });
 });

@@ -55,6 +55,52 @@ describe('GuildCommandFlowsSchema', () => {
     ).toThrow();
   });
 
+  it('accepts a schedule-only flow (no phrase triggers)', () => {
+    const parsed = GuildCommandFlowsSchema.parse({
+      flows: [
+        {
+          id: 'x',
+          name: 'Daily post',
+          triggers: [],
+          schedule: { enabled: true, every_minutes: 1440, channel_id: 'c1' },
+          actions: [{ id: 'a', type: 'send_message', channel_id: 'c1', text: 'gm' }],
+        },
+      ],
+    });
+    expect(parsed.flows[0].schedule).toEqual({ enabled: true, every_minutes: 1440, channel_id: 'c1' });
+  });
+
+  it('defaults schedule to disabled for existing flows', () => {
+    const parsed = GuildCommandFlowsSchema.parse({
+      flows: [{ id: 'x', name: 'Old', triggers: ['hi'], actions: [{ id: 'a', type: 'voice_leave' }] }],
+    });
+    expect(parsed.flows[0].schedule).toEqual({ enabled: false, every_minutes: 60, channel_id: '' });
+  });
+
+  it('rejects an enabled schedule without an output channel', () => {
+    expect(() =>
+      GuildCommandFlowsSchema.parse({
+        flows: [
+          {
+            id: 'x',
+            name: 'Bad',
+            triggers: [],
+            schedule: { enabled: true, every_minutes: 60, channel_id: '' },
+            actions: [{ id: 'a', type: 'voice_leave' }],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a flow with neither phrase triggers nor a schedule', () => {
+    expect(() =>
+      GuildCommandFlowsSchema.parse({
+        flows: [{ id: 'x', name: 'Bad', triggers: [], actions: [{ id: 'a', type: 'voice_leave' }] }],
+      }),
+    ).toThrow();
+  });
+
   it('rejects unknown action types', () => {
     expect(() =>
       GuildCommandFlowsSchema.parse({

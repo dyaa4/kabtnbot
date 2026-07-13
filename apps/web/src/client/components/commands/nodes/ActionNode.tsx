@@ -1,13 +1,85 @@
-import { memo } from 'react';
+import { memo, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowAction } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { useCanvas } from '../FlowCanvas.js';
 import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
+import { MemberSearchBox } from '../UserSearchSelect.js';
 
 const INPUT_CLASS =
   'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+
+/**
+ * Message textarea with one-click placeholder chips ({user}/{args}/{mention})
+ * and an @-picker that inserts a real member mention (<@id>) at the cursor.
+ */
+function MessageField({
+  guildId,
+  value,
+  maxLength,
+  onChange,
+  hint,
+}: {
+  guildId: string;
+  value: string;
+  maxLength: number;
+  onChange: (v: string) => void;
+  hint: string;
+}) {
+  const { t } = useI18n();
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const [mentionOpen, setMentionOpen] = useState(false);
+
+  const insert = (token: string) => {
+    const el = ref.current;
+    const start = el?.selectionStart ?? value.length;
+    const end = el?.selectionEnd ?? start;
+    onChange((value.slice(0, start) + token + value.slice(end)).slice(0, maxLength));
+    el?.focus();
+  };
+
+  const chipClass =
+    'nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-cyan-400/40 hover:text-cyan-200';
+
+  return (
+    <>
+      <textarea
+        ref={ref}
+        className={`${INPUT_CLASS} nowheel mt-2 h-20`}
+        maxLength={maxLength}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <div className="mt-1.5 flex flex-wrap items-center gap-1">
+        {(['{user}', '{args}', '{mention}'] as const).map((token) => (
+          <button key={token} type="button" dir="ltr" className={chipClass} onClick={() => insert(token)}>
+            {token}
+          </button>
+        ))}
+        <button
+          type="button"
+          className={`${chipClass} ${mentionOpen ? 'border-cyan-400/50 text-cyan-200' : ''}`}
+          onClick={() => setMentionOpen((o) => !o)}
+        >
+          @ {t('commands.action.mentionMember')}
+        </button>
+      </div>
+      {mentionOpen && (
+        <div className="mt-1.5">
+          <MemberSearchBox
+            guildId={guildId}
+            onPick={(m) => {
+              insert(`<@${m.id}>`);
+              setMentionOpen(false);
+            }}
+          />
+        </div>
+      )}
+      <p className="mt-1 text-xs text-slate-500">{hint}</p>
+    </>
+  );
+}
 
 function TargetPicker({
   value,
@@ -70,27 +142,25 @@ function Params({
       );
     case 'speak_tts':
       return (
-        <>
-          <textarea
-            className={`${INPUT_CLASS} nowheel mt-1 h-20`}
-            maxLength={500}
-            value={action.text}
-            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
-          />
-          <p className="mt-1 text-xs text-slate-500">{t('commands.action.textHint')}</p>
-        </>
+        <MessageField
+          guildId={guildId}
+          value={action.text}
+          maxLength={500}
+          onChange={(text) => update({ text } as Partial<FlowAction>)}
+          hint={t('commands.action.textHint')}
+        />
       );
     case 'send_message':
       return (
         <>
           {channelSelect(textChannels.data ?? [], action.channel_id)}
-          <textarea
-            className={`${INPUT_CLASS} nowheel mt-2 h-20`}
-            maxLength={2000}
+          <MessageField
+            guildId={guildId}
             value={action.text}
-            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
+            maxLength={2000}
+            onChange={(text) => update({ text } as Partial<FlowAction>)}
+            hint={t('commands.action.textHint')}
           />
-          <p className="mt-1 text-xs text-slate-500">{t('commands.action.textHint')}</p>
         </>
       );
     case 'timeout_user':
@@ -144,13 +214,13 @@ function Params({
       return (
         <>
           <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
-          <textarea
-            className={`${INPUT_CLASS} nowheel mt-2 h-20`}
-            maxLength={1000}
+          <MessageField
+            guildId={guildId}
             value={action.text}
-            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
+            maxLength={1000}
+            onChange={(text) => update({ text } as Partial<FlowAction>)}
+            hint={t('commands.action.textHint')}
           />
-          <p className="mt-1 text-xs text-slate-500">{t('commands.action.textHint')}</p>
         </>
       );
     case 'dm_inactive_members':
@@ -165,13 +235,13 @@ function Params({
             value={action.days}
             onChange={(e) => update({ days: Math.min(90, Math.max(1, Number(e.target.value) || 1)) } as Partial<FlowAction>)}
           />
-          <textarea
-            className={`${INPUT_CLASS} nowheel mt-2 h-20`}
-            maxLength={1000}
+          <MessageField
+            guildId={guildId}
             value={action.text}
-            onChange={(e) => update({ text: e.target.value } as Partial<FlowAction>)}
+            maxLength={1000}
+            onChange={(text) => update({ text } as Partial<FlowAction>)}
+            hint={t('commands.action.dmInactiveHint')}
           />
-          <p className="mt-1 text-xs text-slate-500">{t('commands.action.dmInactiveHint')}</p>
         </>
       );
   }

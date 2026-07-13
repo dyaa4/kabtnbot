@@ -154,20 +154,22 @@ export function CommandsTab({ guildId }: { guildId: string }) {
     draft.builtin_overrides[key] ?? structuredClone(DEFAULT_OVERRIDE);
 
   // One-click starter templates for the empty state — a prefilled flow is far
-  // easier to tweak than an empty canvas. `null` = blank command.
-  const createFromTemplate = (type: 'speak_tts' | 'ai_reply' | 'send_message' | null) => {
+  // easier to tweak than an empty canvas. `null` = blank command; 'scheduled'
+  // = a channel message on a timer instead of a phrase.
+  const createFromTemplate = (type: 'speak_tts' | 'ai_reply' | 'send_message' | 'scheduled' | null) => {
     const id = crypto.randomUUID();
-    const action = defaultAction(type ?? 'speak_tts', 0);
+    const action = defaultAction(type === 'scheduled' ? 'send_message' : (type ?? 'speak_tts'), 0);
     if (action.type === 'speak_tts' && type) action.text = t('commands.template.reply.text');
     if (action.type === 'send_message') action.text = t('commands.template.reply.text');
     if (action.type === 'ai_reply') action.system_prompt = t('commands.template.ai.prompt');
     const flow: CommandFlow = {
       id,
-      name: t('commands.newName'),
+      name: type === 'scheduled' ? t('commands.template.scheduled.name') : t('commands.newName'),
       folder: '',
       enabled: true,
       sources: { voice: true, text: false },
-      triggers: type ? [t('commands.template.trigger')] : [],
+      triggers: type && type !== 'scheduled' ? [t('commands.template.trigger')] : [],
+      schedule: { enabled: type === 'scheduled', every_minutes: 1440, channel_id: '' },
       match_mode: type === 'ai_reply' ? 'prefix' : 'exact',
       llm_fallback: true,
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },
@@ -311,8 +313,8 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 <h3 className="text-lg font-semibold text-slate-200">{t('commands.start.title')}</h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>
               </div>
-              <div className="grid w-full max-w-2xl gap-3 sm:grid-cols-3">
-                {([['speak_tts', '🗣️'], ['ai_reply', '🤖'], ['send_message', '💬']] as const).map(([type, emoji]) => (
+              <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {([['speak_tts', '🗣️'], ['ai_reply', '🤖'], ['send_message', '💬'], ['scheduled', '⏰']] as const).map(([type, emoji]) => (
                   <button
                     key={type}
                     type="button"
@@ -320,7 +322,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                     onClick={() => createFromTemplate(type)}
                   >
                     <span className="text-3xl">{emoji}</span>
-                    {t(`commands.action.${type}`)}
+                    {type === 'scheduled' ? t('commands.template.scheduled.name') : t(`commands.action.${type}`)}
                   </button>
                 ))}
               </div>

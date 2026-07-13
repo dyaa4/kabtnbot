@@ -7,6 +7,7 @@ import { onInteractionCreate } from './events/interactionCreate.js';
 import { registerActivityTracking } from './events/activity.js';
 import { registerTextProtection } from './modules/protection/text-mod.js';
 import { registerCustomCommands } from './modules/custom-commands/text-listener.js';
+import { registerFlowScheduler } from './modules/custom-commands/scheduler.js';
 import { registerWelcome } from './events/guildMemberAdd.js';
 import { registerVoiceLog } from './events/voice-log.js';
 import { registerChatLog } from './events/chat-log.js';
@@ -29,6 +30,7 @@ async function main(): Promise<void> {
   registerActivityTracking(client);
   registerTextProtection(client);
   registerCustomCommands(client);
+  registerFlowScheduler(client);
   registerWelcome(client);
   registerVoiceLog(client);
   registerChatLog(client);

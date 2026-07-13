@@ -16,7 +16,7 @@ export interface ExecContext {
   utterance: string;
   /** Captured remainder of a 'prefix' trigger ('' for exact matches). */
   args: string;
-  source: 'voice' | 'text';
+  source: 'voice' | 'text' | 'schedule';
   /** Active voice session, if any — text commands can steer voice too. */
   session?: VoiceSession;
   /** Text source only: mentioned user ids take priority for spoken_name targets. */
@@ -30,9 +30,30 @@ export interface ExecContext {
   config: GuildConfig;
 }
 
-function expand(text: string, ctx: ExecContext): string {
+/** Member the {mention} placeholder points at: an explicit mention wins, then
+ * a member named in the captured args, then the invoker themselves. */
+function mentionTargetId(ctx: ExecContext): string {
+  const mentioned = ctx.mentionedUserIds?.[0];
+  if (mentioned) return mentioned;
+  const byName = ctx.args ? resolveKickTarget(ctx.args, voiceChannelMembers(ctx)) : null;
+  return byName ?? ctx.invokerId;
+}
+
+// mentionAs 'name' is for text that gets SPOKEN via TTS — a raw <@id> tag
+// would be read out loud character by character.
+function expand(text: string, ctx: ExecContext, mentionAs: 'tag' | 'name' = 'tag'): string {
   const user = ctx.guild.members.cache.get(ctx.invokerId)?.displayName ?? '';
-  return fmt(text, { user, args: ctx.args });
+  let mention = '';
+  if (text.includes('{mention}')) {
+    const id = mentionTargetId(ctx);
+    mention = mentionAs === 'name' ? (ctx.guild.members.cache.get(id)?.displayName ?? '') : `<@${id}>`;
+  }
+  return fmt(text, { user, args: ctx.args, mention });
+}
+
+/** User ids of all <@…> tags in a message, so those pings actually fire. */
+function mentionedIdsIn(content: string): string[] {
+  return [...content.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]).slice(0, 25);
 }
 
 /** Members of the voice channel the command concerns (session's, else the invoker's). */
@@ -109,7 +130,7 @@ export async function executeActions(
           break;
         }
         case 'speak_tts': {
-          replies.push(expand(action.text, ctx));
+          replies.push(expand(action.text, ctx, 'name'));
           break;
         }
         case 'send_message': {
@@ -117,8 +138,9 @@ export async function executeActions(
           if (!channel?.isTextBased()) break;
           // 2000 = Discord's hard limit; truncate after placeholder expansion.
           const content = expand(action.text, ctx).slice(0, 2000);
+          // Only user tags present in the text may ping — never roles/everyone.
           await (channel as TextChannel)
-            .send({ content, allowedMentions: { parse: [] } })
+            .send({ content, allowedMentions: { parse: [], users: mentionedIdsIn(content) } })
             .catch(() => {});
           break;
         }

@@ -41,6 +41,7 @@ export function FolderSidebar({
           enabled: true,
           sources: { voice: true, text: false },
           triggers: [],
+          schedule: { enabled: false, every_minutes: 60, channel_id: '' },
           match_mode: 'exact',
           llm_fallback: true,
           conditions: { role_ids: [], user_ids: [], channel_ids: [] },
@@ -144,6 +145,7 @@ export function FolderSidebar({
               >
                 <Dot on={flow.enabled} />
                 <span className="truncate">{flow.name}</span>
+                {flow.schedule.enabled && <span title={t('commands.schedule.title')}>⏰</span>}
               </button>
             ))}
             {flowsIn(folder).length === 0 && <p className="px-2.5 py-1 text-xs text-slate-600">—</p>}

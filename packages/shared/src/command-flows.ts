@@ -60,7 +60,19 @@ export const FlowConditionsSchema = z
   .default({});
 export type FlowConditions = z.infer<typeof FlowConditionsSchema>;
 
-export const CommandFlowSchema = z.object({
+// Scheduled runs: "every X minutes" (5 min – 7 days). Output is posted to
+// channel_id (and spoken too when the bot sits in a voice channel). A flow may
+// be phrase-triggered, scheduled, or both.
+export const FlowScheduleSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    every_minutes: z.number().int().min(5).max(10080).default(60),
+    channel_id: z.string().default(''),
+  })
+  .default({});
+export type FlowSchedule = z.infer<typeof FlowScheduleSchema>;
+
+const CommandFlowBase = z.object({
   id: idStr, // client-generated (crypto.randomUUID)
   name: z.string().min(1).max(60),
   folder: z.string().max(40).default(''), // '' = root; 'system' is reserved for built-ins
@@ -68,7 +80,8 @@ export const CommandFlowSchema = z.object({
   sources: z
     .object({ voice: z.boolean().default(true), text: z.boolean().default(false) })
     .default({}),
-  triggers: z.array(z.string().min(1).max(100)).min(1).max(20),
+  triggers: z.array(z.string().min(1).max(100)).max(20),
+  schedule: FlowScheduleSchema,
   // exact = whole utterance equals a trigger; prefix = trigger starts the
   // utterance, remainder is captured as {args} / spoken_name.
   match_mode: z.enum(['exact', 'prefix']).default('exact'),
@@ -91,6 +104,18 @@ export const CommandFlowSchema = z.object({
       condition: NodePos.default({ x: 300, y: 120 }),
     })
     .default({}),
+});
+
+// A flow must be reachable somehow: phrase triggers, a schedule, or both.
+// An enabled schedule needs an output channel — there is no invocation
+// context to reply into.
+export const CommandFlowSchema = CommandFlowBase.superRefine((flow, ctx) => {
+  if (flow.triggers.length === 0 && !flow.schedule.enabled) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['triggers'], message: 'flow needs phrase triggers or a schedule' });
+  }
+  if (flow.schedule.enabled && !flow.schedule.channel_id) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['schedule', 'channel_id'], message: 'scheduled flow needs an output channel' });
+  }
 });
 export type CommandFlow = z.infer<typeof CommandFlowSchema>;
 

@@ -11,6 +11,7 @@ import {
   activeVoiceSessions, listVoiceSessions,
 } from './voice-log-repo.js';
 import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
+import { getScheduleRuns, setScheduleRun } from './schedule-runs-repo.js';
 import { recordChatMessage, listChatMessages } from './chat-log-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -85,6 +86,21 @@ describe('command-flows-repo', () => {
       putCommandFlows('gF2', { flows: [{ id: 'x', name: 'bad', triggers: [], actions: [] }] }),
     ).rejects.toThrow();
     expect((await getCommandFlows('gF2')).flows).toEqual([]); // nothing persisted
+  });
+});
+
+describe('schedule-runs-repo', () => {
+  it('round-trips last-run times per guild+flow and upserts on repeat', async () => {
+    expect((await getScheduleRuns('gS')).size).toBe(0);
+    const t0 = new Date('2026-07-13T10:00:00Z');
+    const t1 = new Date('2026-07-13T12:00:00Z');
+    await setScheduleRun('gS', 'flow1', t0);
+    await setScheduleRun('gS', 'flow2', t0);
+    await setScheduleRun('gS', 'flow1', t1); // update, not duplicate
+    const runs = await getScheduleRuns('gS');
+    expect(runs.get('flow1')?.toISOString()).toBe(t1.toISOString());
+    expect(runs.get('flow2')?.toISOString()).toBe(t0.toISOString());
+    expect((await getScheduleRuns('gOther')).size).toBe(0); // guild-scoped
   });
 });
 

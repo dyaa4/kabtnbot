@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../api.js';
 import { useI18n } from '../../i18n.js';
 
-interface Member {
+export interface Member {
   id: string;
   username: string;
   display_name: string;
@@ -15,15 +15,13 @@ interface Member {
 // was never seen (saved long ago) fall back to the raw id.
 const nameCache = new Map<string, string>();
 
-/** Debounced member search (min 2 chars) with removable chips for picked users. */
-export function UserSearchSelect({
+/** Debounced member search box (min 2 chars); calls onPick and clears itself. */
+export function MemberSearchBox({
   guildId,
-  values,
-  onChange,
+  onPick,
 }: {
   guildId: string;
-  values: string[];
-  onChange: (ids: string[]) => void;
+  onPick: (m: Member) => void;
 }) {
   const { t } = useI18n();
   const [input, setInput] = useState('');
@@ -38,7 +36,7 @@ export function UserSearchSelect({
 
   const pick = (m: Member) => {
     nameCache.set(m.id, m.display_name);
-    if (!values.includes(m.id)) onChange([...values, m.id]);
+    onPick(m);
     setInput('');
     setQuery('');
   };
@@ -80,6 +78,28 @@ export function UserSearchSelect({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Member search with removable chips for picked user ids. */
+export function UserSearchSelect({
+  guildId,
+  values,
+  onChange,
+}: {
+  guildId: string;
+  values: string[];
+  onChange: (ids: string[]) => void;
+}) {
+  return (
+    <div>
+      <MemberSearchBox
+        guildId={guildId}
+        onPick={(m) => {
+          if (!values.includes(m.id)) onChange([...values, m.id]);
+        }}
+      />
       {values.length > 0 && (
         <div className="mt-1.5 flex flex-wrap gap-1">
           {values.map((id) => (

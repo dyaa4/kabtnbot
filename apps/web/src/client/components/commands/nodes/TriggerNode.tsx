@@ -1,8 +1,9 @@
 import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { CommandFlow } from '@gamebot/shared';
+import type { CommandFlow, FlowSchedule } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { useCanvas } from '../FlowCanvas.js';
+import { useTextChannels } from '../pickers.js';
 
 const INPUT_CLASS =
   'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
@@ -57,9 +58,93 @@ function PhraseChips({
   );
 }
 
+// every_minutes shown as the largest unit that divides it evenly, so "1440"
+// reads as "1 day" and editing keeps the chosen unit.
+function intervalParts(minutes: number): { value: number; unit: 'minutes' | 'hours' | 'days' } {
+  if (minutes % 1440 === 0) return { value: minutes / 1440, unit: 'days' };
+  if (minutes % 60 === 0) return { value: minutes / 60, unit: 'hours' };
+  return { value: minutes, unit: 'minutes' };
+}
+const UNIT_MINUTES = { minutes: 1, hours: 60, days: 1440 } as const;
+
+function ScheduleSection({
+  guildId,
+  schedule,
+  onChange,
+}: {
+  guildId: string;
+  schedule: FlowSchedule;
+  onChange: (s: FlowSchedule) => void;
+}) {
+  const { t } = useI18n();
+  const channels = useTextChannels(guildId);
+  const { value, unit } = intervalParts(schedule.every_minutes);
+
+  const setInterval = (v: number, u: 'minutes' | 'hours' | 'days') => {
+    // Clamp to the schema's 5 min – 7 days window.
+    const minutes = Math.min(10080, Math.max(5, Math.round(v) * UNIT_MINUTES[u]));
+    onChange({ ...schedule, every_minutes: minutes });
+  };
+
+  return (
+    <div className="mt-3 border-t border-white/10 pt-3">
+      <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-300">
+        <input
+          type="checkbox"
+          className="nodrag"
+          checked={schedule.enabled}
+          onChange={(e) => onChange({ ...schedule, enabled: e.target.checked })}
+        />
+        ⏰ {t('commands.schedule.title')}
+      </label>
+      <p className="mt-1 text-xs text-slate-500">{t('commands.schedule.hint')}</p>
+      {schedule.enabled && (
+        <>
+          <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.every')}</label>
+          <div className="flex gap-1.5">
+            <input
+              type="number"
+              min={1}
+              className={`${INPUT_CLASS} w-20`}
+              value={value}
+              onChange={(e) => setInterval(Math.max(1, Number(e.target.value) || 1), unit)}
+            />
+            <select
+              className={INPUT_CLASS}
+              value={unit}
+              onChange={(e) => setInterval(value, e.target.value as 'minutes' | 'hours' | 'days')}
+            >
+              <option value="minutes">{t('commands.schedule.minutes')}</option>
+              <option value="hours">{t('commands.schedule.hours')}</option>
+              <option value="days">{t('commands.schedule.days')}</option>
+            </select>
+          </div>
+          <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.channel')}</label>
+          <select
+            className={INPUT_CLASS}
+            value={schedule.channel_id}
+            onChange={(e) => onChange({ ...schedule, channel_id: e.target.value })}
+          >
+            <option value="">—</option>
+            {channels.data?.map((c) => (
+              <option key={c.id} value={c.id}>
+                #{c.name}
+              </option>
+            ))}
+            {schedule.channel_id && !channels.data?.some((c) => c.id === schedule.channel_id) && (
+              <option value={schedule.channel_id}>{schedule.channel_id}</option>
+            )}
+          </select>
+        </>
+      )}
+    </div>
+  );
+}
+
 export const TriggerNode = memo(function TriggerNode() {
   const { t } = useI18n();
-  const { flow, change, builtin } = useCanvas();
+  const { guildId, flow, change, builtin } = useCanvas();
+  const hasPhrases = (flow?.triggers.length ?? 0) > 0;
 
   return (
     <div className="w-72 rounded-2xl border border-cyan-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)]">
@@ -89,58 +174,70 @@ export const TriggerNode = memo(function TriggerNode() {
             phrases={flow.triggers}
             onChange={(triggers) => change({ triggers })}
             placeholder={t('commands.trigger.addPhrase')}
+            min={0}
           />
 
-          <div className="mt-3 flex gap-4">
-            <label className="flex items-center gap-1.5 text-sm">
+          {/* Phrase-only knobs are noise while a flow has no phrases (pure schedule). */}
+          {hasPhrases && (
+            <>
+              <div className="mt-3 flex gap-4">
+                <label className="flex items-center gap-1.5 text-sm">
+                  <input
+                    type="checkbox"
+                    className="nodrag"
+                    checked={flow.sources.voice}
+                    onChange={(e) => change({ sources: { ...flow.sources, voice: e.target.checked } })}
+                  />
+                  {t('commands.trigger.voice')}
+                </label>
+                <label className="flex items-center gap-1.5 text-sm">
+                  <input
+                    type="checkbox"
+                    className="nodrag"
+                    checked={flow.sources.text}
+                    onChange={(e) => change({ sources: { ...flow.sources, text: e.target.checked } })}
+                  />
+                  {t('commands.trigger.text')}
+                </label>
+              </div>
+              {flow.sources.text && <p className="mt-1 text-xs text-amber-400/80">{t('commands.textIntentHint')}</p>}
+
+              <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.matchMode')}</label>
+              <select
+                className={INPUT_CLASS}
+                value={flow.match_mode}
+                onChange={(e) => change({ match_mode: e.target.value as CommandFlow['match_mode'] })}
+              >
+                <option value="exact">{t('commands.trigger.exact')}</option>
+                <option value="prefix">{t('commands.trigger.prefix')}</option>
+              </select>
+
+              <label className="mt-3 flex items-center gap-1.5 text-sm">
+                <input
+                  type="checkbox"
+                  className="nodrag"
+                  checked={flow.llm_fallback}
+                  onChange={(e) => change({ llm_fallback: e.target.checked })}
+                />
+                {t('commands.trigger.llm')}
+              </label>
+
+              <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.cooldown')}</label>
               <input
-                type="checkbox"
-                className="nodrag"
-                checked={flow.sources.voice}
-                onChange={(e) => change({ sources: { ...flow.sources, voice: e.target.checked } })}
+                type="number"
+                min={0}
+                max={3600}
+                className={INPUT_CLASS}
+                value={flow.cooldown_seconds}
+                onChange={(e) => change({ cooldown_seconds: Math.max(0, Number(e.target.value) || 0) })}
               />
-              {t('commands.trigger.voice')}
-            </label>
-            <label className="flex items-center gap-1.5 text-sm">
-              <input
-                type="checkbox"
-                className="nodrag"
-                checked={flow.sources.text}
-                onChange={(e) => change({ sources: { ...flow.sources, text: e.target.checked } })}
-              />
-              {t('commands.trigger.text')}
-            </label>
-          </div>
-          {flow.sources.text && <p className="mt-1 text-xs text-amber-400/80">{t('commands.textIntentHint')}</p>}
+            </>
+          )}
 
-          <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.matchMode')}</label>
-          <select
-            className={INPUT_CLASS}
-            value={flow.match_mode}
-            onChange={(e) => change({ match_mode: e.target.value as CommandFlow['match_mode'] })}
-          >
-            <option value="exact">{t('commands.trigger.exact')}</option>
-            <option value="prefix">{t('commands.trigger.prefix')}</option>
-          </select>
-
-          <label className="mt-3 flex items-center gap-1.5 text-sm">
-            <input
-              type="checkbox"
-              className="nodrag"
-              checked={flow.llm_fallback}
-              onChange={(e) => change({ llm_fallback: e.target.checked })}
-            />
-            {t('commands.trigger.llm')}
-          </label>
-
-          <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.cooldown')}</label>
-          <input
-            type="number"
-            min={0}
-            max={3600}
-            className={INPUT_CLASS}
-            value={flow.cooldown_seconds}
-            onChange={(e) => change({ cooldown_seconds: Math.max(0, Number(e.target.value) || 0) })}
+          <ScheduleSection
+            guildId={guildId}
+            schedule={flow.schedule}
+            onChange={(schedule) => change({ schedule })}
           />
         </>
       )}
