@@ -37,23 +37,23 @@ const Env = z.object({
   ELEVENLABS_VOICE_ID: z.string().optional().default('21m00Tcm4TlvDq8ikWAM'),
   ELEVENLABS_MODEL_ID: z.string().optional().default('eleven_flash_v2_5'),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
-  // only if a guild's text protection is actually enabled AND the Message Content Intent
-  // is turned on in the Discord Developer Portal. See README.
+  // Text features are ON by default (opt-OUT: set 'false' to disable one).
+  // They need the privileged Message Content Intent; if the intent is missing
+  // in the Discord Developer Portal, startup falls back to a content-less
+  // login (see index.ts) instead of crashing, and these features stay dormant.
   ENABLE_TEXT_PROTECTION: z.string().optional().default(''),
-  // Same privileged-intent guard for the /summarize ("Catch me up") command,
-  // which must read message content. Set 'true' only with the Message Content
-  // Intent enabled in the Discord Developer Portal.
+  // /summarize ("Catch me up") — reads message content.
   ENABLE_SUMMARY: z.string().optional().default(''),
-  // Same guard for user-defined TEXT command triggers (flow editor). Voice
-  // triggers work regardless — only reading channel messages needs the intent.
+  // User-defined TEXT command triggers (flow editor). Voice triggers work
+  // regardless — only reading channel messages needs the intent.
   ENABLE_TEXT_COMMANDS: z.string().optional().default(''),
-  // Same guard for the premium chat log (stores recent messages, 7-day TTL).
+  // Premium chat log (stores recent messages, 7-day TTL).
   ENABLE_CHAT_LOG: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
 
-export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION === 'true';
-export const summaryEnabled = config.ENABLE_SUMMARY === 'true';
-export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS === 'true';
-export const chatLogEnabled = config.ENABLE_CHAT_LOG === 'true';
+export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION !== 'false';
+export const summaryEnabled = config.ENABLE_SUMMARY !== 'false';
+export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS !== 'false';
+export const chatLogEnabled = config.ENABLE_CHAT_LOG !== 'false';

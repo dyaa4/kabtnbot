@@ -338,7 +338,7 @@
   "chatlog.hint": "Les derniers messages des salons sur 7 jours — supprimés automatiquement ensuite",
   "chatlog.empty": "Aucun message enregistré pour l'instant.",
   "chatlog.disabled.title": "L'enregistrement des messages n'est pas activé sur le bot",
-  "chatlog.disabled.body": "Ajoutez ENABLE_CHAT_LOG=true aux variables du service bot chez votre hébergeur (Railway), activez le Message Content Intent sur la page Bot du portail développeurs Discord, puis redémarrez le bot. L'enregistrement commence à partir de ce moment.",
+  "chatlog.disabled.body": "Activez le Message Content Intent sur la page Bot du portail développeurs Discord, puis redémarrez le bot — l'enregistrement est actif par défaut ; vérifiez seulement que ENABLE_CHAT_LOG n'est pas à false sur le service bot. L'enregistrement commence à partir de ce moment.",
   "chatlog.member": "Membre",
   "chatlog.channel": "Salon",
   "chatlog.message": "Message",

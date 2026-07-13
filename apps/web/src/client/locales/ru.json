@@ -338,7 +338,7 @@
   "chatlog.hint": "Свежие сообщения каналов за последние 7 дней — затем удаляются автоматически",
   "chatlog.empty": "Пока нет записанных сообщений.",
   "chatlog.disabled.title": "Запись сообщений на боте не включена",
-  "chatlog.disabled.body": "Добавьте ENABLE_CHAT_LOG=true в переменные сервиса бота на хостинге (Railway), включите Message Content Intent на странице Bot в портале разработчиков Discord и перезапустите бота. Запись начнётся с этого момента.",
+  "chatlog.disabled.body": "Включите Message Content Intent на странице Bot в портале разработчиков Discord и перезапустите бота — запись включена по умолчанию; просто убедитесь, что ENABLE_CHAT_LOG не установлен в false на сервисе бота. Запись начнётся с этого момента.",
   "chatlog.member": "Участник",
   "chatlog.channel": "Канал",
   "chatlog.message": "Сообщение",

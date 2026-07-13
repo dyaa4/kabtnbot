@@ -338,7 +338,7 @@
   "chatlog.hint": "Son 7 günün en yeni kanal mesajları — sonrasında otomatik silinir",
   "chatlog.empty": "Henüz kaydedilmiş mesaj yok.",
   "chatlog.disabled.title": "Mesaj kaydı botta etkin değil",
-  "chatlog.disabled.body": "Barındırıcıdaki (Railway) bot servisi değişkenlerine ENABLE_CHAT_LOG=true ekleyin, Discord geliştirici portalındaki Bot sayfasından Message Content Intent'i etkinleştirin ve botu yeniden başlatın. Kayıt o andan itibaren başlar.",
+  "chatlog.disabled.body": "Discord geliştirici portalındaki Bot sayfasından Message Content Intent'i etkinleştirin ve botu yeniden başlatın — kayıt varsayılan olarak açıktır; sadece bot servisinde ENABLE_CHAT_LOG'un false olmadığından emin olun. Kayıt o andan itibaren başlar.",
   "chatlog.member": "Üye",
   "chatlog.channel": "Kanal",
   "chatlog.message": "Mesaj",

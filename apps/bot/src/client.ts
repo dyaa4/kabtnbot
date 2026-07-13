@@ -1,7 +1,18 @@
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { textProtectionEnabled, summaryEnabled, textCommandsEnabled, chatLogEnabled } from './config.js';
 
-export function createClient(): Client {
+export const wantsMessageContent =
+  textProtectionEnabled || summaryEnabled || textCommandsEnabled || chatLogEnabled;
+
+// Whether the CURRENT client actually holds the MessageContent intent — false
+// after the content-less fallback login (index.ts). Feature reporting reads
+// this so the dashboard never claims a dormant feature is recording.
+let messageContentActive = false;
+export function contentIntentActive(): boolean {
+  return messageContentActive;
+}
+
+export function createClient(withMessageContent: boolean = wantsMessageContent): Client {
   const intents = [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMembers,
@@ -9,14 +20,12 @@ export function createClient(): Client {
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.GuildMessageReactions,
   ];
-  // MessageContent is a privileged intent — requesting it unconditionally makes the bot
-  // fail to boot ("Used disallowed intents") on any deploy that hasn't enabled it in the
-  // Discord Developer Portal. Only request it when text protection is actually turned on
-  // for this deploy (ENABLE_TEXT_PROTECTION=true) — the operator must also enable the
-  // Message Content Intent in the portal in that case. See README.
-  if (textProtectionEnabled || summaryEnabled || textCommandsEnabled || chatLogEnabled) {
-    intents.push(GatewayIntentBits.MessageContent);
-  }
+  // MessageContent is privileged: requesting it without enabling it in the
+  // Discord Developer Portal fails the login ("Used disallowed intents").
+  // index.ts catches that and retries with withMessageContent=false so the
+  // bot still boots — text features stay dormant until the intent is on.
+  if (withMessageContent) intents.push(GatewayIntentBits.MessageContent);
+  messageContentActive = withMessageContent;
 
   return new Client({
     intents,

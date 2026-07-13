@@ -338,7 +338,7 @@
   "chatlog.hint": "The latest channel messages of the last 7 days — auto-deleted afterwards",
   "chatlog.empty": "No messages recorded yet.",
   "chatlog.disabled.title": "Message recording is not enabled on the bot",
-  "chatlog.disabled.body": "Add ENABLE_CHAT_LOG=true to the bot service variables on your host (Railway), enable the Message Content Intent on the Bot page of the Discord developer portal, then restart the bot. Recording starts from that moment.",
+  "chatlog.disabled.body": "Enable the Message Content Intent on the Bot page of the Discord developer portal, then restart the bot — recording is on by default; just make sure ENABLE_CHAT_LOG is not set to false on the bot service. Recording starts from that moment.",
   "chatlog.member": "Member",
   "chatlog.channel": "Channel",
   "chatlog.message": "Message",

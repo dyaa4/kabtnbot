@@ -1,7 +1,7 @@
 import { generateDependencyReport } from '@discordjs/voice';
 import { connectDb, disconnectDb, clearBotHeartbeat } from '@gamebot/db';
 import { config } from './config.js';
-import { createClient } from './client.js';
+import { createClient, wantsMessageContent } from './client.js';
 import { onReady } from './events/ready.js';
 import { onInteractionCreate } from './events/interactionCreate.js';
 import { registerActivityTracking } from './events/activity.js';
@@ -23,19 +23,24 @@ async function main(): Promise<void> {
   console.log('[Voice] Dependency report:\n' + generateDependencyReport());
   await connectDb(config.MONGODB_URI);
   console.log('[DB] Connected');
-  const client = createClient();
-  registerClientErrorLogging(client);
-  onReady(client);
-  onInteractionCreate(client);
-  registerActivityTracking(client);
-  registerTextProtection(client);
-  registerCustomCommands(client);
-  registerFlowScheduler(client);
-  registerWelcome(client);
-  registerVoiceLog(client);
-  registerChatLog(client);
-  registerGuildDirectory(client);
-  registerWeeklySummary(client);
+
+  const buildClient = (withMessageContent: boolean) => {
+    const client = createClient(withMessageContent);
+    registerClientErrorLogging(client);
+    onReady(client);
+    onInteractionCreate(client);
+    registerActivityTracking(client);
+    registerTextProtection(client);
+    registerCustomCommands(client);
+    registerFlowScheduler(client);
+    registerWelcome(client);
+    registerVoiceLog(client);
+    registerChatLog(client);
+    registerGuildDirectory(client);
+    registerWeeklySummary(client);
+    return client;
+  };
+  let client = buildClient(wantsMessageContent);
 
   // Graceful shutdown: clear the heartbeat so the dashboard shows offline
   // immediately (instead of after the 90s staleness window), then close the
@@ -54,7 +59,26 @@ async function main(): Promise<void> {
     process.on(signal, () => void shutdown(signal));
   }
 
-  await client.login(config.DISCORD_TOKEN);
+  try {
+    await client.login(config.DISCORD_TOKEN);
+  } catch (err) {
+    // Text features are on by default, but MessageContent is a privileged
+    // intent: without it in the Discord Developer Portal the login is
+    // rejected. Boot WITHOUT the intent instead of crash-looping — voice and
+    // everything else keeps working, and the dashboard shows what's dormant.
+    if (wantsMessageContent && String(err).toLowerCase().includes('disallowed intents')) {
+      console.error(
+        '[Login] Message Content Intent is NOT enabled in the Discord Developer Portal (Bot page). ' +
+          'Booting without it — chat log, text triggers, text protection and /summarize stay OFF ' +
+          'until you enable the intent and redeploy.',
+      );
+      await client.destroy().catch(() => {});
+      client = buildClient(false);
+      await client.login(config.DISCORD_TOKEN);
+    } else {
+      throw err;
+    }
+  }
 }
 
 main().catch((err) => {

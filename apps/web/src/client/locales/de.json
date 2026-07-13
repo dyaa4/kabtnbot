@@ -338,7 +338,7 @@
   "chatlog.hint": "Die neuesten Kanalnachrichten der letzten 7 Tage — danach automatisch gelöscht",
   "chatlog.empty": "Noch keine Nachrichten aufgezeichnet.",
   "chatlog.disabled.title": "Die Nachrichtenaufzeichnung ist auf dem Bot nicht aktiviert",
-  "chatlog.disabled.body": "Füge ENABLE_CHAT_LOG=true zu den Variablen des Bot-Services beim Hoster (Railway) hinzu, aktiviere den Message Content Intent auf der Bot-Seite des Discord-Entwicklerportals und starte den Bot neu. Aufgezeichnet wird ab diesem Moment.",
+  "chatlog.disabled.body": "Aktiviere den Message Content Intent auf der Bot-Seite des Discord-Entwicklerportals und starte den Bot neu — die Aufzeichnung ist standardmäßig an; stelle nur sicher, dass ENABLE_CHAT_LOG im Bot-Service nicht auf false steht. Aufgezeichnet wird ab diesem Moment.",
   "chatlog.member": "Mitglied",
   "chatlog.channel": "Kanal",
   "chatlog.message": "Nachricht",
