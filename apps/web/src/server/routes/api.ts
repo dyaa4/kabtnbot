@@ -468,14 +468,18 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         apiError(res, 403, 'PREMIUM_REQUIRED', 'Chat log requires premium');
         return;
       }
-      const [members, textChannels, messages] = await Promise.all([
+      const [members, textChannels, messages, status] = await Promise.all([
         statsCached(`members:${guildId}`, () => rest.listMembers(guildId)),
         statsCached(`tchannels:${guildId}`, () => rest.listTextChannels(guildId)),
         listChatMessages(guildId, 200),
+        getBotStatus().catch(() => null),
       ]);
       const nameById = new Map(members.map((m) => [m.id, m.username]));
       const channelById = new Map(textChannels.map((c) => [c.id, c.name]));
       res.json({
+        // Recording is env-gated on the BOT service — surface it so the UI can
+        // explain an empty log instead of showing "no messages yet" forever.
+        recording: status?.features?.chat_log ?? false,
         messages: messages.map((m) => ({
           user_id: m.user_id,
           name: nameById.get(m.user_id) ?? `#${m.user_id.slice(-4)}`,

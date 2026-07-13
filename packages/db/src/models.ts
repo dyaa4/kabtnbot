@@ -103,16 +103,27 @@ const kvSchema = new Schema<KvDoc>({
 
 export const KvModel = (mongoose.models.Kv as mongoose.Model<KvDoc>) ?? mongoose.model<KvDoc>('Kv', kvSchema);
 
+// Env-gated bot features, reported with each heartbeat so the dashboard can
+// explain WHY a feature shows no data (e.g. chat log without ENABLE_CHAT_LOG).
+export interface BotFeatures {
+  chat_log: boolean;
+  text_commands: boolean;
+  text_protection: boolean;
+  summary: boolean;
+}
+
 export interface BotStatusDoc {
   key: string; // singleton: 'bot'
   last_seen: Date;
   guild_count: number;
+  features?: BotFeatures;
 }
 
 const botStatusSchema = new Schema<BotStatusDoc>({
   key: { type: String, required: true, unique: true },
   last_seen: { type: Date, required: true },
   guild_count: { type: Number, default: 0 },
+  features: { type: Object, default: undefined },
 });
 
 export const BotStatusModel =

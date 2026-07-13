@@ -337,6 +337,8 @@
   "chatlog.title": "سجل الدردشة",
   "chatlog.hint": "أحدث رسائل القنوات خلال آخر 7 أيام — تُحذف تلقائياً بعدها",
   "chatlog.empty": "لا توجد رسائل مسجلة بعد.",
+  "chatlog.disabled.title": "تسجيل الرسائل غير مفعّل على البوت",
+  "chatlog.disabled.body": "أضف المتغير ENABLE_CHAT_LOG=true في إعدادات خدمة البوت على الاستضافة (Railway)، وفعّل Message Content Intent من صفحة Bot في بوابة مطوري ديسكورد، ثم أعد تشغيل البوت. التسجيل يبدأ من لحظة التفعيل.",
   "chatlog.member": "العضو",
   "chatlog.channel": "القناة",
   "chatlog.message": "الرسالة",

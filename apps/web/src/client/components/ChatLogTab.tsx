@@ -1,4 +1,4 @@
-import { Gem } from 'lucide-react';
+import { Gem, TriangleAlert } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -14,6 +14,8 @@ interface ChatLogEntry {
 }
 
 interface ChatLogResp {
+  /** False = the bot service runs without ENABLE_CHAT_LOG — nothing records. */
+  recording?: boolean;
   messages: ChatLogEntry[];
 }
 
@@ -50,7 +52,15 @@ export function ChatLogTab({ guildId }: { guildId: string }) {
         {t('chatlog.title')} <span className="ms-1 rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300"><Gem className="inline h-3 w-3 align-[-1px]" /> Pro</span>
       </h3>
       <p className="mb-4 text-xs text-slate-500">{t('chatlog.hint')}</p>
-      {log.data.messages.length === 0 ? (
+      {log.data.recording === false ? (
+        <div className="flex items-start gap-3 rounded-xl border border-blue-400/30 bg-blue-400/5 p-4">
+          <TriangleAlert className="mt-0.5 h-5 w-5 shrink-0 text-blue-300" />
+          <div>
+            <p className="text-sm font-semibold text-blue-200">{t('chatlog.disabled.title')}</p>
+            <p className="mt-1 text-xs leading-5 text-slate-400">{t('chatlog.disabled.body')}</p>
+          </div>
+        </div>
+      ) : log.data.messages.length === 0 ? (
         <p className="text-sm text-slate-500">{t('chatlog.empty')}</p>
       ) : (
         <div className="overflow-x-auto">
