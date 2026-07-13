@@ -145,7 +145,7 @@
   "protection.blockedDomains": "Engellenen bağlantı alan adları (satır başına bir tane veya virgülle ayrılmış)",
   "protection.blockedDomains.hint": "Bu alan adlarından birine bağlantı içeren her mesaj otomatik silinir (örn. tiktok.com).",
   "protection.antiSpam": "Spam koruması",
-  "protection.antiSpam.hint": "Aynı mesajı bir dakika içinde birden çok kanala göndermek tüm kopyaları siler ve gönderene özel mesajla bildirir.",
+  "protection.antiSpam.hint": "Aynı mesajı bir dakika içinde birden çok kanala göndermek tüm kopyaları siler ve gönderene özel mesajla bildirir. Yöneticiler muaftır — normal bir üye hesabıyla deneyin; botun Mesajları Yönet iznine ihtiyacı var.",
   "protection.logChannelId": "Kayıt kanalı",
   "protection.logChannelId.hint": "Silmeler, kaldırılan içerikle birlikte buraya kaydedilir — kaydı kapatmak için boş bırak.",
   "channel.none": "— yok —",

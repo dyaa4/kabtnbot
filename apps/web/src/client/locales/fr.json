@@ -145,7 +145,7 @@
   "protection.blockedDomains": "Domaines de liens interdits (un par ligne ou séparés par des virgules)",
   "protection.blockedDomains.hint": "Tout message contenant un lien vers un de ces domaines est supprimé automatiquement (p. ex. tiktok.com).",
   "protection.antiSpam": "Anti-spam",
-  "protection.antiSpam.hint": "Poster le même message dans plusieurs salons en une minute supprime toutes les copies et envoie un MP à l'expéditeur.",
+  "protection.antiSpam.hint": "Poster le même message dans plusieurs salons en une minute supprime toutes les copies et envoie un MP à l'expéditeur. Les admins sont exemptés — testez avec un compte membre ordinaire ; le bot a besoin de la permission Gérer les messages.",
   "protection.logChannelId": "Salon de journal",
   "protection.logChannelId.hint": "Les suppressions y sont consignées, contenu retiré compris — laisser vide pour désactiver le journal.",
   "channel.none": "— aucun —",

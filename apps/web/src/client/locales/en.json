@@ -145,7 +145,7 @@
   "protection.blockedDomains": "Blocked link domains (one per line or comma-separated)",
   "protection.blockedDomains.hint": "Any message containing a link to one of these domains is deleted automatically (e.g. tiktok.com).",
   "protection.antiSpam": "Anti-spam",
-  "protection.antiSpam.hint": "Posting the same message into several channels within a minute deletes every copy and DMs the sender a notice.",
+  "protection.antiSpam.hint": "Posting the same message into several channels within a minute deletes every copy and DMs the sender a notice. Admins are exempt — test with a regular member account; the bot needs the Manage Messages permission.",
   "protection.logChannelId": "Log channel",
   "protection.logChannelId.hint": "Deletions are logged here including the removed content — leave empty to disable logging.",
   "channel.none": "— none —",

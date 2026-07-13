@@ -62,12 +62,19 @@ export async function handleAntiSpam(msg: Message): Promise<boolean> {
   const burst = trackCrossPost(key, msg.channelId, msg.id);
   if (!burst) return false;
 
+  let failed = 0;
   for (const copy of burst) {
     const channel = msg.guild.channels.cache.get(copy.channelId);
     if (channel?.isTextBased()) {
-      await (channel as TextChannel).messages.delete(copy.messageId).catch(() => {});
+      await (channel as TextChannel).messages.delete(copy.messageId).catch(() => {
+        failed += 1;
+      });
     }
   }
+  console.log(
+    `[AntiSpam ${msg.guild.id}] burst from ${msg.author.id}: deleted ${burst.length - failed}/${burst.length} copies` +
+      (failed > 0 ? ' (delete failures — check the Manage Messages permission)' : ''),
+  );
 
   const strings = t(config.language);
   await msg.author.send({ content: fmt(strings.spamDmNotice, { server: msg.guild.name }) }).catch(() => {});

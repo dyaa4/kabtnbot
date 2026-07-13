@@ -145,7 +145,7 @@
   "protection.blockedDomains": "Gesperrte Link-Domains (eine pro Zeile oder kommagetrennt)",
   "protection.blockedDomains.hint": "Jede Nachricht mit einem Link zu einer dieser Domains wird automatisch gelöscht (z. B. tiktok.com).",
   "protection.antiSpam": "Spam-Schutz",
-  "protection.antiSpam.hint": "Dieselbe Nachricht in mehreren Kanälen innerhalb einer Minute löscht alle Kopien und schickt dem Absender eine private Nachricht.",
+  "protection.antiSpam.hint": "Dieselbe Nachricht in mehreren Kanälen innerhalb einer Minute löscht alle Kopien und schickt dem Absender eine private Nachricht. Admins sind ausgenommen — mit einem normalen Member-Konto testen; der Bot braucht die Berechtigung „Nachrichten verwalten\".",
   "protection.logChannelId": "Log-Kanal",
   "protection.logChannelId.hint": "Löschungen werden hier inklusive des entfernten Inhalts protokolliert — leer lassen, um das Logging zu deaktivieren.",
   "channel.none": "— keiner —",
