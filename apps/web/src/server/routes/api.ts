@@ -6,7 +6,7 @@ import {
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, listChatMessages,
 } from '@gamebot/db';
-import { DIALECTS, LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
+import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -24,7 +24,6 @@ const ConfigPatch = z
       .object({
         enabled: z.boolean().optional(),
         wake_word: z.string().min(2).max(30).optional(),
-        dialect: z.enum(DIALECTS).optional(),
         tts_voice: z.enum(TTS_VOICES).optional(),
         allowed_channel_ids: z.array(z.string()).max(50).optional(),
         personality_enabled: z.boolean().optional(),

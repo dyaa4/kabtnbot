@@ -50,7 +50,7 @@ export const summarizeCommand: Command = {
     let text: string;
     try {
       text = await getAIProvider().generateResponse(lines.join('\n').slice(0, 8000), {
-        systemPrompt: buildSummaryPrompt(config.voice.dialect, interaction.guild.name, config.language),
+        systemPrompt: buildSummaryPrompt(interaction.guild.name, config.language),
         username: interaction.user.displayName,
       });
     } catch {

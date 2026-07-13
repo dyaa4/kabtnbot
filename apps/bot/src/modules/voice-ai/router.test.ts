@@ -4,7 +4,7 @@ const baseConfig = (premiumActive: boolean) => ({
   language: 'ar',
   admin_role_id: null,
   voice: {
-    enabled: true, wake_word: 'يا بوت', dialect: 'gulf', allowed_channel_ids: [], personality_enabled: false,
+    enabled: true, wake_word: 'يا بوت', allowed_channel_ids: [], personality_enabled: false,
   },
   quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
   premium: { active: premiumActive, listen_minutes_override: null, ai_questions_override: null },

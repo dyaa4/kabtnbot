@@ -28,13 +28,13 @@ describe('guild-config-repo', () => {
   it('creates defaults on first access and persists patches', async () => {
     const c = await getGuildConfig('g1');
     expect(c.voice.wake_word).toBe('يا كابتن');
-    const updated = await updateGuildConfig('g1', { voice: { dialect: 'syrian' } });
-    expect(updated.voice.dialect).toBe('syrian');
+    const updated = await updateGuildConfig('g1', { voice: { tts_voice: 'noura' } });
+    expect(updated.voice.tts_voice).toBe('noura');
     expect(updated.voice.wake_word).toBe('يا كابتن'); // merge, not replace
   });
 
   it('rejects invalid patches', async () => {
-    await expect(updateGuildConfig('g1', { voice: { dialect: 'xx' } })).rejects.toThrow();
+    await expect(updateGuildConfig('g1', { voice: { tts_voice: 'xx' } })).rejects.toThrow();
   });
 
   it('first access creates exactly one config document', async () => {

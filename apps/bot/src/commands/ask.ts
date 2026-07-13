@@ -26,7 +26,7 @@ async function answer(interaction: Parameters<Command['execute']>[0], speakOut: 
   let text: string;
   try {
     text = await getAIProvider().generateResponse(interaction.options.getString('prompt', true), {
-      systemPrompt: buildSystemPrompt(config.voice.dialect, interaction.guild.name, { language: config.language }),
+      systemPrompt: buildSystemPrompt(interaction.guild.name, { language: config.language }),
       username: interaction.user.displayName,
     });
   } catch {

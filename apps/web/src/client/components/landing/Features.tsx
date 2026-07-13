@@ -3,7 +3,8 @@ import { useI18n } from '../../i18n.js';
 import { SectionHeading } from './SectionHeading.js';
 import { ChartIcon, IdBadgeIcon, ImageIcon, MicIcon, ShieldIcon } from './icons.js';
 
-const DIALECT_KEYS = ['gulf', 'syrian', 'egyptian', 'msa'] as const;
+// Native names of the six supported bot languages, shown as pills.
+const LANGS = ['العربية', 'English', 'Deutsch', 'Türkçe', 'Français', 'Русский'] as const;
 
 function Card({ icon, title, body, children, className = '' }: {
   icon: ReactNode;
@@ -45,12 +46,12 @@ export function Features() {
             <span className="rounded-full bg-gradient-to-r from-blue-500/30 to-blue-400/30 px-4 py-1.5 text-sm font-bold text-blue-200 ring-1 ring-blue-400/40">
               «{t('landing.feature.voice.wake')}»
             </span>
-            {DIALECT_KEYS.map((key) => (
+            {LANGS.map((name) => (
               <span
-                key={key}
+                key={name}
                 className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300"
               >
-                {t(`settings.dialect.${key}`)}
+                {name}
               </span>
             ))}
           </div>

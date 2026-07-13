@@ -48,8 +48,8 @@ describe('GuildConfigSchema', () => {
     expect('customs' in c).toBe(false);
   });
 
-  it('rejects invalid dialect', () => {
-    expect(() => GuildConfigSchema.parse({ voice: { dialect: 'french' } })).toThrow();
+  it('rejects an invalid tts voice', () => {
+    expect(() => GuildConfigSchema.parse({ voice: { tts_voice: 'french' } })).toThrow();
   });
 
   it('defaults premium to inactive with null overrides', () => {

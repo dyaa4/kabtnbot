@@ -33,7 +33,6 @@ export const ar = {
   settingsQuotasLine: 'استماع: {listen} دقيقة • أسئلة AI: {ai}',
   labelEnabled: 'مفعل',
   labelWakeWord: 'كلمة التنبيه',
-  labelDialect: 'اللهجة',
   labelPersonality: 'الشخصية الكوميدية',
   labelProtection: 'الحماية',
   labelWelcome: 'الترحيب',
@@ -42,10 +41,6 @@ export const ar = {
   no: 'لا',
   on: 'مفعّل',
   off: 'معطّل',
-  dialectGulf: 'خليجية',
-  dialectSyrian: 'سورية',
-  dialectEgyptian: 'مصرية',
-  dialectMsa: 'فصحى',
   // welcome preview
   welcomeEnabledNote: '✅ الترحيب مفعّل.',
   welcomeDisabledNote: '⚠️ الترحيب معطّل حالياً — فعّله من لوحة التحكم أو /settings.',

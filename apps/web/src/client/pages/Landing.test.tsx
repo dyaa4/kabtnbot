@@ -53,11 +53,11 @@ describe('Landing', () => {
     expect(hrefs).toEqual(expect.arrayContaining(['#features', '#how', '#pricing', '#faq']));
   });
 
-  it('renders the bento voice card with the wake word and all four dialect pills', async () => {
+  it('renders the bento voice card with the wake word and the six language pills', async () => {
     renderLanding();
     expect((await screen.findAllByText(/يا كابتن/)).length).toBeGreaterThanOrEqual(1);
-    for (const dialect of [/خليجية|Gulf/, /سورية|Syrian/, /مصرية|Egyptian/, /فصحى|MSA/]) {
-      expect(screen.getAllByText(dialect).length).toBeGreaterThanOrEqual(1);
+    for (const lang of ['العربية', 'English', 'Deutsch', 'Türkçe', 'Français', 'Русский']) {
+      expect(screen.getAllByText(lang).length).toBeGreaterThanOrEqual(1);
     }
   });
 

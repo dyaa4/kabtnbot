@@ -216,7 +216,7 @@ export async function routeVoiceCommand(
   try {
     const ai = getAIProvider();
     return await ai.generateResponse(q, {
-      systemPrompt: buildSystemPrompt(config.voice.dialect, guild.name, {
+      systemPrompt: buildSystemPrompt(guild.name, {
         comedic: config.voice.personality_enabled,
         language: config.language,
       }),

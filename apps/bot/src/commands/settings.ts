@@ -1,13 +1,9 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags, ChannelType, type GuildMember } from 'discord.js';
 import { getGuildConfig, updateGuildConfig } from '@gamebot/db';
-import { DIALECTS, LANGUAGES } from '@gamebot/shared';
+import { LANGUAGES } from '@gamebot/shared';
 import type { Command } from './index.js';
 import { S, t, fmt, type BotStrings } from '../lib/strings.js';
 import { isGuildAdmin } from '../lib/permissions.js';
-
-const DIALECT_KEY: Record<string, keyof BotStrings> = {
-  gulf: 'dialectGulf', syrian: 'dialectSyrian', egyptian: 'dialectEgyptian', msa: 'dialectMsa',
-};
 
 // Native names — identical in every dictionary, so they live here once.
 export const LANGUAGE_LABELS: Record<(typeof LANGUAGES)[number], string> = {
@@ -37,11 +33,6 @@ export const settingsCommand: Command = {
         .setDescription('إعدادات المساعد الصوتي')
         .addBooleanOption((o) => o.setName('enabled').setDescription('تفعيل/تعطيل الصوتي'))
         .addStringOption((o) => o.setName('wake_word').setDescription('كلمة التنبيه').setMinLength(2).setMaxLength(30))
-        .addStringOption((o) =>
-          o.setName('dialect').setDescription('اللهجة').addChoices(
-            ...DIALECTS.map((d) => ({ name: { gulf: 'خليجية', syrian: 'سورية', egyptian: 'مصرية', msa: 'فصحى' }[d]!, value: d })),
-          ),
-        )
         .addChannelOption((o) =>
           o.setName('allow_channel').setDescription('إضافة روم صوتي لقائمة المسموح').addChannelTypes(ChannelType.GuildVoice),
         )
@@ -72,8 +63,6 @@ export const settingsCommand: Command = {
             value: [
               `${strings.labelEnabled}: ${config.voice.enabled ? strings.yes : strings.no}`,
               `${strings.labelWakeWord}: ${config.voice.wake_word}`,
-              // Dialect only applies to Arabic voice replies — hide it otherwise.
-              ...(config.language === 'ar' ? [`${strings.labelDialect}: ${strings[DIALECT_KEY[config.voice.dialect]]}`] : []),
               `${strings.labelPersonality}: ${config.voice.personality_enabled ? strings.yes : strings.no}`,
             ].join('\n'),
           },
@@ -114,14 +103,12 @@ export const settingsCommand: Command = {
       const voice: Record<string, unknown> = {};
       const enabled = interaction.options.getBoolean('enabled');
       const wakeWord = interaction.options.getString('wake_word');
-      const dialect = interaction.options.getString('dialect');
       const allowChannel = interaction.options.getChannel('allow_channel');
       const clearChannels = interaction.options.getBoolean('clear_channels');
       const personality = interaction.options.getBoolean('personality');
       const adminRole = interaction.options.getRole('admin_role');
       if (enabled !== null) voice.enabled = enabled;
       if (wakeWord !== null) voice.wake_word = wakeWord;
-      if (dialect !== null) voice.dialect = dialect;
       if (clearChannels) voice.allowed_channel_ids = [];
       else if (allowChannel) {
         voice.allowed_channel_ids = [...new Set([...config.voice.allowed_channel_ids, allowChannel.id])];

@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { DIALECTS, LANGUAGES, TTS_VOICES } from '@gamebot/shared';
+import { LANGUAGES, TTS_VOICES } from '@gamebot/shared';
 import { api, ApiError } from '../api.js';
 import { useI18n, LANG_NAMES } from '../i18n.js';
 import { BotProfileCard } from './BotProfileCard.js';
@@ -17,7 +17,6 @@ import { useToast } from './Toast.js';
 const VoiceForm = z.object({
   enabled: z.boolean(),
   wake_word: z.string().min(2).max(30),
-  dialect: z.enum(DIALECTS),
   tts_voice: z.enum(TTS_VOICES),
   personality_enabled: z.boolean(),
 });
@@ -30,7 +29,6 @@ interface GuildConfigResp {
   voice: {
     enabled: boolean;
     wake_word: string;
-    dialect: (typeof DIALECTS)[number];
     tts_voice: (typeof TTS_VOICES)[number];
     allowed_channel_ids: string[];
     personality_enabled: boolean;
@@ -149,24 +147,6 @@ export function SettingsTab({ guildId }: { guildId: string }) {
             />
           </label>
           <p className="mb-3 text-xs text-slate-500">{t('settings.voice.wakeWord.hint')}</p>
-          {botLanguage === 'ar' && (
-            <>
-              <label className="mb-1 block">
-                <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
-                <select
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
-                  {...voice.register('dialect')}
-                >
-                  {DIALECTS.map((d) => (
-                    <option key={d} value={d}>
-                      {t(`settings.dialect.${d}`)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
-            </>
-          )}
           <label className="mb-1 block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.ttsVoice')}</span>
             <select

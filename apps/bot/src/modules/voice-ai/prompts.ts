@@ -1,11 +1,8 @@
-import type { Dialect, Language } from '@gamebot/shared';
+import type { Language } from '@gamebot/shared';
 
-const DIALECT_RULES: Record<Dialect, string> = {
-  gulf: 'رد باللهجة الخليجية العامية فقط. ممنوع الفصحى.',
-  syrian: 'رد باللهجة السورية العامية فقط. ممنوع الفصحى.',
-  egyptian: 'رد باللهجة المصرية العامية فقط. ممنوع الفصحى.',
-  msa: 'رد بالعربية الفصحى المبسطة.',
-};
+// Arabic replies use one neutral style — the model, not a dialect setting,
+// decides the phrasing.
+const ARABIC_RULE = 'رد بالعربية بأسلوب طبيعي وواضح.';
 
 // English name of each language, used to instruct the model which language to
 // reply in for non-Arabic guilds.
@@ -19,7 +16,6 @@ const LANGUAGE_NAMES: Record<Language, string> = {
 };
 
 export function buildSystemPrompt(
-  dialect: Dialect,
   guildName: string,
   opts: { comedic?: boolean; language?: Language } = {},
 ): string {
@@ -40,7 +36,7 @@ export function buildSystemPrompt(
 
   const lines = [
     `أنت بوت صوتي ذكي في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
-    DIALECT_RULES[dialect],
+    ARABIC_RULE,
     'ردودك تُقرأ بصوت مسموع: اجعلها قصيرة جداً (جملة إلى ثلاث جمل)، بلا رموز ولا إيموجي ولا قوائم.',
     'إذا سُئلت عن شيء لا تعرفه قل ذلك بصراحة وباختصار.',
   ];
@@ -51,7 +47,7 @@ export function buildSystemPrompt(
 }
 
 /** System prompt for the /summarize command — text output, so short bullets are fine. */
-export function buildSummaryPrompt(dialect: Dialect, guildName: string, language: Language = 'ar'): string {
+export function buildSummaryPrompt(guildName: string, language: Language = 'ar'): string {
   if (language !== 'ar') {
     return [
       `You summarize a conversation in a Discord gaming server called "${guildName}".`,
@@ -62,7 +58,7 @@ export function buildSummaryPrompt(dialect: Dialect, guildName: string, language
   }
   return [
     `أنت مساعد في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
-    DIALECT_RULES[dialect],
+    ARABIC_RULE,
     'لخّص المحادثة التالية بإيجاز في نقاط قصيرة: أهم المواضيع والقرارات والأحداث.',
     'تجاهل الرسائل غير المهمة والتكرار. اكتب ملخصاً مفيداً في 3 إلى 6 أسطر كحد أقصى.',
   ].join('\n');

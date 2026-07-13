@@ -9,7 +9,7 @@ import { SettingsTab } from './SettingsTab.js';
 
 const config = {
   admin_role_id: null,
-  voice: { enabled: true, wake_word: 'يا بوت', dialect: 'gulf', tts_voice: 'fahad', allowed_channel_ids: [], personality_enabled: false },
+  voice: { enabled: true, wake_word: 'يا بوت', tts_voice: 'fahad', allowed_channel_ids: [], personality_enabled: false },
   quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
   premium: { active: false, listen_minutes_override: null, ai_questions_override: null },
   language: 'ar',
@@ -143,22 +143,6 @@ describe('SettingsTab', () => {
       expect(patchCalls).toHaveLength(1);
       expect(JSON.parse((patchCalls[0][1] as RequestInit).body as string).language).toBe('de');
     });
-  });
-
-  it('hides the dialect picker when the bot language is not Arabic', async () => {
-    const user = userEvent.setup();
-    renderTab();
-    await screen.findByDisplayValue('يا بوت');
-
-    // Arabic (the loaded config) → dialect picker visible
-    expect(screen.getByLabelText(/اللهجة|Dialect/)).toBeTruthy();
-
-    await user.selectOptions(screen.getByLabelText(/لغة البوت|Bot language/), 'de');
-    expect(screen.queryByLabelText(/اللهجة|Dialect/)).toBeNull();
-
-    // switching back restores it
-    await user.selectOptions(screen.getByLabelText(/لغة البوت|Bot language/), 'ar');
-    expect(screen.getByLabelText(/اللهجة|Dialect/)).toBeTruthy();
   });
 
   it('save button is disabled until something changes, then saves everything at once', async () => {
