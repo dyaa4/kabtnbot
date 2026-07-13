@@ -32,7 +32,11 @@ export const GuildConfigSchema = z.object({
       text_protection: z.boolean().default(false),
       text_timeout: z.boolean().default(false),
       custom_words: z.array(z.string()).max(200).default([]),
-      allowed_domains: z.array(z.string()).max(200).default([]),
+      // Any message linking to one of these domains (or a subdomain) is deleted.
+      blocked_domains: z.array(z.string()).max(200).default([]),
+      // Cross-channel spam: same content posted into several channels within
+      // a minute -> delete every copy and DM the sender.
+      anti_spam: z.boolean().default(false),
       log_channel_id: z.string().nullable().default(null),
     })
     .default({}),

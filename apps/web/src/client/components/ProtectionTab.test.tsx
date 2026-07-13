@@ -13,7 +13,8 @@ const config = {
     voice_moderation: true,
     text_protection: false,
     custom_words: ['كلمة1', 'كلمة2'],
-    allowed_domains: ['example.com'],
+    anti_spam: false,
+    blocked_domains: ['example.com'],
     log_channel_id: null,
   },
 };
@@ -95,7 +96,7 @@ describe('ProtectionTab', () => {
     });
   });
 
-  it('splits custom_words / allowed_domains on newline and comma, trims, and drops empties', async () => {
+  it('splits custom_words / blocked_domains on newline and comma, trims, and drops empties', async () => {
     const user = userEvent.setup();
     renderTab();
     const wordsBox = await screen.findByDisplayValue('كلمة1\nكلمة2', { collapseWhitespace: false });

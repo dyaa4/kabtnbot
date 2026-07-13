@@ -38,7 +38,8 @@ const ConfigPatch = z
         text_protection: z.boolean().optional(),
         text_timeout: z.boolean().optional(),
         custom_words: z.array(z.string().min(1).max(60)).max(200).optional(),
-        allowed_domains: z.array(z.string().min(3).max(120)).max(200).optional(),
+        blocked_domains: z.array(z.string().min(3).max(120)).max(200).optional(),
+        anti_spam: z.boolean().optional(),
         log_channel_id: z.string().nullable().optional(),
       })
       .strict()

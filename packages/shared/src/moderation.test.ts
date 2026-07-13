@@ -119,22 +119,25 @@ describe('findProfanity', () => {
 
 describe('scanMessage', () => {
   it('blocks known nitro/steam scam phrasing with a link', () => {
-    expect(scanMessage('free nitro here http://d1scord-nitro.ru/x', { customWords: [], allowedDomains: [] }).blocked).toBe(true);
+    expect(scanMessage('free nitro here http://d1scord-nitro.ru/x', { customWords: [], blockedDomains: [] }).blocked).toBe(true);
   });
   it('blocks foreign discord invites', () => {
-    expect(scanMessage('join discord.gg/abc123', { customWords: [], allowedDomains: [] }).reason).toBe('invite');
+    expect(scanMessage('join discord.gg/abc123', { customWords: [], blockedDomains: [] }).reason).toBe('invite');
   });
   it('blocks url shorteners', () => {
-    expect(scanMessage('look bit.ly/xyz', { customWords: [], allowedDomains: [] }).reason).toBe('shortener');
+    expect(scanMessage('look bit.ly/xyz', { customWords: [], blockedDomains: [] }).reason).toBe('shortener');
   });
   it('passes ordinary links (youtube) and clean text', () => {
-    expect(scanMessage('watch https://youtube.com/watch?v=1', { customWords: [], allowedDomains: [] }).blocked).toBe(false);
-    expect(scanMessage('gg wp everyone', { customWords: [], allowedDomains: [] }).blocked).toBe(false);
+    expect(scanMessage('watch https://youtube.com/watch?v=1', { customWords: [], blockedDomains: [] }).blocked).toBe(false);
+    expect(scanMessage('gg wp everyone', { customWords: [], blockedDomains: [] }).blocked).toBe(false);
   });
-  it('passes a link whose domain is admin-allowed', () => {
-    expect(scanMessage('my site shop.example.com/a', { customWords: [], allowedDomains: ['shop.example.com'] }).blocked).toBe(false);
+  it('blocks links to admin-blocked domains, including subdomains', () => {
+    const opts = { customWords: [], blockedDomains: ['example.com'] };
+    expect(scanMessage('my site shop.example.com/a', opts).reason).toBe('domain');
+    expect(scanMessage('go to https://example.com/x', opts).reason).toBe('domain');
+    expect(scanMessage('see notexample.org/a', opts).blocked).toBe(false);
   });
   it('blocks an admin custom word', () => {
-    expect(scanMessage('this is spamword', { customWords: ['spamword'], allowedDomains: [] }).reason).toBe('word');
+    expect(scanMessage('this is spamword', { customWords: ['spamword'], blockedDomains: [] }).reason).toBe('word');
   });
 });

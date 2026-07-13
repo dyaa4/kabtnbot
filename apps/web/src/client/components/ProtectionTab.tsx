@@ -23,8 +23,9 @@ const ProtectionForm = z.object({
   voice_kick_immediately: z.boolean(),
   text_protection: z.boolean(),
   text_timeout: z.boolean(),
+  anti_spam: z.boolean(),
   custom_words: z.string(),
-  allowed_domains: z.string(),
+  blocked_domains: z.string(),
   log_channel_id: z.string(),
 });
 
@@ -37,8 +38,9 @@ interface GuildConfigResp {
     voice_kick_immediately: boolean;
     text_protection: boolean;
     text_timeout: boolean;
+    anti_spam: boolean;
     custom_words: string[];
-    allowed_domains: string[];
+    blocked_domains: string[];
     log_channel_id: string | null;
   };
 }
@@ -77,8 +79,9 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         voice_kick_immediately: cfg.data.protection.voice_kick_immediately,
         text_protection: cfg.data.protection.text_protection,
         text_timeout: cfg.data.protection.text_timeout,
+        anti_spam: cfg.data.protection.anti_spam,
         custom_words: cfg.data.protection.custom_words.join('\n'),
-        allowed_domains: cfg.data.protection.allowed_domains.join('\n'),
+        blocked_domains: cfg.data.protection.blocked_domains.join('\n'),
         log_channel_id: cfg.data.protection.log_channel_id ?? '',
       });
     }
@@ -96,8 +99,9 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         voice_kick_immediately: v.voice_kick_immediately,
         text_protection: v.text_protection,
         text_timeout: v.text_timeout,
+        anti_spam: v.anti_spam,
         custom_words: splitList(v.custom_words),
-        allowed_domains: splitList(v.allowed_domains),
+        blocked_domains: splitList(v.blocked_domains),
         log_channel_id: logChannelId === '' ? null : logChannelId,
       },
     });
@@ -135,6 +139,11 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
           <span>{t('protection.textTimeout')}</span>
         </label>
         <p className="mb-4 ms-6 text-xs text-slate-500">{t('protection.textTimeout.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
+          <input type="checkbox" {...form.register('anti_spam')} />
+          <span>{t('protection.antiSpam')}</span>
+        </label>
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('protection.antiSpam.hint')}</p>
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.customWords')}</span>
           <textarea
@@ -144,13 +153,13 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('protection.customWords.hint')}</p>
         <label className="mb-1 block">
-          <span className="mb-1 block text-sm text-slate-400">{t('protection.allowedDomains')}</span>
+          <span className="mb-1 block text-sm text-slate-400">{t('protection.blockedDomains')}</span>
           <textarea
             className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
-            {...form.register('allowed_domains')}
+            {...form.register('blocked_domains')}
           />
         </label>
-        <p className="mb-4 text-xs text-slate-500">{t('protection.allowedDomains.hint')}</p>
+        <p className="mb-4 text-xs text-slate-500">{t('protection.blockedDomains.hint')}</p>
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.logChannelId')}</span>
           <ChannelSelect

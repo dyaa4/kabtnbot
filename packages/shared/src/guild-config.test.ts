@@ -29,7 +29,8 @@ describe('GuildConfigSchema', () => {
       text_protection: false,
       text_timeout: false,
       custom_words: [],
-      allowed_domains: [],
+      blocked_domains: [],
+      anti_spam: false,
       log_channel_id: null,
     });
     expect(c.welcome).toEqual({

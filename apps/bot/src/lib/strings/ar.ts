@@ -24,6 +24,8 @@ export const ar = {
   slashDisabled: '❌ هذا الأمر معطّل في هذا السيرفر.',
   dmFailed: 'تعذّر إرسال الرسالة الخاصة (قد تكون الخاصات مقفلة).',
   dmInactiveStarted: 'بدأت إرسال رسائل خاصة لـ {count} عضو غائب.',
+  spamDmNotice: '🧹 تم حذف رسائلك المتكررة في سيرفر {server} — إرسال الرسالة نفسها في عدة قنوات يُعد سباماً.',
+  spamLogDeleted: '🧹 سبام: حُذفت رسالة مكررة من {user} أُرسلت في {count} قنوات.',
   // settings
   settingsSaved: '✅ انحفظ الإعداد.',
   settingsTitle: '⚙️ إعدادات السيرفر',
@@ -59,6 +61,7 @@ export const ar = {
   reasonScam: 'احتيال/سكام',
   reasonInvite: 'رابط دعوة خارجي',
   reasonShortener: 'رابط مختصر',
+  reasonDomain: 'رابط ممنوع',
   textDeleted: '{user} رسالتك حُذفت ({reason}). ممنوع الروابط المشبوهة/السكام.',
   textDeletedTimeout: '{user} رسالتك حُذفت ({reason}) وتم إسكاتك مؤقتاً {minutes} دقيقة بسبب التكرار.',
   textLogDeleted: '🛡️ حذف رسالة من {user} في {channel} — السبب: {reason}',

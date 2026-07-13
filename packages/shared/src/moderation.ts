@@ -101,9 +101,9 @@ function escapeRe(s: string): string {
 
 export function scanMessage(
   content: string,
-  opts: { customWords: string[]; allowedDomains: string[] },
-): { blocked: boolean; reason: 'scam' | 'invite' | 'shortener' | 'word' | null } {
-  const allowed = new Set(opts.allowedDomains.map((d) => d.toLowerCase().replace(/^www\./, '')));
+  opts: { customWords: string[]; blockedDomains: string[] },
+): { blocked: boolean; reason: 'scam' | 'invite' | 'shortener' | 'word' | 'domain' | null } {
+  const blocked = opts.blockedDomains.map((d) => d.toLowerCase().replace(/^www\./, '')).filter(Boolean);
 
   if (INVITE_RE.test(content)) return { blocked: true, reason: 'invite' };
   if (SCAM_PHRASES.some((re) => re.test(content))) return { blocked: true, reason: 'scam' };
@@ -111,7 +111,11 @@ export function scanMessage(
   const urls = content.match(URL_RE) ?? [];
   for (const url of urls) {
     const domain = domainOf(url);
-    if (!domain || allowed.has(domain)) continue;
+    if (!domain) continue;
+    // Admin blocklist first: exact domain or any subdomain of a listed entry.
+    if (blocked.some((b) => domain === b || domain.endsWith(`.${b}`))) {
+      return { blocked: true, reason: 'domain' };
+    }
     if (SHORTENERS.includes(domain)) return { blocked: true, reason: 'shortener' };
     if (SCAM_DOMAIN_HINTS.some((h) => domain.includes(h))) return { blocked: true, reason: 'scam' };
   }

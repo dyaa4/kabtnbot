@@ -1,5 +1,6 @@
 import { type Client, type GuildMember, type Message, type PartialMessage, type TextChannel } from 'discord.js';
 import { scanMessage } from '@gamebot/shared';
+import { handleAntiSpam } from './anti-spam.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
 import { t, fmt, type BotStrings } from '../../lib/strings.js';
@@ -12,6 +13,7 @@ const REASON_KEY = {
   scam: 'reasonScam',
   invite: 'reasonInvite',
   shortener: 'reasonShortener',
+  domain: 'reasonDomain',
 } as const satisfies Record<string, keyof BotStrings>;
 
 export function shouldModerate(config: GuildConfig, isAdmin: boolean): boolean {
@@ -72,7 +74,7 @@ export async function moderateMessage(msg: Message): Promise<void> {
 
   const verdict = scanMessage(msg.content, {
     customWords: config.protection.custom_words,
-    allowedDomains: config.protection.allowed_domains,
+    blockedDomains: config.protection.blocked_domains,
   });
   if (!verdict.blocked) return;
 
@@ -128,6 +130,9 @@ export async function moderateMessage(msg: Message): Promise<void> {
 export function registerTextProtection(client: Client): void {
   client.on('messageCreate', async (msg) => {
     try {
+      // Cross-channel spam first: when it triggers, the message (and all its
+      // copies) are already gone — the content scan has nothing left to do.
+      if (await handleAntiSpam(msg)) return;
       await moderateMessage(msg);
     } catch (err) {
       console.error('[text-protection]', err);

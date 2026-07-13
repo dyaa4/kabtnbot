@@ -24,7 +24,8 @@ const cfg = (over: Partial<{ enabled: boolean; text: boolean }>) => ({
     text_protection: over.text ?? true,
     voice_moderation: true,
     custom_words: [],
-    allowed_domains: [],
+    blocked_domains: [],
+    anti_spam: false,
     log_channel_id: null,
   },
 }) as never;
