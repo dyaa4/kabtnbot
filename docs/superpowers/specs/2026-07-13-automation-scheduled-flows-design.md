@@ -71,6 +71,21 @@ Owner: a step should be able to run on its own cadence ("this message every
 - UI: action nodes on scheduled flows get a "⏱ own interval" toggle +
   IntervalPicker (extracted from the trigger's schedule section, shared).
 
+## Specific-member target (follow-up, same day)
+
+Owner: member-targeted actions (esp. DM) should point at a member picked in
+the editor — spoken_name/{args} fails on scheduled runs ("ما قدرت أحدد مين
+تقصد") because there is no speaker.
+
+- Target enum gains `member` + `target_user_id` on all six targeted actions
+  (dm_user, timeout_user, role_add/remove, voice_disconnect_user,
+  voice_move_user); flow superRefine requires a picked id.
+- Executor resolves `member` via cache-then-fetch — the only target that also
+  works with `source: 'schedule'`.
+- UI: third option in the target select; picking it reveals a
+  SingleMemberSelect (search box → removable chip, shares MemberSearchBox and
+  the name cache).
+
 ## Testing
 
 - shared: schedule-only flow valid; no-trigger + no-schedule invalid; schedule

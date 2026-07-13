@@ -168,6 +168,23 @@ describe('CommandsTab', () => {
     expect(screen.getByDisplayValue('hallo')).toBeTruthy();
   });
 
+  it("the 'specific member' target reveals a single-member picker", async () => {
+    mockFetch(FLOWS_TWO);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Zwei Aktionen'));
+    // retype the first action to dm_user, then point it at a specific member
+    const typeSelects = (await screen.findAllByLabelText('Change action type')) as HTMLSelectElement[];
+    await user.selectOptions(typeSelects[0], 'dm_user');
+    const target = (await screen.findByLabelText('Target')) as HTMLSelectElement;
+    // one member search so far (the condition node's allowlist)
+    expect(screen.getAllByPlaceholderText('Search members…')).toHaveLength(1);
+    await user.selectOptions(target, 'member');
+    // …the single-member picker adds a second one
+    await waitFor(() => expect(screen.getAllByPlaceholderText('Search members…')).toHaveLength(2));
+  });
+
   it('per-step interval section only shows on scheduled flows and toggles the picker', async () => {
     // schedule disabled → no repeat section on the action node
     mockFetch(FLOWS_TWO);

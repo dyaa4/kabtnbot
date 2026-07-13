@@ -313,6 +313,7 @@
   "commands.action.target": "Hedef",
   "commands.action.target.speaker": "Konuşan/yazan kişi",
   "commands.action.target.spokenName": "Adı geçen üye ({args})",
+  "commands.action.target.member": "Belirli bir üye",
   "commands.action.duration": "Dakika",
   "commands.action.textHint": "{user} = isim, {args} = ifadenin kalanı, {mention} = adı geçen üyeyi etiketler",
   "commands.action.mentionMember": "Üye etiketle",

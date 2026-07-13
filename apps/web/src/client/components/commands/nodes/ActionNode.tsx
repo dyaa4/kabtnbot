@@ -6,7 +6,7 @@ import { ACTION_GROUPS, defaultAction, useCanvas } from '../FlowCanvas.js';
 import { IntervalPicker } from '../IntervalPicker.js';
 import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
-import { MemberSearchBox } from '../UserSearchSelect.js';
+import { MemberSearchBox, SingleMemberSelect } from '../UserSearchSelect.js';
 
 const INPUT_CLASS =
   'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
@@ -82,21 +82,42 @@ function MessageField({
   );
 }
 
+type TargetValue = 'speaker' | 'spoken_name' | 'member';
+
 function TargetPicker({
-  value,
-  onChange,
+  guildId,
+  target,
+  userId,
+  update,
 }: {
-  value: 'speaker' | 'spoken_name';
-  onChange: (v: 'speaker' | 'spoken_name') => void;
+  guildId: string;
+  target: TargetValue;
+  userId: string;
+  update: (patch: Partial<FlowAction>) => void;
 }) {
   const { t } = useI18n();
   return (
     <>
       <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.action.target')}</label>
-      <select className={INPUT_CLASS} value={value} onChange={(e) => onChange(e.target.value as 'speaker' | 'spoken_name')}>
+      <select
+        aria-label={t('commands.action.target')}
+        className={INPUT_CLASS}
+        value={target}
+        onChange={(e) => update({ target: e.target.value as TargetValue } as Partial<FlowAction>)}
+      >
         <option value="speaker">{t('commands.action.target.speaker')}</option>
         <option value="spoken_name">{t('commands.action.target.spokenName')}</option>
+        <option value="member">{t('commands.action.target.member')}</option>
       </select>
+      {target === 'member' && (
+        <div className="mt-1.5">
+          <SingleMemberSelect
+            guildId={guildId}
+            value={userId}
+            onChange={(target_user_id) => update({ target_user_id } as Partial<FlowAction>)}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -132,11 +153,11 @@ function Params({
     case 'voice_stop_listening':
       return null;
     case 'voice_disconnect_user':
-      return <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />;
+      return <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />;
     case 'voice_move_user':
       return (
         <>
-          <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
+          <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />
           <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.condition.channels')}</label>
           {channelSelect(voiceChannels.data ?? [], action.channel_id)}
         </>
@@ -167,7 +188,7 @@ function Params({
     case 'timeout_user':
       return (
         <>
-          <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
+          <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />
           <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.action.duration')}</label>
           <input
             type="number"
@@ -183,7 +204,7 @@ function Params({
     case 'role_remove':
       return (
         <>
-          <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
+          <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />
           <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.condition.roles')}</label>
           <select
             className={INPUT_CLASS}
@@ -214,7 +235,7 @@ function Params({
     case 'dm_user':
       return (
         <>
-          <TargetPicker value={action.target} onChange={(target) => update({ target } as Partial<FlowAction>)} />
+          <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />
           <MessageField
             guildId={guildId}
             value={action.text}
@@ -308,7 +329,7 @@ export const ActionNode = memo(function ActionNode({
   const changeType = (type: FlowActionType) => {
     if (type === action.type) return;
     const next = { ...defaultAction(type, index), id: action.id, pos: action.pos, repeat_minutes: action.repeat_minutes } as FlowAction;
-    for (const key of ['text', 'target'] as const) {
+    for (const key of ['text', 'target', 'target_user_id'] as const) {
       if (key in action && key in next) {
         (next as Record<string, unknown>)[key] = (action as Record<string, unknown>)[key];
       }

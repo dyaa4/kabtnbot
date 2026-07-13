@@ -57,27 +57,28 @@ export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
 
 export function defaultAction(type: FlowActionType, index: number): FlowAction {
   const base = { id: crypto.randomUUID(), pos: { x: 640 + index * 320, y: 120 }, repeat_minutes: 0 as const };
+  const targeted = { target: 'speaker' as const, target_user_id: '' };
   switch (type) {
     case 'voice_leave':
     case 'voice_stop_listening':
       return { ...base, type };
     case 'voice_disconnect_user':
-      return { ...base, type, target: 'speaker' };
+      return { ...base, type, ...targeted };
     case 'voice_move_user':
-      return { ...base, type, target: 'speaker', channel_id: '' };
+      return { ...base, type, ...targeted, channel_id: '' };
     case 'speak_tts':
       return { ...base, type, text: '' };
     case 'send_message':
       return { ...base, type, channel_id: '', text: '' };
     case 'timeout_user':
-      return { ...base, type, target: 'speaker', duration_minutes: 5 };
+      return { ...base, type, ...targeted, duration_minutes: 5 };
     case 'role_add':
     case 'role_remove':
-      return { ...base, type, target: 'speaker', role_id: '' };
+      return { ...base, type, ...targeted, role_id: '' };
     case 'ai_reply':
       return { ...base, type, system_prompt: '' };
     case 'dm_user':
-      return { ...base, type, target: 'speaker', text: '' };
+      return { ...base, type, ...targeted, text: '' };
     case 'dm_inactive_members':
       return { ...base, type, days: 14, text: '' };
   }

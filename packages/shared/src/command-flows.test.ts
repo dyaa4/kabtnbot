@@ -121,6 +121,19 @@ describe('GuildCommandFlowsSchema', () => {
     expect(() => CommandFlowSchema.parse(withRepeat(20000))).toThrow();
   });
 
+  it("target 'member' requires a picked member id", () => {
+    const dm = (extra: object) => ({
+      id: 'x', name: 'DM', triggers: ['hi'],
+      actions: [{ id: 'a', type: 'dm_user', text: 'hey', ...extra }],
+    });
+    expect(() => CommandFlowSchema.parse(dm({ target: 'member' }))).toThrow();
+    const parsed = CommandFlowSchema.parse(dm({ target: 'member', target_user_id: 'u1' }));
+    expect(parsed.actions[0]).toMatchObject({ target: 'member', target_user_id: 'u1' });
+    // default stays backward-compatible: speaker with empty member id
+    const legacy = CommandFlowSchema.parse(dm({}));
+    expect(legacy.actions[0]).toMatchObject({ target: 'speaker', target_user_id: '' });
+  });
+
   it('rejects unknown action types', () => {
     expect(() =>
       GuildCommandFlowsSchema.parse({

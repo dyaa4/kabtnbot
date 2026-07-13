@@ -313,6 +313,7 @@
   "commands.action.target": "Цель",
   "commands.action.target.speaker": "Говорящий/пишущий",
   "commands.action.target.spokenName": "Названный участник ({args})",
+  "commands.action.target.member": "Определённый участник",
   "commands.action.duration": "Минуты",
   "commands.action.textHint": "{user} = имя, {args} = остаток фразы, {mention} = упоминает названного участника",
   "commands.action.mentionMember": "Упомянуть участника",

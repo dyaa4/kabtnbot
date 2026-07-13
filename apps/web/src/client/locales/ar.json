@@ -313,6 +313,7 @@
   "commands.action.target": "الهدف",
   "commands.action.target.speaker": "المتحدث/الكاتب",
   "commands.action.target.spokenName": "العضو المذكور ({args})",
+  "commands.action.target.member": "عضو محدد",
   "commands.action.duration": "دقائق",
   "commands.action.textHint": "{user} = الاسم، {args} = بقية العبارة، {mention} = منشن العضو المذكور",
   "commands.action.mentionMember": "منشن عضو",

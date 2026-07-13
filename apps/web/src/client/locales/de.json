@@ -313,6 +313,7 @@
   "commands.action.target": "Ziel",
   "commands.action.target.speaker": "Der Sprecher/Schreiber",
   "commands.action.target.spokenName": "Genanntes Mitglied ({args})",
+  "commands.action.target.member": "Ein bestimmtes Mitglied",
   "commands.action.duration": "Minuten",
   "commands.action.textHint": "{user} = Name, {args} = Rest der Phrase, {mention} = erwähnt das genannte Mitglied",
   "commands.action.mentionMember": "Mitglied erwähnen",

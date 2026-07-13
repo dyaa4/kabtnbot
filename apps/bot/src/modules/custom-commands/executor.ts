@@ -68,11 +68,20 @@ function voiceChannelMembers(ctx: ExecContext): { id: string; displayName: strin
     .map((m) => ({ id: m.id, displayName: m.displayName }));
 }
 
-function resolveTargetMember(
-  target: 'speaker' | 'spoken_name',
+async function resolveTargetMember(
+  action: { target: 'speaker' | 'spoken_name' | 'member'; target_user_id: string },
   ctx: ExecContext,
-): GuildMember | null {
-  if (target === 'speaker') return ctx.guild.members.cache.get(ctx.invokerId) ?? null;
+): Promise<GuildMember | null> {
+  if (action.target === 'member') {
+    // A member picked in the editor — the only target that also resolves on
+    // scheduled runs. Not necessarily cached, so fall back to a fetch.
+    if (!action.target_user_id) return null;
+    return (
+      ctx.guild.members.cache.get(action.target_user_id) ??
+      (await ctx.guild.members.fetch(action.target_user_id).catch(() => null))
+    );
+  }
+  if (action.target === 'speaker') return ctx.guild.members.cache.get(ctx.invokerId) ?? null;
   // spoken_name: an explicit mention wins (text source), else fuzzy-match the
   // captured args against voice-channel members like the built-in kick.
   const mentioned = ctx.mentionedUserIds?.[0];
@@ -110,7 +119,7 @@ export async function executeActions(
           break;
         }
         case 'voice_disconnect_user': {
-          const member = resolveTargetMember(action.target, ctx);
+          const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
           if (member.user.bot || !botHas(ctx, PermissionFlagsBits.MoveMembers)) {
             replies.push(strings.kickFailed);
@@ -120,7 +129,7 @@ export async function executeActions(
           break;
         }
         case 'voice_move_user': {
-          const member = resolveTargetMember(action.target, ctx);
+          const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
           if (member.user.bot || !botHas(ctx, PermissionFlagsBits.MoveMembers)) {
             replies.push(strings.kickFailed);
@@ -145,7 +154,7 @@ export async function executeActions(
           break;
         }
         case 'timeout_user': {
-          const member = resolveTargetMember(action.target, ctx);
+          const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
           // moderatable covers bot permission, role hierarchy and guild owner.
           if (member.user.bot || !member.moderatable) { replies.push(strings.kickFailed); break; }
@@ -156,7 +165,7 @@ export async function executeActions(
         }
         case 'role_add':
         case 'role_remove': {
-          const member = resolveTargetMember(action.target, ctx);
+          const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
           const role = ctx.guild.roles.cache.get(action.role_id);
           const me = ctx.guild.members.me;
@@ -170,7 +179,7 @@ export async function executeActions(
           break;
         }
         case 'dm_user': {
-          const member = resolveTargetMember(action.target, ctx);
+          const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
           if (member.user.bot) break;
           const text = expand(action.text, ctx).replaceAll('{member}', member.displayName).slice(0, 2000);

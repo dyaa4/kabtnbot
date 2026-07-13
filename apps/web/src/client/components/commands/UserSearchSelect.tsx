@@ -82,6 +82,28 @@ export function MemberSearchBox({
   );
 }
 
+/** Pick exactly ONE member: search box until picked, then a removable chip. */
+export function SingleMemberSelect({
+  guildId,
+  value,
+  onChange,
+}: {
+  guildId: string;
+  value: string;
+  onChange: (id: string) => void;
+}) {
+  if (!value) return <MemberSearchBox guildId={guildId} onPick={(m) => onChange(m.id)} />;
+  return (
+    <button
+      type="button"
+      className="nodrag rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-xs text-cyan-200 hover:border-rose-400/50 hover:text-rose-300"
+      onClick={() => onChange('')}
+    >
+      @{nameCache.get(value) ?? value} ×
+    </button>
+  );
+}
+
 /** Member search with removable chips for picked user ids. */
 export function UserSearchSelect({
   guildId,
