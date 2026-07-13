@@ -46,7 +46,11 @@ function fuzzyBudget(len: number): number {
  * - candidates are compared space-free against the wake word with a length-
  *   scaled edit budget,
  * - a 2+-edit match must still start with the wake word's first letter
- *   (rejects "الكابتن …" = talking ABOUT the bot, not TO it).
+ *   (rejects "الكابتن …" = talking ABOUT the bot, not TO it),
+ * - containment: the WHOLE wake word inside a candidate with ≤2 extra letters
+ *   always matches, regardless of budget — Whisper almost never emits a short
+ *   wake word ("عرب") bare; it produces "العرب" / "عربي" / "أعرب". Pure
+ *   insertions only, so 1-edit lookalikes (غرب/قرب/حرب) stay silent.
  */
 function fuzzyWakeMatch(t: string, w: string): string | null {
   const wCompact = w.replace(/ /g, '');
@@ -60,10 +64,14 @@ function fuzzyWakeMatch(t: string, w: string): string | null {
     let best: { span: number; dist: number } | null = null;
     for (let span = 1; span <= Math.min(3, tokens.length - start); span++) {
       const cand = tokens.slice(start, start + span).join('');
-      if (Math.abs(cand.length - wCompact.length) > budget) continue;
-      const dist = levenshtein(cand, wCompact);
-      if (dist > budget) continue;
-      if (dist >= 2 && cand[0] !== wCompact[0]) continue;
+      const extra = cand.length - wCompact.length;
+      const contained = wCompact.length >= 3 && extra >= 0 && extra <= 2 && cand.includes(wCompact);
+      if (!contained && Math.abs(extra) > budget) continue;
+      const dist = contained ? extra : levenshtein(cand, wCompact);
+      if (!contained) {
+        if (dist > budget) continue;
+        if (dist >= 2 && cand[0] !== wCompact[0]) continue;
+      }
       if (!best || dist < best.dist || (dist === best.dist && span > best.span)) {
         best = { span, dist };
       }

@@ -61,5 +61,23 @@ describe('parseWakeWord', () => {
     it('does not fire deep inside a sentence', () => {
       expect(parseWakeWord('قلت له امس يا كابتن اطلع', 'يا كابتن')).toBeNull();
     });
+
+    // Short wake words ("عرب") get no edit budget, but Whisper almost never
+    // emits them bare — it produces "العرب" / "عربي" / "أعرب". Containment
+    // (whole wake word inside the token, ≤2 extra letters) covers those
+    // without opening the 1-edit floodgate (غرب/قرب/حرب must stay silent).
+    it('containment: definite article and suffix variants of a short wake word', () => {
+      expect(parseWakeWord('العرب اطلع', 'عرب')).toBe('اطلع');
+      expect(parseWakeWord('عربي اسكت', 'عرب')).toBe('اسكت');
+      expect(parseWakeWord('أعرب قف', 'عرب')).toBe('قف'); // أ folds to ا
+    });
+    it('containment does not loosen into 1-edit lookalikes', () => {
+      expect(parseWakeWord('غرب اطلع', 'عرب')).toBeNull();
+      expect(parseWakeWord('قرب اسكت', 'عرب')).toBeNull();
+      expect(parseWakeWord('حرب قامت', 'عرب')).toBeNull();
+    });
+    it('containment respects the ≤2 extra letters cap', () => {
+      expect(parseWakeWord('عربيتين جو', 'عرب')).toBeNull(); // 5 extra letters
+    });
   });
 });
