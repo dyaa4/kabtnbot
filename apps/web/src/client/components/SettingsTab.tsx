@@ -1,3 +1,4 @@
+import { Volume2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -143,7 +144,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           <label className="mb-1 block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.wakeWord')}</span>
             <input
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
               {...voice.register('wake_word')}
             />
           </label>
@@ -153,7 +154,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
               <label className="mb-1 block">
                 <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
                 <select
-                  className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+                  className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
                   {...voice.register('dialect')}
                 >
                   {DIALECTS.map((d) => (
@@ -169,7 +170,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           <label className="mb-1 block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.ttsVoice')}</span>
             <select
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
               {...voice.register('tts_voice')}
             >
               {TTS_VOICES.map((v) => (
@@ -196,7 +197,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
                   checked={allowedVoiceIds.includes(c.id)}
                   onChange={() => toggleVoiceChannel(c.id)}
                 />
-                <span>🔊 {c.name}</span>
+                <span className="flex items-center gap-1"><Volume2 className="h-3.5 w-3.5 text-slate-400" /> {c.name}</span>
               </label>
             ))}
           </div>
@@ -211,7 +212,7 @@ export function SettingsTab({ guildId }: { guildId: string }) {
           <label className="mb-1 block">
             <span className="mb-1 block text-sm text-slate-400">{t('settings.language')}</span>
             <select
-              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
               value={botLanguage}
               onChange={(e) => setBotLanguage(e.target.value as (typeof LANGUAGES)[number])}
             >

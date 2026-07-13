@@ -1,3 +1,4 @@
+import { ArrowLeft, ArrowRight, AtSign, Copy, MessageSquareText, Timer, User, X, Zap } from 'lucide-react';
 import { memo, useRef, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
@@ -8,8 +9,16 @@ import { builtinNameKey } from '../builtin-meta.js';
 import { useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
 import { MemberSearchBox, SingleMemberSelect } from '../UserSearchSelect.js';
 
+// Friendly placeholder chips: localized label + icon; clicking inserts the
+// raw token the bot understands ({user}/{args}/{mention}) at the cursor.
+const PLACEHOLDERS = [
+  { token: '{user}', icon: User, key: 'commands.ph.user' },
+  { token: '{args}', icon: MessageSquareText, key: 'commands.ph.args' },
+  { token: '{mention}', icon: AtSign, key: 'commands.ph.mention' },
+] as const;
+
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
 
 /**
  * Message textarea with one-click placeholder chips ({user}/{args}/{mention})
@@ -41,7 +50,7 @@ function MessageField({
   };
 
   const chipClass =
-    'nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-cyan-400/40 hover:text-cyan-200';
+    'nodrag inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-blue-400/40 hover:text-blue-200';
 
   return (
     <>
@@ -53,17 +62,17 @@ function MessageField({
         onChange={(e) => onChange(e.target.value)}
       />
       <div className="mt-1.5 flex flex-wrap items-center gap-1">
-        {(['{user}', '{args}', '{mention}'] as const).map((token) => (
-          <button key={token} type="button" dir="ltr" className={chipClass} onClick={() => insert(token)}>
-            {token}
+        {PLACEHOLDERS.map(({ token, icon: Icon, key }) => (
+          <button key={token} type="button" title={token} className={chipClass} onClick={() => insert(token)}>
+            <Icon className="h-3 w-3" /> {t(key)}
           </button>
         ))}
         <button
           type="button"
-          className={`${chipClass} ${mentionOpen ? 'border-cyan-400/50 text-cyan-200' : ''}`}
+          className={`${chipClass} ${mentionOpen ? 'border-blue-400/50 text-blue-200' : ''}`}
           onClick={() => setMentionOpen((o) => !o)}
         >
-          @ {t('commands.action.mentionMember')}
+          <AtSign className="h-3 w-3" /> {t('commands.action.mentionMember')}
         </button>
       </div>
       {mentionOpen && (
@@ -279,13 +288,13 @@ export const ActionNode = memo(function ActionNode({
 
   if (data.builtinAction || !flow) {
     return (
-      <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
-        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-300">
-          <span>⚡</span>
+      <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
+        <div className="flex items-center gap-2 text-sm font-semibold text-blue-300">
+          <Zap className="h-4 w-4 shrink-0" />
           {builtin ? t(builtinNameKey(builtin.key)) : ''}
         </div>
         <p className="mt-2 text-xs text-slate-500">{t('commands.builtin.actionLabel')}</p>
-        <Handle type="target" position={Position.Left} className="!bg-emerald-400" />
+        <Handle type="target" position={Position.Left} className="!bg-blue-400" />
       </div>
     );
   }
@@ -338,19 +347,19 @@ export const ActionNode = memo(function ActionNode({
   };
 
   const toolBtnClass = (enabled: boolean) =>
-    `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-cyan-200' : 'cursor-default text-slate-700'}`;
+    `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-blue-200' : 'cursor-default text-slate-700'}`;
 
   return (
-    <div className="w-72 rounded-2xl border border-emerald-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]">
+    <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
       <div className="mb-2 flex items-center gap-1.5">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-[11px] font-bold text-emerald-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-[11px] font-bold text-blue-300">
           {3 + index}
         </span>
-        <span>⚡</span>
+        <Zap className="h-4 w-4 shrink-0" />
         <select
           aria-label={t('commands.action.changeType')}
           title={t('commands.action.changeType')}
-          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-emerald-300 hover:border-white/10 focus:border-cyan-400/50 focus:outline-none"
+          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-blue-300 hover:border-white/10 focus:border-blue-400/50 focus:outline-none"
           value={action.type}
           onChange={(e) => changeType(e.target.value as FlowActionType)}
         >
@@ -367,7 +376,7 @@ export const ActionNode = memo(function ActionNode({
         {flow.actions.length > 1 && (
           <>
             <button type="button" className={toolBtnClass(index > 0)} disabled={index === 0} onClick={() => move(-1)} title={t('commands.action.moveEarlier')}>
-              ←
+              <ArrowLeft className="h-3.5 w-3.5" />
             </button>
             <button
               type="button"
@@ -376,7 +385,7 @@ export const ActionNode = memo(function ActionNode({
               onClick={() => move(1)}
               title={t('commands.action.moveLater')}
             >
-              →
+              <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </>
         )}
@@ -387,16 +396,16 @@ export const ActionNode = memo(function ActionNode({
           onClick={duplicate}
           title={flow.actions.length >= 5 ? t('commands.action.max') : t('commands.action.duplicate')}
         >
-          ⧉
+          <Copy className="h-3.5 w-3.5" />
         </button>
         {remove && (
           <button
             type="button"
-            className="nodrag rounded-lg px-1 text-sm text-slate-500 hover:bg-rose-400/10 hover:text-rose-300"
+            className="nodrag rounded-lg px-1 text-sm text-slate-500 hover:bg-blue-400/10 hover:text-blue-200"
             onClick={remove}
             title={t('commands.action.remove')}
           >
-            ✕
+            <X className="h-3.5 w-3.5" />
           </button>
         )}
       </div>
@@ -406,14 +415,14 @@ export const ActionNode = memo(function ActionNode({
           is on, so the section stays hidden otherwise. */}
       {flow.schedule.enabled && (
         <div className="mt-3 border-t border-white/10 pt-2">
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-amber-300">
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-blue-300">
             <input
               type="checkbox"
               className="nodrag"
               checked={action.repeat_minutes > 0}
               onChange={(e) => update({ repeat_minutes: e.target.checked ? 60 : 0 } as Partial<FlowAction>)}
             />
-            ⏱ {t('commands.action.repeat')}
+            <Timer className="h-3.5 w-3.5" /> {t('commands.action.repeat')}
           </label>
           {action.repeat_minutes > 0 ? (
             <div className="mt-1.5">
@@ -426,8 +435,8 @@ export const ActionNode = memo(function ActionNode({
         </div>
       )}
 
-      <Handle type="target" position={Position.Left} className="!bg-emerald-400" />
-      <Handle type="source" position={Position.Right} className="!bg-emerald-400" />
+      <Handle type="target" position={Position.Left} className="!bg-blue-400" />
+      <Handle type="source" position={Position.Right} className="!bg-blue-400" />
     </div>
   );
 });

@@ -99,7 +99,7 @@ describe('SettingsTab', () => {
     const user = userEvent.setup();
     renderTab();
     await screen.findByDisplayValue('يا بوت');
-    const gaming = await screen.findByLabelText(/🔊 Gaming/);
+    const gaming = await screen.findByLabelText(/Gaming/);
     await user.click(gaming);
     await user.click(screen.getAllByRole('button', { name: /حفظ|Save/ })[0]);
     await waitFor(() => {

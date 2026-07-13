@@ -9,7 +9,7 @@ export function LangSwitcher() {
         aria-label={t('lang.switch')}
         // appearance-none drops the browser's default arrow; the custom chevron
         // below sits tight to the edge (logical `end` keeps it correct in RTL).
-        className="appearance-none rounded-xl border border-white/10 bg-white/5 py-1.5 pe-8 ps-3 text-sm text-slate-200 backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10 focus:border-cyan-400/50 focus:outline-none [&>option]:bg-slate-900"
+        className="appearance-none rounded-xl border border-white/10 bg-white/5 py-1.5 pe-8 ps-3 text-sm text-slate-200 backdrop-blur transition hover:border-blue-400/40 hover:bg-white/10 focus:border-blue-400/50 focus:outline-none [&>option]:bg-slate-900"
         value={lang}
         onChange={(e) => setLang(e.target.value as Lang)}
       >

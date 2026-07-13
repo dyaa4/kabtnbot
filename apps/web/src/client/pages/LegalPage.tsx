@@ -22,11 +22,11 @@ export function LegalPage({ content }: { content: Record<'ar' | 'en', LegalConte
     <div className="min-h-screen px-6 py-10">
       <div className="mx-auto max-w-3xl">
         <div className="mb-8 flex items-center justify-between">
-          <a href="/" className="text-sm text-cyan-300 hover:underline">
+          <a href="/" className="text-sm text-blue-300 hover:underline">
             {lang === 'ar' ? '← الصفحة الرئيسية' : '← Home'}
           </a>
           <button
-            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-cyan-400/40 hover:bg-white/10"
+            className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-sm backdrop-blur transition hover:border-blue-400/40 hover:bg-white/10"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
           >
             {lang === 'ar' ? 'English' : 'عربي'}
@@ -38,7 +38,7 @@ export function LegalPage({ content }: { content: Record<'ar' | 'en', LegalConte
 
         {c.sections.map((s) => (
           <section key={s.heading} className="mb-8">
-            <h2 className="mb-3 text-xl font-bold text-indigo-300">{s.heading}</h2>
+            <h2 className="mb-3 text-xl font-bold text-blue-300">{s.heading}</h2>
             {s.paragraphs.map((p, i) => (
               <p key={i} className="mb-3 leading-7 text-slate-300">
                 {p}

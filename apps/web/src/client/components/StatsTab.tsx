@@ -1,3 +1,4 @@
+import { RotateCw } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
@@ -56,7 +57,7 @@ function isAllZero(values: number[]): boolean {
 function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-      <div className="text-3xl font-bold text-cyan-300">{value}</div>
+      <div className="text-3xl font-bold text-blue-300">{value}</div>
       <div className="mt-1 text-sm text-slate-400">{label}</div>
     </div>
   );
@@ -107,10 +108,10 @@ export function StatsTab({ guildId }: { guildId: string }) {
         <p className="text-sm text-slate-300">{t('error.generic')}</p>
         <button
           type="button"
-          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50"
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-blue-400/50"
           onClick={() => void stats.refetch()}
         >
-          ↻
+          <RotateCw className="h-4 w-4" />
         </button>
       </div>
     );
@@ -144,7 +145,7 @@ export function StatsTab({ guildId }: { guildId: string }) {
             onClick={() => setDays(d)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
               days === d
-                ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)]'
+                ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
                 : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
             }`}
           >
@@ -251,7 +252,7 @@ export function StatsTab({ guildId }: { guildId: string }) {
                   className="h-8 w-8 rounded-full"
                 />
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 text-xs font-bold text-slate-950">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-400 text-xs font-bold text-slate-950">
                   {m.username.slice(0, 1)}
                 </div>
               )}

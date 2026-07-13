@@ -14,12 +14,12 @@ export function Faq() {
         {QUESTIONS.map((q) => (
           <details
             key={q}
-            className="group rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition open:border-cyan-400/30"
+            className="group rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md transition open:border-blue-400/30"
           >
             <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-4 font-semibold text-slate-100 [&::-webkit-details-marker]:hidden">
               {t(`landing.faq.${q}.q`)}
               <span
-                className="shrink-0 text-cyan-400 transition-transform duration-200 group-open:rotate-45"
+                className="shrink-0 text-blue-400 transition-transform duration-200 group-open:rotate-45"
                 aria-hidden="true"
               >
                 +

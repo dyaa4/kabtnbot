@@ -1,3 +1,4 @@
+import { Check, Circle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
@@ -48,10 +49,10 @@ export function GettingStarted({ guildId }: { guildId: string }) {
   if (doneCount === required.length) return null;
 
   return (
-    <div className="mb-8 rounded-2xl border border-cyan-400/30 bg-cyan-950/20 p-6 backdrop-blur-md">
+    <div className="mb-8 rounded-2xl border border-blue-400/30 bg-blue-950/20 p-6 backdrop-blur-md">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-lg font-semibold">{t('onboarding.title')}</h3>
-        <span className="text-sm text-cyan-300">
+        <span className="text-sm text-blue-300">
           {doneCount}/{required.length}
         </span>
       </div>
@@ -59,13 +60,13 @@ export function GettingStarted({ guildId }: { guildId: string }) {
       <ul className="grid gap-2">
         {steps.map((step) => (
           <li key={step.key} className="flex items-center gap-3 text-sm">
-            <span className={step.done ? 'text-emerald-400' : 'text-slate-500'}>{step.done ? '✓' : '○'}</span>
+            <span className={step.done ? 'text-blue-400' : 'text-slate-500'}>{step.done ? <Check className="h-4 w-4" /> : <Circle className="h-3 w-3" />}</span>
             <span className={step.done ? 'text-slate-500 line-through' : 'text-slate-200'}>
               {t(`onboarding.step.${step.key}`)}
               {step.optional && <span className="ms-2 text-xs text-slate-500">{t('onboarding.optional')}</span>}
             </span>
             {!step.done && (
-              <Link to={step.to} className="ms-auto text-xs font-semibold text-cyan-300 hover:underline">
+              <Link to={step.to} className="ms-auto text-xs font-semibold text-blue-300 hover:underline">
                 {t('onboarding.fix')}
               </Link>
             )}

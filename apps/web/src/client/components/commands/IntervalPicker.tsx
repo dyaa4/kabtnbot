@@ -1,7 +1,7 @@
 import { useI18n } from '../../i18n.js';
 
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
 
 // Minutes shown as the largest unit that divides them evenly, so "1440" reads
 // as "1 day" and editing keeps the chosen unit.

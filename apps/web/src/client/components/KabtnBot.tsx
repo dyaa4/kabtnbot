@@ -52,7 +52,7 @@ function KabtnDefs() {
         </linearGradient>
         <linearGradient id="kb-cap" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#8b93f8" />
-          <stop offset="55%" stopColor="#6366f1" />
+          <stop offset="55%" stopColor="#3b82f6" />
           <stop offset="100%" stopColor="#372f9e" />
         </linearGradient>
         <linearGradient id="kb-badge" x1="0" y1="0" x2="1" y2="1">
@@ -61,13 +61,13 @@ function KabtnDefs() {
         </linearGradient>
         <radialGradient id="kb-eye" cx="35%" cy="30%" r="75%">
           <stop offset="0%" stopColor="#ecfeff" />
-          <stop offset="45%" stopColor="#22d3ee" />
-          <stop offset="100%" stopColor="#0e7490" />
+          <stop offset="45%" stopColor="#60a5fa" />
+          <stop offset="100%" stopColor="#1d4ed8" />
         </radialGradient>
         <radialGradient id="kb-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#6366f1" stopOpacity="0.55" />
-          <stop offset="60%" stopColor="#22d3ee" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#60a5fa" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
         </radialGradient>
         <radialGradient id="kb-shadow" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#020617" stopOpacity="0.6" />
@@ -214,7 +214,7 @@ export function KabtnBot({ className = '' }: { className?: string }) {
       className={`relative ${reduceMotion ? '' : 'animate-float'} ${className}`}
       style={{
         aspectRatio: '240 / 260',
-        filter: 'drop-shadow(0 0 24px rgba(99,102,241,0.45)) drop-shadow(0 0 12px rgba(34,211,238,0.35))',
+        filter: 'drop-shadow(0 0 24px rgba(59,130,246,0.45)) drop-shadow(0 0 12px rgba(59,130,246,0.35))',
       }}
     >
       <style>{`
@@ -258,12 +258,12 @@ export function KabtnBot({ className = '' }: { className?: string }) {
           {/* body / torso — z -10 */}
           <Layer innerRef={bodyRef} z={-10}>
             {/* rim light behind torso silhouette */}
-            <rect x="68" y="190" width="104" height="66" rx="24" fill="none" stroke="#22d3ee" strokeOpacity="0.55" strokeWidth="5" filter="url(#kb-blur-rim)" />
+            <rect x="68" y="190" width="104" height="66" rx="24" fill="none" stroke="#60a5fa" strokeOpacity="0.55" strokeWidth="5" filter="url(#kb-blur-rim)" />
             <rect x="104" y="178" width="32" height="14" fill="#334155" />
             <rect x="70" y="192" width="100" height="62" rx="22" fill="url(#kb-metal-body)" stroke="#1e293b" strokeWidth="3" />
-            <line x1="70" y1="214" x2="170" y2="214" stroke="#6366f1" strokeOpacity="0.4" strokeWidth="2" />
+            <line x1="70" y1="214" x2="170" y2="214" stroke="#3b82f6" strokeOpacity="0.4" strokeWidth="2" />
             {/* chest badge, embossed ك */}
-            <circle cx="120" cy="228" r="18" fill="url(#kb-badge)" stroke="#0e7490" strokeWidth="2" />
+            <circle cx="120" cy="228" r="18" fill="url(#kb-badge)" stroke="#1d4ed8" strokeWidth="2" />
             <circle cx="120" cy="228" r="18" fill="none" stroke="#ffffff" strokeOpacity="0.35" strokeWidth="1" />
             <text x="120" y="236" textAnchor="middle" fontSize="18" fontWeight="900" fill="#020617" opacity="0.55">
               ك
@@ -274,25 +274,25 @@ export function KabtnBot({ className = '' }: { className?: string }) {
             <text x="120" y="235" textAnchor="middle" fontSize="18" fontWeight="900" fill="#0b1220">
               ك
             </text>
-            <circle cx="78" cy="204" r="4" fill="#22d3ee" />
-            <circle cx="162" cy="204" r="4" fill="#22d3ee" />
+            <circle cx="78" cy="204" r="4" fill="#60a5fa" />
+            <circle cx="162" cy="204" r="4" fill="#60a5fa" />
           </Layer>
 
           {/* head shell — z 0 */}
           <Layer innerRef={headRef} z={0}>
-            <rect x="55" y="82" width="130" height="96" rx="28" fill="none" stroke="#22d3ee" strokeOpacity="0.5" strokeWidth="5" filter="url(#kb-blur-rim)" />
+            <rect x="55" y="82" width="130" height="96" rx="28" fill="none" stroke="#60a5fa" strokeOpacity="0.5" strokeWidth="5" filter="url(#kb-blur-rim)" />
             <rect x="55" y="82" width="130" height="96" rx="28" fill="url(#kb-metal-head)" stroke="#1e293b" strokeWidth="3" />
             {/* inner shadow cast by the cap brim */}
             <rect x="58" y="82" width="124" height="16" rx="10" fill="#020617" opacity="0.35" />
-            <line x1="55" y1="118" x2="185" y2="118" stroke="#6366f1" strokeOpacity="0.5" strokeWidth="2" />
-            <line x1="55" y1="150" x2="185" y2="150" stroke="#22d3ee" strokeOpacity="0.4" strokeWidth="2" />
+            <line x1="55" y1="118" x2="185" y2="118" stroke="#3b82f6" strokeOpacity="0.5" strokeWidth="2" />
+            <line x1="55" y1="150" x2="185" y2="150" stroke="#60a5fa" strokeOpacity="0.4" strokeWidth="2" />
             <circle cx="52" cy="128" r="10" fill="#334155" stroke="#1e293b" strokeWidth="2" />
             <circle cx="188" cy="128" r="10" fill="#334155" stroke="#1e293b" strokeWidth="2" />
           </Layer>
 
           {/* visor + eyes — z 14 */}
           <Layer innerRef={visorRef} z={14}>
-            <rect x="72" y="104" width="96" height="48" rx="20" fill="url(#kb-visor)" stroke="#0891b2" strokeOpacity="0.6" strokeWidth="2" />
+            <rect x="72" y="104" width="96" height="48" rx="20" fill="url(#kb-visor)" stroke="#2563eb" strokeOpacity="0.6" strokeWidth="2" />
             {/* eye sockets (static) */}
             <circle cx="103" cy="128" r="14" fill="#04101d" />
             <circle cx="137" cy="128" r="14" fill="#04101d" />
@@ -334,7 +334,7 @@ export function KabtnBot({ className = '' }: { className?: string }) {
 
           {/* captain's cap — z 22 */}
           <Layer innerRef={capRef} z={22}>
-            <path d="M62 58 Q120 20 178 58 L178 74 Q120 60 62 74 Z" fill="none" stroke="#22d3ee" strokeOpacity="0.5" strokeWidth="4" filter="url(#kb-blur-rim)" />
+            <path d="M62 58 Q120 20 178 58 L178 74 Q120 60 62 74 Z" fill="none" stroke="#60a5fa" strokeOpacity="0.5" strokeWidth="4" filter="url(#kb-blur-rim)" />
             <path d="M62 58 Q120 20 178 58 L178 74 Q120 60 62 74 Z" fill="url(#kb-cap)" stroke="#312e81" strokeWidth="2" />
             <rect x="58" y="70" width="124" height="14" rx="7" fill="#4338ca" stroke="#312e81" strokeWidth="2" />
             <path
@@ -349,7 +349,7 @@ export function KabtnBot({ className = '' }: { className?: string }) {
           {/* antenna tip — z 28 */}
           <Layer innerRef={antennaRef} z={28}>
             <line x1="120" y1="16" x2="120" y2="42" stroke="#475569" strokeWidth="4" />
-            <circle cx="120" cy="12" r="8" fill="#67e8f9" style={{ animation: reduceMotion ? 'none' : 'kabtn-antenna-glow 2s ease-in-out infinite' }} />
+            <circle cx="120" cy="12" r="8" fill="#93c5fd" style={{ animation: reduceMotion ? 'none' : 'kabtn-antenna-glow 2s ease-in-out infinite' }} />
           </Layer>
         </div>
       </div>

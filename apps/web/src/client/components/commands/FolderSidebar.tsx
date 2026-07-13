@@ -1,3 +1,4 @@
+import { Clock, FolderPlus, Gem, Plus, Settings, SquareSlash, X } from 'lucide-react';
 import { useState } from 'react';
 import { SLASH_COMMAND_KEYS, type BuiltinCommandKey, type GuildCommandFlows, type SlashCommandKey } from '@gamebot/shared';
 import { useI18n } from '../../i18n.js';
@@ -10,7 +11,7 @@ export type Selection =
   | null;
 
 function Dot({ on }: { on: boolean }) {
-  return <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${on ? 'bg-emerald-400' : 'bg-slate-600'}`} />;
+  return <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${on ? 'bg-blue-400' : 'bg-slate-600'}`} />;
 }
 
 export function FolderSidebar({
@@ -82,16 +83,16 @@ export function FolderSidebar({
 
   return (
     <aside className="max-h-56 w-full shrink-0 space-y-4 overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md lg:h-full lg:max-h-none lg:w-64">
-      <div className="flex items-center justify-between px-1 text-xs font-semibold text-amber-300">
-        <span>💎 Pro</span>
+      <div className="flex items-center justify-between px-1 text-xs font-semibold text-blue-300">
+        <span className="flex items-center gap-1"><Gem className="h-3.5 w-3.5" /> Pro</span>
       </div>
       <div className="flex gap-2">
         <button
           type="button"
-          className="flex-1 rounded-lg bg-gradient-to-r from-indigo-500 to-cyan-400 px-2 py-1.5 text-sm font-semibold text-slate-950"
+          className="flex-1 rounded-lg bg-gradient-to-r from-blue-500 to-blue-400 px-2 py-1.5 text-sm font-semibold text-slate-950"
           onClick={() => newCommand('')}
         >
-          ＋ {t('commands.new')}
+          <Plus className="inline h-4 w-4 align-[-3px]" /> {t('commands.new')}
         </button>
         <button
           type="button"
@@ -99,13 +100,13 @@ export function FolderSidebar({
           onClick={() => setNewFolderMode(true)}
           title={t('commands.newFolder')}
         >
-          🗂️
+          <FolderPlus className="h-4 w-4" />
         </button>
       </div>
       {newFolderMode && (
         <input
           autoFocus
-          className="w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none"
+          className="w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none"
           placeholder={t('commands.folderName')}
           value={folderDraft}
           maxLength={40}
@@ -120,17 +121,17 @@ export function FolderSidebar({
           <div className="mb-1 flex items-center justify-between px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
             <span>{folder || t('commands.root')}</span>
             <span className="flex gap-1">
-              <button type="button" className="hover:text-cyan-300" title={t('commands.new')} onClick={() => newCommand(folder)}>
-                ＋
+              <button type="button" className="hover:text-blue-300" title={t('commands.new')} onClick={() => newCommand(folder)}>
+                <Plus className="h-3.5 w-3.5" />
               </button>
               {folder && (
                 <button
                   type="button"
-                  className="hover:text-rose-300"
+                  className="hover:text-blue-300"
                   title={t('commands.deleteFolder')}
                   onClick={() => deleteFolder(folder)}
                 >
-                  ✕
+                  <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </span>
@@ -145,7 +146,7 @@ export function FolderSidebar({
               >
                 <Dot on={flow.enabled} />
                 <span className="truncate">{flow.name}</span>
-                {flow.schedule.enabled && <span title={t('commands.schedule.title')}>⏰</span>}
+                {flow.schedule.enabled && <span title={t('commands.schedule.title')}><Clock className="h-3.5 w-3.5 text-blue-300" /></span>}
               </button>
             ))}
             {flowsIn(folder).length === 0 && <p className="px-2.5 py-1 text-xs text-slate-600">—</p>}
@@ -154,8 +155,8 @@ export function FolderSidebar({
       ))}
 
       <div>
-        <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          ⚙️ {t('commands.system')}
+        <div className="mb-1 flex items-center gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <Settings className="h-3.5 w-3.5" /> {t('commands.system')}
         </div>
         <div className="space-y-0.5">
           {BUILTIN_KEYS.map((key) => {
@@ -177,8 +178,8 @@ export function FolderSidebar({
       </div>
 
       <div>
-        <div className="mb-1 px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          🔷 {t('commands.slash.section')}
+        <div className="mb-1 flex items-center gap-1 px-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <SquareSlash className="h-3.5 w-3.5" /> {t('commands.slash.section')}
         </div>
         <div className="space-y-0.5">
           {SLASH_COMMAND_KEYS.map((key) => {

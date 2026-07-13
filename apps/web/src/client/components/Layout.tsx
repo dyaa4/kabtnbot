@@ -31,10 +31,10 @@ function BotStatusBadge() {
       data-testid="bot-status"
       title={status.data.last_seen ?? ''}
       className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
-        online ? 'border-emerald-500/30 bg-emerald-900/30 text-emerald-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
+        online ? 'border-blue-500/30 bg-blue-900/30 text-blue-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
       }`}
     >
-      <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-emerald-400' : 'bg-red-400'}`} />
+      <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-blue-400' : 'bg-red-400'}`} />
       {online ? t('bot.online') : t('bot.offline')}
     </span>
   );
@@ -56,12 +56,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           to="/app"
           className="text-xl font-black"
         >
-          <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-cyan-400 bg-clip-text text-transparent">{t('brand.name')}</span>
+          <span className="bg-gradient-to-r from-blue-400 via-blue-400 to-blue-400 bg-clip-text text-transparent">{t('brand.name')}</span>
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
           {admin.data?.isSuperAdmin && (
-            <Link to="/admin" className="text-sm font-semibold text-amber-300 transition hover:text-amber-200">
+            <Link to="/admin" className="text-sm font-semibold text-blue-300 transition hover:text-blue-200">
               {t('admin.nav')}
             </Link>
           )}
@@ -71,7 +71,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-2">
               <span className="text-sm text-slate-300">{me.data.uname}</span>
               <button
-                className="text-sm text-slate-400 hover:text-cyan-300"
+                className="text-sm text-slate-400 hover:text-blue-300"
                 onClick={async () => {
                   await fetch('/auth/logout', { method: 'POST' });
                   window.location.href = '/';
@@ -86,8 +86,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">{children}</main>
       <footer className="border-t border-white/10 px-6 py-6 text-sm text-slate-500">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-2">
-          <Link to="/terms" className="transition hover:text-cyan-300">{t('footer.terms')}</Link>
-          <Link to="/privacy" className="transition hover:text-cyan-300">{t('footer.privacy')}</Link>
+          <Link to="/terms" className="transition hover:text-blue-300">{t('footer.terms')}</Link>
+          <Link to="/privacy" className="transition hover:text-blue-300">{t('footer.privacy')}</Link>
         </div>
       </footer>
     </div>

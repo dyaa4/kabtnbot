@@ -8,7 +8,7 @@ interface Role {
 }
 
 const FIELD_CLASS =
-  'w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none';
+  'w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none';
 
 /** A dropdown of the guild's assignable roles (by name) for picking a role id. */
 export function RoleSelect({

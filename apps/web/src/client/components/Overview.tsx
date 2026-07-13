@@ -33,7 +33,7 @@ function Bar({ label, used, max }: { label: string; used: number; max: number })
       </div>
       <div className="h-2 rounded-full bg-white/10">
         <div
-          className="h-2 rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.6)]"
+          className="h-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -44,7 +44,7 @@ function Bar({ label, used, max }: { label: string; used: number; max: number })
 function InfoStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-xl font-bold text-cyan-300">{value}</div>
+      <div className="text-xl font-bold text-blue-300">{value}</div>
       <div className="mt-0.5 text-xs text-slate-400">{label}</div>
     </div>
   );
@@ -73,7 +73,7 @@ function ServerInfoCard({ guildId }: { guildId: string }) {
             className="h-14 w-14 rounded-2xl"
           />
         ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-cyan-400 text-2xl font-bold text-slate-950">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-400 text-2xl font-bold text-slate-950">
             {s.name.slice(0, 1)}
           </div>
         )}

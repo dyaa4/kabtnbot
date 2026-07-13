@@ -1,3 +1,4 @@
+import { Shield } from 'lucide-react';
 import { memo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useI18n } from '../../../i18n.js';
@@ -19,10 +20,10 @@ export const ConditionNode = memo(function ConditionNode() {
   };
 
   return (
-    <div className="w-72 rounded-2xl border border-violet-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(139,92,246,0.5)]">
-      <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-violet-300">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-400/20 text-[11px] font-bold">2</span>
-        <span>🛡️</span>
+    <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
+      <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-blue-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-[11px] font-bold">2</span>
+        <Shield className="h-4 w-4 shrink-0" />
         {t('commands.condition.title')}
       </div>
       <p className="mb-3 text-xs text-slate-500">{t('commands.condition.hint')}</p>
@@ -50,8 +51,8 @@ export const ConditionNode = memo(function ConditionNode() {
         </>
       )}
 
-      <Handle type="target" position={Position.Left} className="!bg-violet-400" />
-      <Handle type="source" position={Position.Right} className="!bg-violet-400" />
+      <Handle type="target" position={Position.Left} className="!bg-blue-400" />
+      <Handle type="source" position={Position.Right} className="!bg-blue-400" />
     </div>
   );
 });

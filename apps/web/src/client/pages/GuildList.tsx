@@ -25,12 +25,12 @@ export function GuildList() {
           <Link
             key={g.id}
             to={`/app/${g.id}`}
-            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:-translate-y-1 hover:border-cyan-400/40 hover:shadow-[0_0_30px_-8px_rgba(99,102,241,0.5)]"
+            className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-md transition hover:-translate-y-1 hover:border-blue-400/40 hover:shadow-[0_0_30px_-8px_rgba(59,130,246,0.5)]"
           >
             {g.icon ? (
               <img src={`https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png?size=64`} alt="" className="h-10 w-10 rounded-full" />
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-cyan-400 font-bold text-slate-950">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-400 font-bold text-slate-950">
                 {g.name.slice(0, 1)}
               </div>
             )}

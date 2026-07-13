@@ -73,7 +73,7 @@ export function Admin() {
                 <td className="p-3">
                   <div className="flex flex-wrap gap-1.5">
                     {g.premium && (
-                      <span className="rounded-full border border-amber-500/40 bg-amber-950/40 px-2 py-0.5 text-xs text-amber-300">Premium</span>
+                      <span className="rounded-full border border-blue-500/40 bg-blue-950/40 px-2 py-0.5 text-xs text-blue-300">Premium</span>
                     )}
                     {g.blocked && (
                       <span className="rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs text-red-300">{t('admin.blocked')}</span>
@@ -84,14 +84,14 @@ export function Admin() {
                   <div className="flex flex-wrap gap-2">
                     <button
                       type="button"
-                      className={`${BTN} text-amber-300 hover:border-amber-400/50`}
+                      className={`${BTN} text-blue-300 hover:border-blue-400/50`}
                       onClick={() => act.mutate({ path: `/api/admin/guilds/${g.guild_id}/premium`, body: { value: !g.premium } })}
                     >
                       {g.premium ? t('admin.revokePremium') : t('admin.grantPremium')}
                     </button>
                     <button
                       type="button"
-                      className={`${BTN} text-slate-300 hover:border-cyan-400/50`}
+                      className={`${BTN} text-slate-300 hover:border-blue-400/50`}
                       onClick={() => act.mutate({ path: `/api/admin/guilds/${g.guild_id}/block`, body: { value: !g.blocked } })}
                     >
                       {g.blocked ? t('admin.unblock') : t('admin.block')}

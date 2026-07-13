@@ -369,7 +369,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
             }}
             onDragOver={(e) => e.preventDefault()}
             onDrop={onDrop}
-            className="mb-4 flex h-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-slate-950/40 text-slate-400 transition hover:border-cyan-400/50 hover:text-cyan-300"
+            className="mb-4 flex h-40 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-white/20 bg-slate-950/40 text-slate-400 transition hover:border-blue-400/50 hover:text-blue-300"
           >
             {upload.isPending ? t('welcome.uploading') : t('welcome.upload')}
           </div>
@@ -409,7 +409,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
                 onPointerMove={onHandlePointerMove}
                 onPointerUp={onHandlePointerUp}
                 onKeyDown={onHandleKeyDown}
-                className="absolute cursor-grab touch-none rounded-full border-2 border-cyan-300 bg-cyan-400/40 shadow-[0_0_16px_rgba(34,211,238,0.6)] active:cursor-grabbing"
+                className="absolute cursor-grab touch-none rounded-full border-2 border-blue-300 bg-blue-400/40 shadow-[0_0_16px_rgba(59,130,246,0.6)] active:cursor-grabbing"
                 style={{
                   left: `${pos.x * 100}%`,
                   top: `${pos.y * 100}%`,
@@ -448,7 +448,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
                   onPointerDown={onGripPointerDown}
                   onPointerMove={onGripPointerMove}
                   onPointerUp={onGripPointerUp}
-                  className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-nwse-resize touch-none rounded-full border border-slate-900 bg-cyan-300 shadow"
+                  className="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-nwse-resize touch-none rounded-full border border-slate-900 bg-blue-300 shadow"
                 />
               </div>
             </div>
@@ -456,7 +456,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300"
+                className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-blue-400/50 hover:text-blue-300"
               >
                 {upload.isPending ? t('welcome.uploading') : t('welcome.changeImage')}
               </button>

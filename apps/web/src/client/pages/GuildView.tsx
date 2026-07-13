@@ -37,7 +37,7 @@ export function GuildView() {
             className={({ isActive }) =>
               `rounded-xl px-4 py-2 text-sm font-semibold transition ${
                 isActive
-                  ? 'bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)]'
+                  ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
                   : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
               }`
             }

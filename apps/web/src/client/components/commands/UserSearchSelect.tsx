@@ -44,7 +44,7 @@ export function MemberSearchBox({
   return (
     <div>
       <input
-        className="nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none"
+        className="nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none"
         placeholder={t('commands.users.search')}
         value={input}
         onChange={(e) => {
@@ -96,7 +96,7 @@ export function SingleMemberSelect({
   return (
     <button
       type="button"
-      className="nodrag rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-xs text-cyan-200 hover:border-rose-400/50 hover:text-rose-300"
+      className="nodrag rounded-full border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-xs text-blue-200 hover:border-blue-400/60 hover:text-blue-100"
       onClick={() => onChange('')}
     >
       @{nameCache.get(value) ?? value} ×
@@ -128,7 +128,7 @@ export function UserSearchSelect({
             <button
               key={id}
               type="button"
-              className="nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-rose-400/50 hover:text-rose-300"
+              className="nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-blue-400/60 hover:text-blue-100"
               onClick={() => onChange(values.filter((v) => v !== id))}
             >
               @{nameCache.get(id) ?? id} ×

@@ -93,7 +93,7 @@ body {
 
 /* animated gradient headline */
 .hero-title {
-  background: linear-gradient(90deg, #a5b4fc, #67e8f9, #d8b4fe, #a5b4fc);
+  background: linear-gradient(90deg, #60a5fa, #93c5fd, #93c5fd, #60a5fa);
   background-size: 300% auto;
   -webkit-background-clip: text;
   background-clip: text;

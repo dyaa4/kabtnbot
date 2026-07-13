@@ -29,7 +29,7 @@ export function useVoiceChannels(guildId: string) {
 }
 
 const FIELD_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
 
 /** Generic multi-select: a dropdown that ADDS an id + removable chips below. */
 export function MultiSelect({
@@ -71,7 +71,7 @@ export function MultiSelect({
             <button
               key={id}
               type="button"
-              className="nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-rose-400/50 hover:text-rose-300"
+              className="nodrag rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-300 hover:border-blue-400/60 hover:text-blue-100"
               onClick={() => onChange(values.filter((v) => v !== id))}
               title="×"
             >

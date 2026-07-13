@@ -1,3 +1,4 @@
+import { Gem } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -33,9 +34,9 @@ export function ChatLogTab({ guildId }: { guildId: string }) {
 
   if (log.error instanceof ApiError && log.error.code === 'PREMIUM_REQUIRED') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-12 text-center backdrop-blur-md">
-        <span className="text-4xl">💎</span>
-        <h3 className="text-lg font-semibold text-amber-200">{t('chatlog.premium.title')}</h3>
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 p-12 text-center backdrop-blur-md">
+        <Gem className="h-10 w-10 text-blue-300" />
+        <h3 className="text-lg font-semibold text-blue-200">{t('chatlog.premium.title')}</h3>
         <p className="max-w-md text-sm text-slate-400">{t('chatlog.premium.body')}</p>
       </div>
     );
@@ -46,7 +47,7 @@ export function ChatLogTab({ guildId }: { guildId: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
       <h3 className="mb-1 text-lg font-semibold">
-        {t('chatlog.title')} <span className="ms-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">💎 Pro</span>
+        {t('chatlog.title')} <span className="ms-1 rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300"><Gem className="inline h-3 w-3 align-[-1px]" /> Pro</span>
       </h3>
       <p className="mb-4 text-xs text-slate-500">{t('chatlog.hint')}</p>
       {log.data.messages.length === 0 ? (

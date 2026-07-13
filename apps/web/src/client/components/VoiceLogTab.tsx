@@ -1,3 +1,4 @@
+import { Gem, Volume2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -43,9 +44,9 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
 
   if (log.error instanceof ApiError && log.error.code === 'PREMIUM_REQUIRED') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-12 text-center backdrop-blur-md">
-        <span className="text-4xl">💎</span>
-        <h3 className="text-lg font-semibold text-amber-200">{t('voicelog.premium.title')}</h3>
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 p-12 text-center backdrop-blur-md">
+        <Gem className="h-10 w-10 text-blue-300" />
+        <h3 className="text-lg font-semibold text-blue-200">{t('voicelog.premium.title')}</h3>
         <p className="max-w-md text-sm text-slate-400">{t('voicelog.premium.body')}</p>
       </div>
     );
@@ -57,7 +58,7 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
     <div className="grid gap-8">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
         <h3 className="mb-1 text-lg font-semibold">
-          {t('voicelog.activeNow')} <span className="ms-1 rounded-full bg-amber-400/15 px-2 py-0.5 text-xs font-semibold text-amber-300">💎 Pro</span>
+          {t('voicelog.activeNow')} <span className="ms-1 rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300"><Gem className="inline h-3 w-3 align-[-1px]" /> Pro</span>
         </h3>
         <p className="mb-4 text-xs text-slate-500">{t('voicelog.hint')}</p>
         {log.data.active.length === 0 ? (
@@ -66,9 +67,9 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
           <ul className="grid gap-2">
             {log.data.active.map((s) => (
               <li key={`${s.user_id}-${s.joined_at}`} className="flex items-center gap-3 text-sm">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-blue-400" />
                 <span className="font-semibold text-slate-200">{s.name}</span>
-                <span className="text-slate-400">🔊 {s.channel_name}</span>
+                <span className="flex items-center gap-1 text-slate-400"><Volume2 className="h-3.5 w-3.5" /> {s.channel_name}</span>
                 <span className="ms-auto text-slate-400" dir="ltr">
                   {formatDuration(s.seconds)}
                 </span>
@@ -97,7 +98,7 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
                 {log.data.sessions.map((s) => (
                   <tr key={`${s.user_id}-${s.joined_at}`} className="border-t border-white/5 text-slate-300">
                     <td className="py-2 font-semibold">{s.name}</td>
-                    <td className="py-2">🔊 {s.channel_name}</td>
+                    <td className="py-2"><span className="flex items-center gap-1"><Volume2 className="h-3.5 w-3.5 text-slate-400" /> {s.channel_name}</span></td>
                     <td className="py-2 text-slate-400" dir="ltr">
                       {timeOf(s.joined_at)}
                     </td>

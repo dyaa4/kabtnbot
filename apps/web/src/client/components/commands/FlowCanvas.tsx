@@ -1,3 +1,4 @@
+import { LayoutGrid, Maximize2, Minimize2 } from 'lucide-react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   ReactFlow,
@@ -85,7 +86,7 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
 }
 
 const PANEL_BTN_CLASS =
-  'rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50 focus:border-cyan-400/50 focus:outline-none';
+  'flex items-center gap-1.5 rounded-lg border border-white/10 bg-slate-900 px-2.5 py-1.5 text-sm text-slate-200 hover:border-blue-400/50 focus:border-blue-400/50 focus:outline-none';
 
 // Lives inside <ReactFlow> so it can reach the internal store: the canvas is
 // uncontrolled, so persisting tidy positions alone would not move anything
@@ -104,7 +105,7 @@ function ArrangeButton({ arrange }: { arrange: () => Record<string, XYPosition> 
         requestAnimationFrame(() => void rf.fitView({ padding: 0.15, maxZoom: 1 }));
       }}
     >
-      🧹 {t('commands.canvas.arrange')}
+      <LayoutGrid className="h-4 w-4" /> {t('commands.canvas.arrange')}
     </button>
   );
 }
@@ -115,7 +116,7 @@ function chainEdges(ids: string[]): Edge[] {
     source: id,
     target: ids[i + 1],
     animated: true,
-    style: { stroke: 'rgba(139,92,246,0.6)' },
+    style: { stroke: 'rgba(59,130,246,0.6)' },
   }));
 }
 
@@ -285,12 +286,12 @@ export function FlowCanvas({
               style={{ width: 140, height: 90 }}
               className="!m-2 rounded-lg border border-white/10 !bg-slate-900"
               maskColor="rgba(2,6,23,0.6)"
-              nodeColor={(n) => (n.type === 'trigger' ? '#22d3ee' : n.type === 'condition' ? '#8b5cf6' : '#34d399')}
+              nodeColor={(n) => (n.type === 'trigger' ? '#60a5fa' : n.type === 'condition' ? '#3b82f6' : '#93c5fd')}
             />
             <Panel position="top-right" className="flex items-center gap-2">
               {flow && onFlowChange && (
                 <select
-                  className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 focus:border-cyan-400/50 focus:outline-none"
+                  className="rounded-lg border border-white/10 bg-slate-900 px-2 py-1.5 text-sm text-slate-200 focus:border-blue-400/50 focus:outline-none"
                   value=""
                   disabled={flow.actions.length >= 5}
                   title={flow.actions.length >= 5 ? t('commands.action.max') : t('commands.action.add')}
@@ -321,7 +322,8 @@ export function FlowCanvas({
                 title={fullscreen ? t('commands.canvas.exitFullscreen') : t('commands.canvas.fullscreen')}
                 className={PANEL_BTN_CLASS}
               >
-                {fullscreen ? '✕ ' + t('commands.canvas.exitFullscreen') : '⛶ ' + t('commands.canvas.fullscreen')}
+                {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                {fullscreen ? t('commands.canvas.exitFullscreen') : t('commands.canvas.fullscreen')}
               </button>
             </Panel>
           </ReactFlow>

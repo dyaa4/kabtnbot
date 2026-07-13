@@ -1,3 +1,4 @@
+import { Bot, Clock, Gem, MessageSquare, Plus, RotateCw, Settings, Trash2, Volume2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -26,7 +27,7 @@ const DEFAULT_OVERRIDE: BuiltinOverride = {
 };
 
 const INPUT_CLASS =
-  'rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'rounded-lg border border-white/10 bg-slate-950/60 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
 
 // Discord slash-command names: lowercase, no spaces, letters/digits/-/_ (Arabic ok).
 function sanitizeSlashName(s: string): string {
@@ -104,9 +105,9 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   if (flowsQuery.error instanceof ApiError && flowsQuery.error.code === 'PREMIUM_REQUIRED') {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-2xl border border-amber-400/20 bg-amber-400/5 p-12 text-center backdrop-blur-md">
-        <span className="text-4xl">💎</span>
-        <h3 className="text-lg font-semibold text-amber-200">{t('commands.premium.title')}</h3>
+      <div className="flex flex-col items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 p-12 text-center backdrop-blur-md">
+        <Gem className="h-10 w-10 text-blue-300" />
+        <h3 className="text-lg font-semibold text-blue-200">{t('commands.premium.title')}</h3>
         <p className="max-w-md text-sm text-slate-400">{t('commands.premium.body')}</p>
       </div>
     );
@@ -119,10 +120,10 @@ export function CommandsTab({ guildId }: { guildId: string }) {
         <p className="text-sm text-slate-300">{t('error.generic')}</p>
         <button
           type="button"
-          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-cyan-400/50"
+          className="rounded-lg border border-white/10 bg-slate-900 px-3 py-1.5 text-sm text-slate-200 hover:border-blue-400/50"
           onClick={() => void flowsQuery.refetch()}
         >
-          ↻
+          <RotateCw className="h-4 w-4" />
         </button>
       </div>
     );
@@ -249,7 +250,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 {t('commands.slashExpose')}
               </label>
               {selectedFlow.slash_name !== '' && (
-                <span dir="ltr" className="flex items-center gap-0.5 font-mono text-sm text-cyan-300">
+                <span dir="ltr" className="flex items-center gap-0.5 font-mono text-sm text-blue-300">
                   /
                   <input
                     dir="ltr"
@@ -262,18 +263,18 @@ export function CommandsTab({ guildId }: { guildId: string }) {
               )}
               <button
                 type="button"
-                className="ms-auto rounded-lg border border-rose-400/30 px-3 py-1.5 text-sm text-rose-300 hover:bg-rose-400/10"
+                className="ms-auto rounded-lg border border-blue-400/30 px-3 py-1.5 text-sm text-blue-300 hover:bg-blue-400/10"
                 onClick={() => deleteFlow(selectedFlow.id)}
               >
-                {t('commands.deleteCommand')}
+                <Trash2 className="inline h-3.5 w-3.5 align-[-2px]" /> {t('commands.deleteCommand')}
               </button>
             </div>
           )}
 
           {selectedBuiltin && (
             <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md">
-              <span className="font-semibold text-slate-200">
-                ⚙️ {t(builtinNameKey(selectedBuiltin))}
+              <span className="flex items-center gap-1.5 font-semibold text-slate-200">
+                <Settings className="h-4 w-4" /> {t(builtinNameKey(selectedBuiltin))}
               </span>
               <label className="ms-auto flex items-center gap-1.5 text-sm text-slate-300">
                 <input
@@ -314,14 +315,14 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>
               </div>
               <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {([['speak_tts', '🗣️'], ['ai_reply', '🤖'], ['send_message', '💬'], ['scheduled', '⏰']] as const).map(([type, emoji]) => (
+                {([['speak_tts', Volume2], ['ai_reply', Bot], ['send_message', MessageSquare], ['scheduled', Clock]] as const).map(([type, Icon]) => (
                   <button
                     key={type}
                     type="button"
-                    className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+                    className="flex flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm text-slate-200 transition hover:border-blue-400/40 hover:bg-white/10"
                     onClick={() => createFromTemplate(type)}
                   >
-                    <span className="text-3xl">{emoji}</span>
+                    <Icon className="h-8 w-8 text-blue-300" />
                     {type === 'scheduled' ? t('commands.template.scheduled.name') : t(`commands.action.${type}`)}
                   </button>
                 ))}
@@ -331,7 +332,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 className="rounded-lg border border-white/10 px-3 py-1.5 text-sm text-slate-400 hover:bg-white/5 hover:text-slate-200"
                 onClick={() => createFromTemplate(null)}
               >
-                ＋ {t('commands.start.blank')}
+                <Plus className="inline h-4 w-4 align-[-3px]" /> {t('commands.start.blank')}
               </button>
             </div>
           )}

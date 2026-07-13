@@ -138,7 +138,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.customWords')}</span>
           <textarea
-            className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+            className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
             {...form.register('custom_words')}
           />
         </label>
@@ -146,7 +146,7 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('protection.allowedDomains')}</span>
           <textarea
-            className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+            className="h-28 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
             {...form.register('allowed_domains')}
           />
         </label>

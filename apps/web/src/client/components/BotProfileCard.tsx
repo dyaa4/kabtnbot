@@ -1,3 +1,4 @@
+import { Bot } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
@@ -82,7 +83,7 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
       <h3 className="mb-4 text-lg font-semibold">{t('botProfile.title')}</h3>
 
       {saved && (
-        <div className="mb-3 rounded-xl border border-emerald-500/30 bg-emerald-900/30 px-4 py-2 text-emerald-300">
+        <div className="mb-3 rounded-xl border border-blue-500/30 bg-blue-900/30 px-4 py-2 text-blue-300">
           {t('settings.saved')}
         </div>
       )}
@@ -95,8 +96,8 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
             className="h-16 w-16 rounded-full border border-white/15 object-cover"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-slate-950/60 text-2xl">
-            🤖
+          <div className="flex h-16 w-16 items-center justify-center rounded-full border border-white/15 bg-slate-950/60">
+            <Bot className="h-7 w-7 text-slate-400" />
           </div>
         )}
         <div>
@@ -116,20 +117,20 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-300"
+            className="rounded-lg border border-white/15 px-3 py-1.5 text-sm text-slate-300 transition hover:border-blue-400/50 hover:text-blue-300"
           >
             {uploadAvatar.isPending ? t('botProfile.uploading') : t('botProfile.upload')}
           </button>
           <p className="mt-1 text-xs text-slate-500">{t('botProfile.avatar.hint')}</p>
         </div>
       </div>
-      {appliedGlobally && <p className="mb-3 text-sm text-amber-300">{t('botProfile.globalNote')}</p>}
+      {appliedGlobally && <p className="mb-3 text-sm text-blue-300">{t('botProfile.globalNote')}</p>}
       {uploadAvatar.isError && <p className="mb-3 text-sm text-red-400">{t('botProfile.uploadFailed')}</p>}
 
       <label className="mb-1 block">
         <span className="mb-1 block text-sm text-slate-400">{t('botProfile.name')}</span>
         <input
-          className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-cyan-400/50 focus:outline-none"
+          className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
           value={nickname}
           maxLength={32}
           placeholder={profile.data?.username ?? ''}
@@ -144,7 +145,7 @@ export function BotProfileCard({ guildId }: { guildId: string }) {
       )}
 
       <button
-        className="rounded-xl bg-gradient-to-r from-indigo-500 via-violet-500 to-cyan-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(99,102,241,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(34,211,238,0.8)]"
+        className="rounded-xl bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 px-4 py-2 font-semibold text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)] transition hover:scale-[1.02] hover:shadow-[0_0_26px_-4px_rgba(59,130,246,0.8)]"
         type="submit"
       >
         {t('settings.save')}

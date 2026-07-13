@@ -21,6 +21,7 @@
     "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.24.0",
     "mongoose": "^8.9.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

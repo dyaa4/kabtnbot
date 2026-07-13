@@ -35,7 +35,7 @@ export function SlashCommandPanel({
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
       <div className="mb-1 flex flex-wrap items-center gap-3">
-        <span className="font-mono text-lg font-semibold text-cyan-300">/{cmd}</span>
+        <span className="font-mono text-lg font-semibold text-blue-300">/{cmd}</span>
         <label className="ms-auto flex items-center gap-1.5 text-sm text-slate-300">
           <input
             type="checkbox"

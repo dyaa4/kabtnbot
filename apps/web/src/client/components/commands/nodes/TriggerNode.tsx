@@ -1,3 +1,4 @@
+import { Clock, Mic } from 'lucide-react';
 import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowSchedule } from '@gamebot/shared';
@@ -7,7 +8,7 @@ import { IntervalPicker } from '../IntervalPicker.js';
 import { useTextChannels } from '../pickers.js';
 
 const INPUT_CLASS =
-  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-cyan-400/50 focus:outline-none';
+  'nodrag w-full rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-sm focus:border-blue-400/50 focus:outline-none';
 
 function PhraseChips({
   phrases,
@@ -35,7 +36,7 @@ function PhraseChips({
           <button
             key={p}
             type="button"
-            className="nodrag rounded-full border border-cyan-400/30 bg-cyan-400/10 px-2 py-0.5 text-xs text-cyan-200 hover:border-rose-400/50 hover:text-rose-300"
+            className="nodrag rounded-full border border-blue-400/30 bg-blue-400/10 px-2 py-0.5 text-xs text-blue-200 hover:border-blue-400/60 hover:text-blue-100"
             onClick={() => phrases.length > min && onChange(phrases.filter((x) => x !== p))}
           >
             {p} ×
@@ -73,14 +74,14 @@ function ScheduleSection({
 
   return (
     <div className="mt-3 border-t border-white/10 pt-3">
-      <label className="flex items-center gap-1.5 text-sm font-semibold text-amber-300">
+      <label className="flex items-center gap-1.5 text-sm font-semibold text-blue-300">
         <input
           type="checkbox"
           className="nodrag"
           checked={schedule.enabled}
           onChange={(e) => onChange({ ...schedule, enabled: e.target.checked })}
         />
-        ⏰ {t('commands.schedule.title')}
+        <Clock className="h-3.5 w-3.5" /> {t('commands.schedule.title')}
       </label>
       <p className="mt-1 text-xs text-slate-500">{t('commands.schedule.hint')}</p>
       {schedule.enabled && (
@@ -115,10 +116,10 @@ export const TriggerNode = memo(function TriggerNode() {
   const hasPhrases = (flow?.triggers.length ?? 0) > 0;
 
   return (
-    <div className="w-72 rounded-2xl border border-cyan-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)]">
-      <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-cyan-300">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-400/20 text-[11px] font-bold">1</span>
-        <span>🎙️</span>
+    <div className="w-72 rounded-2xl border border-blue-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(59,130,246,0.5)]">
+      <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-blue-300">
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-400/20 text-[11px] font-bold">1</span>
+        <Mic className="h-4 w-4 shrink-0" />
         {t('commands.trigger.title')}
       </div>
       <p className="mb-3 text-xs text-slate-500">{t('commands.trigger.sub')}</p>
@@ -168,7 +169,7 @@ export const TriggerNode = memo(function TriggerNode() {
                   {t('commands.trigger.text')}
                 </label>
               </div>
-              {flow.sources.text && <p className="mt-1 text-xs text-amber-400/80">{t('commands.textIntentHint')}</p>}
+              {flow.sources.text && <p className="mt-1 text-xs text-blue-400/80">{t('commands.textIntentHint')}</p>}
 
               <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.matchMode')}</label>
               <select
@@ -210,7 +211,7 @@ export const TriggerNode = memo(function TriggerNode() {
         </>
       )}
 
-      <Handle type="source" position={Position.Right} className="!bg-cyan-400" />
+      <Handle type="source" position={Position.Right} className="!bg-blue-400" />
     </div>
   );
 });

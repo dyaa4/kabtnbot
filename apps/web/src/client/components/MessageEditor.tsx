@@ -1,3 +1,4 @@
+import { Hash, Home, Smile, User } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
@@ -78,9 +79,9 @@ const EMOJI_GROUPS: { icon: string; emojis: string[] }[] = [
 ];
 
 const TAGS = [
-  { snippet: '{user}', icon: '👤', key: 'editor.tag.user' },
-  { snippet: '{server}', icon: '🏠', key: 'editor.tag.server' },
-  { snippet: '{count}', icon: '#️⃣', key: 'editor.tag.count' },
+  { snippet: '{user}', icon: User, key: 'editor.tag.user' },
+  { snippet: '{server}', icon: Home, key: 'editor.tag.server' },
+  { snippet: '{count}', icon: Hash, key: 'editor.tag.count' },
 ] as const;
 
 export interface MessageEditorProps {
@@ -164,17 +165,17 @@ export function MessageEditor({ label, hint, value, onChange, maxLength, rows = 
         {label}
       </span>
 
-      <div className="rounded-xl border border-white/10 bg-slate-950/60 transition focus-within:border-cyan-400/50">
+      <div className="rounded-xl border border-white/10 bg-slate-950/60 transition focus-within:border-blue-400/50">
         {/* toolbar */}
         <div className="relative flex flex-wrap items-center gap-1.5 border-b border-white/5 px-2 py-1.5">
-          {TAGS.map(({ snippet, icon, key }) => (
+          {TAGS.map(({ snippet, icon: Icon, key }) => (
             <button
               key={snippet}
               type="button"
               onClick={() => insert(snippet)}
-              className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 transition hover:border-cyan-400/40 hover:text-cyan-300"
+              className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-slate-300 transition hover:border-blue-400/40 hover:text-blue-300"
             >
-              {icon} {t(key)}
+              <Icon className="h-3 w-3" /> {t(key)}
             </button>
           ))}
           <button
@@ -183,9 +184,9 @@ export function MessageEditor({ label, hint, value, onChange, maxLength, rows = 
             aria-label={t('editor.emoji')}
             aria-expanded={emojiOpen}
             onClick={() => setEmojiOpen((o) => !o)}
-            className="ms-auto rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm transition hover:border-cyan-400/40"
+            className="ms-auto rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-sm transition hover:border-blue-400/40"
           >
-            😊
+            <Smile className="h-4 w-4" />
           </button>
 
           {emojiOpen && (
@@ -197,7 +198,7 @@ export function MessageEditor({ label, hint, value, onChange, maxLength, rows = 
             >
               {(guildEmojis.data?.length ?? 0) > 0 && (
                 <div className="mb-1">
-                  <span className="block px-1 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-cyan-400/70">
+                  <span className="block px-1 pb-0.5 pt-1 text-[10px] font-semibold uppercase tracking-wider text-blue-400/70">
                     {t('editor.serverEmojis')}
                   </span>
                   <div className="grid grid-cols-10">
@@ -260,7 +261,7 @@ export function MessageEditor({ label, hint, value, onChange, maxLength, rows = 
           data-testid="message-preview"
           className="mb-3 rounded-xl border border-white/5 bg-slate-900/60 px-3 py-2 text-sm text-slate-300"
         >
-          <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-cyan-400/70">
+          <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-blue-400/70">
             {t('editor.preview')}
           </span>
           <span className="whitespace-pre-wrap">{renderWithCustomEmojis(preview)}</span>

@@ -84,7 +84,7 @@ export function HomeImage({ className = '' }: { className?: string }) {
       {/* soft neon glow behind the transparent image — a radial halo, not a panel */}
       <div
         ref={glowRef}
-        className="pointer-events-none absolute inset-x-2 inset-y-6 -z-10 rounded-[50%] bg-gradient-to-br from-indigo-500/45 via-violet-500/35 to-cyan-400/45 blur-3xl"
+        className="pointer-events-none absolute inset-x-2 inset-y-6 -z-10 rounded-[50%] bg-gradient-to-br from-blue-500/45 via-blue-500/35 to-blue-400/45 blur-3xl"
         aria-hidden="true"
       />
 
@@ -96,7 +96,7 @@ export function HomeImage({ className = '' }: { className?: string }) {
             src={homeImage}
             alt=""
             aria-hidden="true"
-            className="block h-auto w-full select-none [filter:drop-shadow(0_22px_44px_rgba(34,211,238,0.45))_drop-shadow(0_0_18px_rgba(99,102,241,0.35))]"
+            className="block h-auto w-full select-none [filter:drop-shadow(0_22px_44px_rgba(59,130,246,0.45))_drop-shadow(0_0_18px_rgba(59,130,246,0.35))]"
             draggable={false}
           />
         </div>

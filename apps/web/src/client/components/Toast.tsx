@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 
 interface ToastItem {
@@ -45,11 +46,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             data-testid={toast.kind === 'error' ? 'save-error' : 'toast-success'}
             className={
               toast.kind === 'success'
-                ? 'rounded-xl border border-emerald-500/40 bg-emerald-950/90 px-4 py-2.5 text-sm font-semibold text-emerald-300 shadow-lg backdrop-blur-md'
+                ? 'rounded-xl border border-blue-500/40 bg-blue-950/90 px-4 py-2.5 text-sm font-semibold text-blue-300 shadow-lg backdrop-blur-md'
                 : 'rounded-xl border border-red-500/40 bg-red-950/90 px-4 py-2.5 text-sm font-semibold text-red-300 shadow-lg backdrop-blur-md'
             }
           >
-            {toast.kind === 'success' ? '✓ ' : ''}
+            {toast.kind === 'success' ? <Check className="me-1 inline h-4 w-4 align-[-3px]" /> : null}
             {toast.text}
           </div>
         ))}
