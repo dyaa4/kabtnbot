@@ -88,20 +88,34 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   });
   session.subscriptions.set(userId, { decoder, stream });
 
-  // 'end' and 'error' can both fire on the same stream, and by then the map
-  // may already hold a NEWER subscription for this user (immediate
-  // re-subscribe below). Each cleanup therefore only touches ITS OWN entry
-  // and frees the decoder exactly once — otherwise a stale handler would tear
-  // down the fresh subscription and duplicate streams would double-transcribe.
+  // ── Subscription lifecycle ─────────────────────────────────────────────
+  // There is exactly ONE cleanup-and-renewal point: the stream's 'close'
+  // event. Every path funnels into it — 'end' (silence) auto-destroys the
+  // readable, 'error' is destroyed explicitly below, stopListening destroys
+  // all streams. Renewing any EARLIER is the "answers only once" bug:
+  // @discordjs/voice keeps its internal per-user registration until 'close'
+  // (receiver.subscriptions.delete fires on 'close'), so a subscribe() from
+  // the 'end' handler returns this very stream — already ended, forever
+  // silent — and the member goes permanently deaf.
+  //
+  // 'close' fires milliseconds after the utterance ends, long before STT and
+  // the reply finish, so the renewed subscription still captures anything
+  // said while the bot is thinking or talking.
   let decoderFreed = false;
   const freeDecoder = () => {
     if (decoderFreed) return;
     decoderFreed = true;
-    decoder.delete();
+    try {
+      decoder.delete();
+    } catch { /* already freed by stopListening's sweep */ }
   };
-  const unsubscribeSelf = () => {
+
+  stream.once('close', () => {
+    freeDecoder();
+    // Only OUR map entry — never a successor's.
     if (session.subscriptions.get(userId)?.stream === stream) session.subscriptions.delete(userId);
-  };
+    if (session.listening) subscribeToUser(session, guild, userId);
+  });
 
   stream.on('data', (chunk: Buffer) => {
     if (!session.listening) { stream.destroy(); return; }
@@ -114,32 +128,14 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   stream.on('end', () => {
     onUtteranceEnd().catch((err) => console.error(`[Listen ${guild.id}]`, err));
   });
-  stream.on('error', () => {
-    unsubscribeSelf();
-    freeDecoder();
-    if (session.listening) subscribeToUser(session, guild, userId);
-  });
+  // Funnel failures into the single 'close' path above.
+  stream.on('error', () => stream.destroy());
 
   async function onUtteranceEnd(): Promise<void> {
-    unsubscribeSelf();
-    if (!session.listening) { freeDecoder(); return; }
-    if (totalFrames === 0) {
-      // Nothing decoded (codec hiccup / empty stream). Re-subscribe anyway —
-      // returning without it left the bot permanently deaf to THIS member
-      // until they rejoined: the classic "ignores my wake word" report.
-      freeDecoder();
-      subscribeToUser(session, guild, userId);
-      return;
-    }
-
+    // Cleanup and renewal belong to 'close' — this function only processes
+    // whatever audio the stream captured.
+    if (!session.listening || totalFrames === 0) return;
     const raw = Buffer.concat(pcmFrames);
-    freeDecoder();
-
-    // Re-subscribe IMMEDIATELY, before STT/routing/TTS (seconds of work) —
-    // this closure keeps its own buffered frames, and a fresh subscription
-    // captures anything said meanwhile. Without it, a wake word spoken while
-    // the bot was still processing the previous utterance was simply lost.
-    subscribeToUser(session, guild, userId);
 
     // stereo → mono downmix
     const monoLen = raw.length >> 1;
@@ -181,8 +177,8 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       console.log(`[Voice ${guild.id}] STT="${text}"`);
 
       const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
-      // moderated → skip wake-word handling (already re-subscribed above; a
-      // subscription to a kicked member is inert and cleared on stop).
+      // moderated → skip wake-word handling (the 'close' renewal keeps
+      // listening; a subscription to a kicked member is inert).
       if (await handleTranscriptModeration(guild, session, userId, text)) return;
 
       const query = parseWakeWord(text, config.voice.wake_word);
