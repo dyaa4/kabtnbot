@@ -109,6 +109,11 @@ export interface UserAccountDoc {
   user_id: string;
   premium_active: boolean;
   linked_guild_ids: string[];
+  // Identity snapshot from the last dashboard login — drives the admin's
+  // user list (grant premium to USERS, not guilds).
+  uname: string;
+  avatar: string | null;
+  last_login: Date | null;
   updated_at: Date;
 }
 
@@ -116,6 +121,9 @@ const userAccountSchema = new Schema<UserAccountDoc>({
   user_id: { type: String, required: true, unique: true },
   premium_active: { type: Boolean, default: false },
   linked_guild_ids: { type: [String], default: [] },
+  uname: { type: String, default: '' },
+  avatar: { type: String, default: null },
+  last_login: { type: Date, default: null },
   updated_at: { type: Date, default: Date.now },
 });
 // "is this guild linked by anyone" is the hot premium-gate lookup.

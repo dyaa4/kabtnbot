@@ -55,6 +55,37 @@ export async function unlinkGuild(userId: string, guildId: string): Promise<User
   return getUserPlan(userId);
 }
 
+/** Upserts the identity snapshot on every dashboard login, so the admin's
+ * user list shows everyone who ever signed in. */
+export async function recordUserLogin(userId: string, uname: string, avatar: string | null): Promise<void> {
+  await retryOnDupKey(() => UserAccountModel.updateOne(
+    { user_id: userId },
+    { $set: { uname, avatar, last_login: new Date(), updated_at: new Date() } },
+    { upsert: true },
+  ));
+}
+
+export interface UserAccountSummary {
+  user_id: string;
+  uname: string;
+  avatar: string | null;
+  premium_active: boolean;
+  linked_guild_ids: string[];
+  last_login: string | null;
+}
+
+export async function listUserAccounts(limit = 200): Promise<UserAccountSummary[]> {
+  const docs = await UserAccountModel.find({}).sort({ last_login: -1 }).limit(limit).lean();
+  return docs.map((d) => ({
+    user_id: d.user_id,
+    uname: d.uname ?? '',
+    avatar: d.avatar ?? null,
+    premium_active: d.premium_active,
+    linked_guild_ids: d.linked_guild_ids ?? [],
+    last_login: d.last_login ? d.last_login.toISOString() : null,
+  }));
+}
+
 /** Premium gate: a guild has premium features when ANY account links it. */
 export async function isGuildLinked(guildId: string): Promise<boolean> {
   return (await UserAccountModel.exists({ linked_guild_ids: guildId })) !== null;

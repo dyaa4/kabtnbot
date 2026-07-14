@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { config } from '../config.js';
 import type { DiscordRest } from '../discord-rest.js';
 import { encryptToken } from '../crypto.js';
+import { recordUserLogin } from '@gamebot/db';
 import { setSessionCookie, clearSessionCookie } from '../session.js';
 import { apiError } from '../app.js';
 
@@ -41,6 +42,9 @@ export function authRouter(rest: DiscordRest): Router {
       res.clearCookie(STATE_COOKIE);
       const { access_token } = await rest.exchangeCode(code);
       const me = await rest.getMe(access_token);
+      // Fire-and-forget: the admin's user list must show everyone who signed
+      // in, but a slow/absent Mongo must never delay or break the login.
+      void recordUserLogin(me.id, me.username, me.avatar).catch(() => {});
       setSessionCookie(res, {
         uid: me.id,
         uname: me.username,

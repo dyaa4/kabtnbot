@@ -2,7 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { z } from 'zod';
 import {
   listActiveGuilds, setGuildBlocked, recordGuildLeave, listPremiumGuildIds, setGuildPremium,
-  setUserPremium, getUserPlan,
+  setUserPremium, getUserPlan, listUserAccounts,
 } from '@gamebot/db';
 import type { DiscordRest } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -36,6 +36,15 @@ export function adminRouter(rest: DiscordRest): Router {
       const [guilds, premiumIds] = await Promise.all([listActiveGuilds(), listPremiumGuildIds()]);
       const premium = new Set(premiumIds);
       res.json(guilds.map((g) => ({ ...g, premium: premium.has(g.guild_id) })));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Everyone who ever logged into the dashboard, newest login first.
+  router.get('/users', async (_req, res, next) => {
+    try {
+      res.json(await listUserAccounts());
     } catch (err) {
       next(err);
     }

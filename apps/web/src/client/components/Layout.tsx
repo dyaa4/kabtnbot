@@ -31,10 +31,10 @@ function BotStatusBadge() {
       data-testid="bot-status"
       title={status.data.last_seen ?? ''}
       className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
-        online ? 'border-blue-500/30 bg-blue-900/30 text-blue-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
+        online ? 'border-emerald-500/30 bg-emerald-900/30 text-emerald-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
       }`}
     >
-      <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-blue-400' : 'bg-red-400'}`} />
+      <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-emerald-400' : 'bg-red-400'}`} />
       {online ? t('bot.online') : t('bot.offline')}
     </span>
   );
