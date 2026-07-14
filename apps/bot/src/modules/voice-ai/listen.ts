@@ -50,6 +50,7 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     (m) => m.voice.channelId === session.channelId && !m.user.bot,
   );
   for (const [id] of members) subscribeToUser(session, guild, id);
+  console.log(`[Listen ${guild.id}] listening to ${members.size} member(s) in ${session.channelId}`);
 
   const onVoiceState = (_old: VoiceState, next: VoiceState) => {
     const live = getSession(guild.id);
@@ -57,7 +58,24 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     subscribeToUser(live, guild, next.id);
   };
   guild.client.on('voiceStateUpdate', onVoiceState);
-  session.removeVoiceHandler = () => guild.client.removeListener('voiceStateUpdate', onVoiceState);
+
+  // Belt and braces: Discord's own speaking signal. If the member cache was
+  // stale at join time or a voice-state event was missed, the moment anyone
+  // actually TALKS we subscribe — nobody can be silently unheard.
+  // (subscribeToUser is idempotent per user, so double signals are free.)
+  const onSpeakingStart = (userId: string) => {
+    const live = getSession(guild.id);
+    if (!live?.listening) return;
+    const member = guild.members.cache.get(userId);
+    if (member && (member.user.bot || member.voice.channelId !== live.channelId)) return;
+    subscribeToUser(live, guild, userId);
+  };
+  session.connection.receiver.speaking.on('start', onSpeakingStart);
+
+  session.removeVoiceHandler = () => {
+    guild.client.removeListener('voiceStateUpdate', onVoiceState);
+    session.connection.receiver.speaking.removeListener('start', onSpeakingStart);
+  };
   return true;
 }
 

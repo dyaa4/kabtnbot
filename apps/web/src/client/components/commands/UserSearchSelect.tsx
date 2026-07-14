@@ -11,9 +11,33 @@ export interface Member {
 }
 
 // Names of picked users, remembered across searches so chips stay readable
-// even after the search results that produced them are gone. Ids whose name
-// was never seen (saved long ago) fall back to the raw id.
+// even after the search results that produced them are gone.
 const nameCache = new Map<string, string>();
+
+/**
+ * Resolves ids the cache doesn't know (configs loaded from the server after a
+ * reload) via one batched request — without this, saved pickers render raw
+ * snowflakes instead of names. The query result feeds the cache and the
+ * useQuery state change re-renders the chips.
+ */
+function useMemberNames(guildId: string, ids: string[]): void {
+  const missing = ids.filter((id) => !nameCache.has(id));
+  const key = [...missing].sort().join(',');
+  useQuery({
+    queryKey: ['member-names', guildId, key],
+    enabled: missing.length > 0,
+    staleTime: Infinity,
+    queryFn: async () => {
+      const names = await api<Record<string, string | null>>(
+        `/api/guilds/${guildId}/members/names?ids=${encodeURIComponent(key)}`,
+      );
+      for (const [id, name] of Object.entries(names)) {
+        if (name) nameCache.set(id, name);
+      }
+      return names;
+    },
+  });
+}
 
 /** Debounced member search box (min 2 chars); calls onPick and clears itself. */
 export function MemberSearchBox({
@@ -92,6 +116,7 @@ export function SingleMemberSelect({
   value: string;
   onChange: (id: string) => void;
 }) {
+  useMemberNames(guildId, value ? [value] : []);
   if (!value) return <MemberSearchBox guildId={guildId} onPick={(m) => onChange(m.id)} />;
   return (
     <button
@@ -114,6 +139,7 @@ export function UserSearchSelect({
   values: string[];
   onChange: (ids: string[]) => void;
 }) {
+  useMemberNames(guildId, values);
   return (
     <div>
       <MemberSearchBox

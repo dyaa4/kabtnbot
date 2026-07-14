@@ -308,6 +308,20 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  // Resolve saved member ids to names — pickers reloaded from a stored config
+  // would otherwise render raw snowflakes. Uses the cached member list, so a
+  // burst of pickers on one page costs a single Discord fetch.
+  router.get('/guilds/:guildId/members/names', guard, async (req, res, next) => {
+    try {
+      const ids = String(req.query.ids ?? '').split(',').filter(Boolean).slice(0, 100);
+      const members = await statsCached(`members:${req.params.guildId}`, () => rest.listMembers(req.params.guildId));
+      const byId = new Map(members.map((m) => [m.id, m.username]));
+      res.json(Object.fromEntries(ids.map((id) => [id, byId.get(id) ?? null])));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   registerStatsRoutes(router, rest);
   registerAssetRoutes(router, rest);
   registerBotProfileRoutes(router, rest);
