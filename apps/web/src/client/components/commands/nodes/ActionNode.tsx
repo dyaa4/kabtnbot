@@ -3,7 +3,7 @@ import { memo, useRef, useState, type ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
-import { ACTION_GROUPS, defaultAction, useCanvas } from '../FlowCanvas.js';
+import { ACTION_GROUPS, ACTION_STYLES, defaultAction, useCanvas } from '../FlowCanvas.js';
 import { IntervalPicker } from '../IntervalPicker.js';
 import { builtinNameKey } from '../builtin-meta.js';
 import { MultiSelect, useRoles, useTextChannels, useVoiceChannels } from '../pickers.js';
@@ -377,17 +377,21 @@ export const ActionNode = memo(function ActionNode({
   const toolBtnClass = (enabled: boolean) =>
     `nodrag rounded-lg px-1 text-sm ${enabled ? 'text-slate-500 hover:bg-white/10 hover:text-sky-200' : 'cursor-default text-slate-700'}`;
 
+  // Per-type color: card border/glow, badge, type select, handles and the
+  // outgoing edge (FlowCanvas) all share it.
+  const style = ACTION_STYLES[action.type];
+
   return (
-    <div className="w-72 rounded-2xl border border-sky-400/30 bg-slate-900 p-4 shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]">
+    <div className={`w-72 rounded-2xl border bg-slate-900 p-4 ${style.card}`}>
       <div className="mb-2 flex items-center gap-1.5">
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-sky-400/20 text-[11px] font-bold text-sky-300">
+        <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${style.badge}`}>
           {3 + index}
         </span>
-        <Zap className="h-4 w-4 shrink-0" />
+        <Zap className={`h-4 w-4 shrink-0 ${style.accent}`} />
         <select
           aria-label={t('commands.action.changeType')}
           title={t('commands.action.changeType')}
-          className="nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold text-sky-300 hover:border-white/10 focus:border-sky-400/50 focus:outline-none"
+          className={`nodrag min-w-0 flex-1 cursor-pointer rounded-lg border border-transparent bg-transparent py-0.5 text-sm font-semibold hover:border-white/10 focus:border-white/30 focus:outline-none ${style.accent}`}
           value={action.type}
           onChange={(e) => changeType(e.target.value as FlowActionType)}
         >
@@ -443,7 +447,7 @@ export const ActionNode = memo(function ActionNode({
           is on, so the section stays hidden otherwise. */}
       {flow.schedule.enabled && (
         <div className="mt-3 border-t border-white/10 pt-2">
-          <label className="flex items-center gap-1.5 text-xs font-semibold text-sky-300">
+          <label className={`flex items-center gap-1.5 text-xs font-semibold ${style.accent}`}>
             <input
               type="checkbox"
               className="nodrag"
@@ -463,8 +467,8 @@ export const ActionNode = memo(function ActionNode({
         </div>
       )}
 
-      <Handle type="target" position={Position.Left} className="!bg-sky-400" />
-      <Handle type="source" position={Position.Right} className="!bg-sky-400" />
+      <Handle type="target" position={Position.Left} className={style.handle} />
+      <Handle type="source" position={Position.Right} className={style.handle} />
     </div>
   );
 });

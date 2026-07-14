@@ -57,6 +57,72 @@ export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
   ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
 
+// One color per action TYPE — the node card, its handles, its outgoing edge
+// and its minimap dot all share it, so a glance at the canvas reads the
+// chain's behavior. Full class literals (no interpolation): Tailwind's JIT
+// only generates classes it can see verbatim in the source.
+export interface ActionStyle {
+  card: string;
+  accent: string;
+  badge: string;
+  handle: string;
+  hex: string;
+}
+
+export const ACTION_STYLES: Record<FlowActionType, ActionStyle> = {
+  speak_tts: {
+    card: 'border-cyan-400/40 shadow-[0_0_24px_-8px_rgba(34,211,238,0.5)]',
+    accent: 'text-cyan-300', badge: 'bg-cyan-400/25 text-cyan-300', handle: '!bg-cyan-400', hex: '#22d3ee',
+  },
+  send_message: {
+    card: 'border-blue-400/40 shadow-[0_0_24px_-8px_rgba(96,165,250,0.5)]',
+    accent: 'text-blue-300', badge: 'bg-blue-400/25 text-blue-300', handle: '!bg-blue-400', hex: '#60a5fa',
+  },
+  ai_reply: {
+    card: 'border-violet-400/40 shadow-[0_0_24px_-8px_rgba(167,139,250,0.5)]',
+    accent: 'text-violet-300', badge: 'bg-violet-400/25 text-violet-300', handle: '!bg-violet-400', hex: '#a78bfa',
+  },
+  dm_user: {
+    card: 'border-indigo-400/40 shadow-[0_0_24px_-8px_rgba(129,140,248,0.5)]',
+    accent: 'text-indigo-300', badge: 'bg-indigo-400/25 text-indigo-300', handle: '!bg-indigo-400', hex: '#818cf8',
+  },
+  dm_inactive_members: {
+    card: 'border-fuchsia-400/40 shadow-[0_0_24px_-8px_rgba(232,121,249,0.5)]',
+    accent: 'text-fuchsia-300', badge: 'bg-fuchsia-400/25 text-fuchsia-300', handle: '!bg-fuchsia-400', hex: '#e879f9',
+  },
+  voice_leave: {
+    card: 'border-teal-400/40 shadow-[0_0_24px_-8px_rgba(45,212,191,0.5)]',
+    accent: 'text-teal-300', badge: 'bg-teal-400/25 text-teal-300', handle: '!bg-teal-400', hex: '#2dd4bf',
+  },
+  voice_stop_listening: {
+    card: 'border-sky-400/40 shadow-[0_0_24px_-8px_rgba(56,189,248,0.5)]',
+    accent: 'text-sky-300', badge: 'bg-sky-400/25 text-sky-300', handle: '!bg-sky-400', hex: '#38bdf8',
+  },
+  voice_disconnect_user: {
+    card: 'border-orange-400/40 shadow-[0_0_24px_-8px_rgba(251,146,60,0.5)]',
+    accent: 'text-orange-300', badge: 'bg-orange-400/25 text-orange-300', handle: '!bg-orange-400', hex: '#fb923c',
+  },
+  voice_move_user: {
+    card: 'border-amber-400/40 shadow-[0_0_24px_-8px_rgba(251,191,36,0.5)]',
+    accent: 'text-amber-300', badge: 'bg-amber-400/25 text-amber-300', handle: '!bg-amber-400', hex: '#fbbf24',
+  },
+  timeout_user: {
+    card: 'border-red-400/40 shadow-[0_0_24px_-8px_rgba(248,113,113,0.5)]',
+    accent: 'text-red-300', badge: 'bg-red-400/25 text-red-300', handle: '!bg-red-400', hex: '#f87171',
+  },
+  role_add: {
+    card: 'border-emerald-400/40 shadow-[0_0_24px_-8px_rgba(52,211,153,0.5)]',
+    accent: 'text-emerald-300', badge: 'bg-emerald-400/25 text-emerald-300', handle: '!bg-emerald-400', hex: '#34d399',
+  },
+  role_remove: {
+    card: 'border-rose-400/40 shadow-[0_0_24px_-8px_rgba(251,113,133,0.5)]',
+    accent: 'text-rose-300', badge: 'bg-rose-400/25 text-rose-300', handle: '!bg-rose-400', hex: '#fb7185',
+  },
+};
+
+// Trigger + condition family color (the "when & who" side of the canvas).
+const FLOW_HEX = '#3b82f6';
+
 export function defaultAction(type: FlowActionType, index: number): FlowAction {
   const base = { id: crypto.randomUUID(), pos: { x: 640 + index * 320, y: 120 }, repeat_minutes: 0 as const };
   const targeted = { target: 'speaker' as const, target_user_id: '' };
@@ -111,15 +177,16 @@ function ArrangeButton({ arrange }: { arrange: () => Record<string, XYPosition> 
   );
 }
 
-function chainEdges(ids: string[]): Edge[] {
-  return ids.slice(0, -1).map((id, i) => ({
-    id: `e-${id}-${ids[i + 1]}`,
-    source: id,
-    target: ids[i + 1],
+// Each edge carries its SOURCE node's color, so the chain reads like a
+// colored pipeline; the arrowhead makes the execution direction obvious.
+function chainEdges(items: { id: string; hex: string }[]): Edge[] {
+  return items.slice(0, -1).map((item, i) => ({
+    id: `e-${item.id}-${items[i + 1].id}`,
+    source: item.id,
+    target: items[i + 1].id,
     animated: true,
-    style: { stroke: 'rgba(59,130,246,0.7)', strokeWidth: 1.5 },
-    // Arrowhead so the execution direction is obvious at a glance.
-    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: 'rgba(96,165,250,0.95)' },
+    style: { stroke: item.hex, strokeWidth: 1.5, opacity: 0.8 },
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: item.hex },
   }));
 }
 
@@ -152,11 +219,12 @@ export function FlowCanvas({
   }, [fullscreen]);
 
   // Remount the (uncontrolled) canvas only when the STRUCTURE changes:
-  // another command selected, or actions added/removed. Typing in node
-  // forms never touches React Flow's store. Fullscreen is part of the key
-  // so the canvas refits to the new viewport size.
+  // another command selected, actions added/removed/reordered, or an action
+  // RETYPED (its color propagates into the baked edges). Typing in node forms
+  // never touches React Flow's store. Fullscreen is part of the key so the
+  // canvas refits to the new viewport size.
   const canvasKey = flow
-    ? `flow:${flow.id}:${flow.actions.map((a) => a.id).join('.')}:${fullscreen}`
+    ? `flow:${flow.id}:${flow.actions.map((a) => `${a.id}=${a.type}`).join('.')}:${fullscreen}`
     : `builtin:${builtin?.key ?? 'none'}:${fullscreen}`;
 
   const ctx: CanvasCtx = {
@@ -180,7 +248,14 @@ export function FlowCanvas({
           data: { actionId: action.id },
         })),
       ];
-      return { nodes, edges: chainEdges(['trigger', 'condition', ...flow.actions.map((a) => a.id)]) };
+      return {
+        nodes,
+        edges: chainEdges([
+          { id: 'trigger', hex: FLOW_HEX },
+          { id: 'condition', hex: FLOW_HEX },
+          ...flow.actions.map((a) => ({ id: a.id, hex: ACTION_STYLES[a.type].hex })),
+        ]),
+      };
     }
     if (builtin) {
       const pos = {
@@ -193,7 +268,14 @@ export function FlowCanvas({
         { id: 'condition', type: 'condition', position: pos.condition, data: {} },
         { id: 'builtin-action', type: 'action', position: pos.action, data: { builtinAction: true } },
       ];
-      return { nodes, edges: chainEdges(['trigger', 'condition', 'builtin-action']) };
+      return {
+        nodes,
+        edges: chainEdges([
+          { id: 'trigger', hex: FLOW_HEX },
+          { id: 'condition', hex: FLOW_HEX },
+          { id: 'builtin-action', hex: '#38bdf8' },
+        ]),
+      };
     }
     return { nodes: [], edges: [] };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -290,7 +372,11 @@ export function FlowCanvas({
               style={{ width: 140, height: 90 }}
               className="!m-2 rounded-lg border border-white/10 !bg-slate-900"
               maskColor="rgba(2,6,23,0.6)"
-              nodeColor={(n) => (n.type === 'action' ? '#38bdf8' : '#3b82f6')}
+              nodeColor={(n) => {
+                if (n.type !== 'action') return FLOW_HEX;
+                const action = flow?.actions.find((a) => a.id === n.id);
+                return action ? ACTION_STYLES[action.type].hex : '#38bdf8';
+              }}
             />
             <Panel position="top-right" className="flex items-center gap-2">
               {flow && onFlowChange && (
