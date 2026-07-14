@@ -6,6 +6,7 @@ export * from './repos/schedule-runs-repo.js';
 export * from './repos/chat-log-repo.js';
 export * from './repos/guild-asset-repo.js';
 export * from './repos/bot-status-repo.js';
+export * from './repos/user-accounts-repo.js';
 export * from './repos/kv-repo.js';
 export * from './repos/voice-log-repo.js';
 export * from './backup.js';

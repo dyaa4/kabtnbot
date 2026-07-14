@@ -5,6 +5,7 @@ import {
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, listChatMessages,
+  getUserPlan, linkGuild, unlinkGuild, isGuildLinked,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -95,6 +96,15 @@ export function apiRouter(rest: DiscordRest): Router {
     res.json({ uid: s.uid, uname: s.uname, avatar: s.avatar });
   });
 
+  // Per-user plan: premium flag, link allowance and the linked guild ids.
+  router.get('/me/plan', async (_req, res, next) => {
+    try {
+      res.json(await getUserPlan((res.locals.session as Session).uid));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get('/status', async (_req, res, next) => {
     try {
       res.json(await getBotStatus());
@@ -116,6 +126,29 @@ export function apiRouter(rest: DiscordRest): Router {
   router.get('/guilds/:guildId/config', guard, async (req, res, next) => {
     try {
       res.json(await getGuildConfig(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Link/unlink a guild to the session user's plan. The guard already
+  // guarantees the user administers this guild ("their own" server).
+  router.post('/guilds/:guildId/link', guard, async (req, res, next) => {
+    try {
+      const plan = await linkGuild((res.locals.session as Session).uid, req.params.guildId);
+      if (!plan) {
+        apiError(res, 409, 'LINK_LIMIT', 'link limit reached for this plan');
+        return;
+      }
+      res.json(plan);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.delete('/guilds/:guildId/link', guard, async (req, res, next) => {
+    try {
+      res.json(await unlinkGuild((res.locals.session as Session).uid, req.params.guildId));
     } catch (err) {
       next(err);
     }
@@ -258,11 +291,13 @@ export function apiRouter(rest: DiscordRest): Router {
 
 const DaysParam = z.enum(['7', '30', '90']).default('30');
 
-// Premium gate for paid dashboard features. The super-admin (bot owner)
-// always has premium access — no manual grant needed for their own guilds.
+// Premium gate for paid dashboard features. A guild qualifies when any user
+// LINKED it to their plan (the per-user premium model), when it carries a
+// legacy manual grant, or for the super-admin (bot owner) outright.
 async function hasPremiumAccess(guildId: string, res: { locals: { session?: unknown } }): Promise<boolean> {
   const session = res.locals.session as Session | undefined;
   if (session && isSuperAdmin(session.uid)) return true;
+  if (await isGuildLinked(guildId)) return true;
   const guildConfig = await getGuildConfig(guildId);
   return guildConfig.premium.active;
 }

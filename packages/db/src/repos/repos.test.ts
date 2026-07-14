@@ -5,6 +5,7 @@ import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-c
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
+import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked } from './user-accounts-repo.js';
 import { getKv, setKv } from './kv-repo.js';
 import {
   startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
@@ -235,3 +236,29 @@ describe('usage-repo', () => {
     expect((await getUsage('gU', '2026-07-05')).ai_questions).toBe(0);
   });
 });
+
+describe('user-accounts-repo', () => {
+  it('free plan links exactly one guild; the second link is rejected', async () => {
+    expect((await getUserPlan('u1')).max_links).toBe(1);
+    const linked = await linkGuild('u1', 'gA');
+    expect(linked?.linked_guild_ids).toEqual(['gA']);
+    expect(await linkGuild('u1', 'gB')).toBeNull(); // limit reached
+    expect(await linkGuild('u1', 'gA')).not.toBeNull(); // re-link is idempotent
+  });
+
+  it('premium raises the limit to three linked guilds', async () => {
+    await setUserPremium('u2', true);
+    for (const g of ['g1', 'g2', 'g3']) expect(await linkGuild('u2', g)).not.toBeNull();
+    expect(await linkGuild('u2', 'g4')).toBeNull();
+    expect((await getUserPlan('u2')).linked_guild_ids).toEqual(['g1', 'g2', 'g3']);
+  });
+
+  it('unlink frees a slot and the guild-linked gate follows', async () => {
+    await linkGuild('u3', 'gX');
+    expect(await isGuildLinked('gX')).toBe(true);
+    await unlinkGuild('u3', 'gX');
+    expect(await isGuildLinked('gX')).toBe(false);
+    expect((await linkGuild('u3', 'gY'))?.linked_guild_ids).toEqual(['gY']);
+  });
+});
+

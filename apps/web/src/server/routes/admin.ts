@@ -2,6 +2,7 @@ import { Router, type Request, type Response, type NextFunction } from 'express'
 import { z } from 'zod';
 import {
   listActiveGuilds, setGuildBlocked, recordGuildLeave, listPremiumGuildIds, setGuildPremium,
+  setUserPremium, getUserPlan,
 } from '@gamebot/db';
 import type { DiscordRest } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -41,6 +42,22 @@ export function adminRouter(rest: DiscordRest): Router {
   });
 
   const BoolBody = z.object({ value: z.boolean() });
+
+  // Per-USER premium grant (payments land later): raises the user's guild
+  // link allowance from 1 to 3.
+  router.post('/users/:userId/premium', async (req, res, next) => {
+    try {
+      const parsed = BoolBody.safeParse(req.body);
+      if (!parsed.success) {
+        apiError(res, 400, 'VALIDATION', 'value must be boolean');
+        return;
+      }
+      await setUserPremium(req.params.userId, parsed.data.value);
+      res.json(await getUserPlan(req.params.userId));
+    } catch (err) {
+      next(err);
+    }
+  });
 
   router.post('/guilds/:id/block', async (req, res, next) => {
     try {

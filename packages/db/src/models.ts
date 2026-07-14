@@ -103,6 +103,28 @@ const kvSchema = new Schema<KvDoc>({
 
 export const KvModel = (mongoose.models.Kv as mongoose.Model<KvDoc>) ?? mongoose.model<KvDoc>('Kv', kvSchema);
 
+// Per-USER premium: a user links their own guilds and premium features run on
+// linked guilds. Free accounts may link 1 guild, premium accounts 3.
+export interface UserAccountDoc {
+  user_id: string;
+  premium_active: boolean;
+  linked_guild_ids: string[];
+  updated_at: Date;
+}
+
+const userAccountSchema = new Schema<UserAccountDoc>({
+  user_id: { type: String, required: true, unique: true },
+  premium_active: { type: Boolean, default: false },
+  linked_guild_ids: { type: [String], default: [] },
+  updated_at: { type: Date, default: Date.now },
+});
+// "is this guild linked by anyone" is the hot premium-gate lookup.
+userAccountSchema.index({ linked_guild_ids: 1 });
+
+export const UserAccountModel =
+  (mongoose.models.UserAccount as mongoose.Model<UserAccountDoc>) ??
+  mongoose.model<UserAccountDoc>('UserAccount', userAccountSchema);
+
 // Env-gated bot features, reported with each heartbeat so the dashboard can
 // explain WHY a feature shows no data (e.g. chat log without ENABLE_CHAT_LOG).
 export interface BotFeatures {
