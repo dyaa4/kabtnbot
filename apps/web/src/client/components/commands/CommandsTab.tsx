@@ -133,6 +133,26 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(flowsQuery.data);
 
+  // Zod's raw messages are English and field-technical — translate the
+  // common failures into pointed, localized guidance (which field, and for
+  // action fields also WHICH step, numbered like the canvas badges).
+  const issueHint = (issue: { path: (string | number)[]; message: string }): string => {
+    const path = issue.path.map(String);
+    const last = path[path.length - 1];
+    const actionPos = path.indexOf('actions');
+    const step =
+      actionPos !== -1 && path.length > actionPos + 1
+        ? ` (${t('commands.issue.step').replace('{n}', String(3 + Number(path[actionPos + 1])))})`
+        : '';
+    if (last === 'triggers') return t('commands.issue.noTrigger');
+    if (last === 'channel_id' && path.includes('schedule')) return t('commands.issue.scheduleChannel');
+    if (last === 'target_user_id') return t('commands.issue.memberTarget') + step;
+    if (last === 'text' || last === 'system_prompt') return t('commands.issue.emptyText') + step;
+    if (last === 'channel_id' && actionPos !== -1) return t('commands.issue.actionChannel') + step;
+    if (last === 'role_id') return t('commands.issue.role') + step;
+    return issue.message + step;
+  };
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Validate client-side with the SAME schema the server enforces, so the
@@ -142,7 +162,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
       const issue = parsed.error.issues[0];
       const flowIdx = issue.path[0] === 'flows' ? (issue.path[1] as number) : null;
       const name = flowIdx !== null ? draft.flows[flowIdx]?.name : '';
-      toast.error(`${t('commands.invalid')}${name ? ` „${name}"` : ''}: ${issue.message}`);
+      toast.error(`${t('commands.invalid')}${name ? ` „${name}"` : ''}: ${issueHint(issue)}`);
       return;
     }
     save.mutate(parsed.data);
