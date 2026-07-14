@@ -133,29 +133,26 @@ export function Admin() {
               <th className="p-3 text-start">{t('admin.server')}</th>
               <th className="p-3 text-start">{t('admin.members')}</th>
               <th className="p-3 text-start">{t('admin.joined')}</th>
-              <th className="p-3 text-start">{t('admin.status')}</th>
               <th className="p-3 text-start">{t('admin.actions')}</th>
             </tr>
           </thead>
           <tbody>
             {guilds.data?.length === 0 && (
-              <tr><td colSpan={5} className="p-4 text-center text-slate-500">{t('admin.empty')}</td></tr>
+              <tr><td colSpan={4} className="p-4 text-center text-slate-500">{t('admin.empty')}</td></tr>
             )}
             {guilds.data?.map((g) => (
               <tr key={g.guild_id} className="border-t border-white/5">
                 <td className="p-3">
-                  <div className="font-semibold text-slate-200">{g.name || g.guild_id}</div>
+                  <div className="flex items-center gap-2 font-semibold text-slate-200">
+                    {g.name || g.guild_id}
+                    {g.blocked && (
+                      <span className="rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs font-normal text-red-300">{t('admin.blocked')}</span>
+                    )}
+                  </div>
                   <div className="text-xs text-slate-500" dir="ltr">{g.guild_id}</div>
                 </td>
                 <td className="p-3 text-slate-400" dir="ltr">{g.member_count.toLocaleString(lang === 'ar' ? 'ar' : 'en-GB')}</td>
                 <td className="p-3 text-slate-400" dir="ltr">{fmtDate(g.joined_at)}</td>
-                <td className="p-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {g.blocked && (
-                      <span className="rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs text-red-300">{t('admin.blocked')}</span>
-                    )}
-                  </div>
-                </td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-2">
                     <button
