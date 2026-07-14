@@ -3,7 +3,7 @@ import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import {
   connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat,
-  startVoiceSession, endVoiceSession, setGuildPremium, recordChatMessage,
+  startVoiceSession, endVoiceSession, linkGuild, unlinkGuild, recordChatMessage,
 } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
@@ -301,12 +301,12 @@ describe('api routes', () => {
   it('serves the voice log with resolved member and channel names (premium-gated)', async () => {
     const { app, cookie, rest } = setup();
 
-    await setGuildPremium('g1', false);
+    await unlinkGuild('linker', 'g1');
     const locked = await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie);
     expect(locked.status).toBe(403);
     expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
 
-    await setGuildPremium('g1', true);
+    await linkGuild('linker', 'g1');
     rest.membersList.set('g1', [
       { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
     ]);
@@ -332,13 +332,13 @@ describe('api routes', () => {
   it('command-flows: premium-gated, GET defaults, PUT round-trips, invalid PUT → 400', async () => {
     const { app, cookie } = setup();
 
-    await setGuildPremium('g1', false);
+    await unlinkGuild('linker', 'g1');
     const locked = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
     expect(locked.status).toBe(403);
     expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
     expect((await request(app).put('/api/guilds/g1/command-flows').set('Cookie', cookie).send({})).status).toBe(403);
 
-    await setGuildPremium('g1', true);
+    await linkGuild('linker', 'g1');
     const empty = await request(app).get('/api/guilds/g1/command-flows').set('Cookie', cookie);
     expect(empty.status).toBe(200);
     expect(empty.body).toMatchObject({ flows: [], builtin_overrides: {}, folders: [] });
@@ -389,12 +389,12 @@ describe('api routes', () => {
 
   it('chat log is premium-gated and resolves names once unlocked', async () => {
     const { app, cookie, rest } = setup();
-    await setGuildPremium('g1', false);
+    await unlinkGuild('linker', 'g1');
     const locked = await request(app).get('/api/guilds/g1/chat-log').set('Cookie', cookie);
     expect(locked.status).toBe(403);
     expect(locked.body.error.code).toBe('PREMIUM_REQUIRED');
 
-    await setGuildPremium('g1', true);
+    await linkGuild('linker', 'g1');
     rest.membersList.set('g1', [
       { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
     ]);
@@ -406,13 +406,13 @@ describe('api routes', () => {
     expect(res.body.messages).toHaveLength(1);
     expect(res.body.messages[0]).toMatchObject({ name: 'أبو فهد', channel_name: 'general', content: 'hi there' });
 
-    await setGuildPremium('g1', false); // reset for other tests
+    await unlinkGuild('linker', 'g1'); // reset for other tests
     expect((await request(app).get('/api/guilds/gX/chat-log').set('Cookie', cookie)).status).toBe(403);
   });
 
   it('super-admin bypasses the premium gate on voice/chat log', async () => {
     const { app, cookie } = setup();
-    await setGuildPremium('g1', false);
+    await unlinkGuild('linker', 'g1');
     superAdminIds.push('u1'); // session uid from setup()
     try {
       expect((await request(app).get('/api/guilds/g1/voice-log').set('Cookie', cookie)).status).toBe(200);

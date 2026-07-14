@@ -5,7 +5,7 @@ import {
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, listChatMessages,
-  getUserPlan, linkGuild, unlinkGuild, isGuildLinked,
+  getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isUserBlocked, isDbConnected,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -90,6 +90,32 @@ export function apiRouter(rest: DiscordRest): Router {
   });
 
   router.use(requireSession);
+
+  // Blocked accounts lose ALL dashboard API access (cached 60s per user; the
+  // super-admin can never lock themselves out).
+  const blockedCache = new Map<string, { at: number; value: boolean }>();
+  router.use(async (_req, res, next) => {
+    try {
+      const s = res.locals.session as Session;
+      // Fail OPEN without a DB (tests, transient outage) — blocking is a
+      // moderation convenience, not a security boundary.
+      if (isSuperAdmin(s.uid) || !isDbConnected()) {
+        next();
+        return;
+      }
+      const hit = blockedCache.get(s.uid);
+      const blocked =
+        hit && Date.now() - hit.at < 60_000 ? hit.value : await isUserBlocked(s.uid);
+      blockedCache.set(s.uid, { at: Date.now(), value: blocked });
+      if (blocked) {
+        apiError(res, 403, 'USER_BLOCKED', 'This account is blocked');
+        return;
+      }
+      next();
+    } catch (err) {
+      next(err);
+    }
+  });
 
   router.get('/me', (_req, res) => {
     const s = res.locals.session as Session;
@@ -291,15 +317,13 @@ export function apiRouter(rest: DiscordRest): Router {
 
 const DaysParam = z.enum(['7', '30', '90']).default('30');
 
-// Premium gate for paid dashboard features. A guild qualifies when any user
-// LINKED it to their plan (the per-user premium model), when it carries a
-// legacy manual grant, or for the super-admin (bot owner) outright.
+// Premium gate for paid dashboard features: premium belongs to USERS — a
+// guild qualifies exactly when someone linked it to their plan (or for the
+// super-admin outright). There is no per-guild premium anymore.
 async function hasPremiumAccess(guildId: string, res: { locals: { session?: unknown } }): Promise<boolean> {
   const session = res.locals.session as Session | undefined;
   if (session && isSuperAdmin(session.uid)) return true;
-  if (await isGuildLinked(guildId)) return true;
-  const guildConfig = await getGuildConfig(guildId);
-  return guildConfig.premium.active;
+  return isGuildLinked(guildId);
 }
 
 // Discord REST results (member list + guild counts) are cached in-memory per guild,
@@ -535,7 +559,7 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
         getGuildConfig(req.params.guildId),
         getUsage(req.params.guildId, todayKey()),
       ]);
-      res.json({ ...usage, limits: effectiveQuotas(guildConfig), premium_active: guildConfig.premium.active });
+      res.json({ ...usage, limits: effectiveQuotas(guildConfig), premium_active: await isGuildLinked(req.params.guildId) });
     } catch (err) {
       next(err);
     }

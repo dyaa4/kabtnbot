@@ -5,7 +5,7 @@ import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-c
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
-import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked } from './user-accounts-repo.js';
+import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
 import { getKv, setKv } from './kv-repo.js';
 import {
   startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
@@ -251,6 +251,14 @@ describe('user-accounts-repo', () => {
     for (const g of ['g1', 'g2', 'g3']) expect(await linkGuild('u2', g)).not.toBeNull();
     expect(await linkGuild('u2', 'g4')).toBeNull();
     expect((await getUserPlan('u2')).linked_guild_ids).toEqual(['g1', 'g2', 'g3']);
+  });
+
+  it('block flag round-trips', async () => {
+    expect(await isUserBlocked('u9')).toBe(false);
+    await setUserBlocked('u9', true);
+    expect(await isUserBlocked('u9')).toBe(true);
+    await setUserBlocked('u9', false);
+    expect(await isUserBlocked('u9')).toBe(false);
   });
 
   it('unlink frees a slot and the guild-linked gate follows', async () => {

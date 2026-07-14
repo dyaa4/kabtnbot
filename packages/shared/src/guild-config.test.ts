@@ -53,12 +53,4 @@ describe('GuildConfigSchema', () => {
     expect(() => GuildConfigSchema.parse({ voice: { tts_voice: 'french' } })).toThrow();
   });
 
-  it('defaults premium to inactive with null overrides', () => {
-    const c = GuildConfigSchema.parse({});
-    expect(c.premium).toEqual({
-      active: false,
-      listen_minutes_override: null,
-      ai_questions_override: null,
-    });
-  });
 });

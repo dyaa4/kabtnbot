@@ -114,6 +114,8 @@ export interface UserAccountDoc {
   uname: string;
   avatar: string | null;
   last_login: Date | null;
+  // Blocked users lose all dashboard API access (enforced in the web layer).
+  blocked: boolean;
   updated_at: Date;
 }
 
@@ -124,6 +126,7 @@ const userAccountSchema = new Schema<UserAccountDoc>({
   uname: { type: String, default: '' },
   avatar: { type: String, default: null },
   last_login: { type: Date, default: null },
+  blocked: { type: Boolean, default: false },
   updated_at: { type: Date, default: Date.now },
 });
 // "is this guild linked by anyone" is the hot premium-gate lookup.

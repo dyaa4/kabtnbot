@@ -9,6 +9,7 @@ interface AdminUser {
   uname: string;
   avatar: string | null;
   premium_active: boolean;
+  blocked: boolean;
   linked_guild_ids: string[];
   last_login: string | null;
 }
@@ -19,7 +20,6 @@ interface AdminGuild {
   member_count: number;
   blocked: boolean;
   joined_at: string;
-  premium: boolean;
 }
 
 const BTN = 'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold transition';
@@ -91,18 +91,30 @@ export function Admin() {
                     {u.premium_active && (
                       <span className="ms-1 rounded-full border border-blue-500/40 bg-blue-950/40 px-2 py-0.5 text-xs text-blue-300">Premium</span>
                     )}
+                    {u.blocked && (
+                      <span className="ms-1 rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs text-red-300">{t('admin.blocked')}</span>
+                    )}
                   </div>
                 </td>
                 <td className="p-3 text-slate-400" dir="ltr">{u.linked_guild_ids.length}/{u.premium_active ? 3 : 1}</td>
                 <td className="p-3 text-slate-400" dir="ltr">{u.last_login ? fmtDate(u.last_login) : '—'}</td>
                 <td className="p-3">
-                  <button
-                    type="button"
-                    className={`${BTN} text-blue-300 hover:border-blue-400/50`}
-                    onClick={() => act.mutate({ path: `/api/admin/users/${u.user_id}/premium`, body: { value: !u.premium_active } })}
-                  >
-                    {u.premium_active ? t('admin.revokePremium') : t('admin.grantPremium')}
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className={`${BTN} text-blue-300 hover:border-blue-400/50`}
+                      onClick={() => act.mutate({ path: `/api/admin/users/${u.user_id}/premium`, body: { value: !u.premium_active } })}
+                    >
+                      {u.premium_active ? t('admin.revokePremium') : t('admin.grantPremium')}
+                    </button>
+                    <button
+                      type="button"
+                      className={`${BTN} text-red-300 hover:border-red-400/50`}
+                      onClick={() => act.mutate({ path: `/api/admin/users/${u.user_id}/block`, body: { value: !u.blocked } })}
+                    >
+                      {u.blocked ? t('admin.unblock') : t('admin.block')}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -139,9 +151,6 @@ export function Admin() {
                 <td className="p-3 text-slate-400" dir="ltr">{fmtDate(g.joined_at)}</td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-1.5">
-                    {g.premium && (
-                      <span className="rounded-full border border-blue-500/40 bg-blue-950/40 px-2 py-0.5 text-xs text-blue-300">Premium</span>
-                    )}
                     {g.blocked && (
                       <span className="rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs text-red-300">{t('admin.blocked')}</span>
                     )}

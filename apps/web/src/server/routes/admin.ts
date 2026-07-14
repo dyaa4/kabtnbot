@@ -1,8 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from 'express';
 import { z } from 'zod';
 import {
-  listActiveGuilds, setGuildBlocked, recordGuildLeave, listPremiumGuildIds, setGuildPremium,
-  setUserPremium, getUserPlan, listUserAccounts,
+  listActiveGuilds, setGuildBlocked, recordGuildLeave,
+  setUserPremium, getUserPlan, listUserAccounts, setUserBlocked, updateUserIdentity,
 } from '@gamebot/db';
 import type { DiscordRest } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -33,18 +33,28 @@ export function adminRouter(rest: DiscordRest): Router {
 
   router.get('/guilds', async (_req, res, next) => {
     try {
-      const [guilds, premiumIds] = await Promise.all([listActiveGuilds(), listPremiumGuildIds()]);
-      const premium = new Set(premiumIds);
-      res.json(guilds.map((g) => ({ ...g, premium: premium.has(g.guild_id) })));
+      res.json(await listActiveGuilds());
     } catch (err) {
       next(err);
     }
   });
 
   // Everyone who ever logged into the dashboard, newest login first.
+  // Accounts created before login tracking (or via linking alone) carry no
+  // identity — resolve those from Discord once and persist the result.
   router.get('/users', async (_req, res, next) => {
     try {
-      res.json(await listUserAccounts());
+      const users = await listUserAccounts();
+      const missing = users.filter((u) => !u.uname).slice(0, 25);
+      await Promise.all(missing.map(async (u) => {
+        const fetched = await rest.getUser(u.user_id);
+        if (fetched) {
+          u.uname = fetched.username;
+          u.avatar = fetched.avatar;
+          await updateUserIdentity(u.user_id, fetched.username, fetched.avatar).catch(() => {});
+        }
+      }));
+      res.json(users);
     } catch (err) {
       next(err);
     }
@@ -54,6 +64,26 @@ export function adminRouter(rest: DiscordRest): Router {
 
   // Per-USER premium grant (payments land later): raises the user's guild
   // link allowance from 1 to 3.
+  // Blocking locks the user out of the whole dashboard API. The super-admin
+  // cannot be blocked.
+  router.post('/users/:userId/block', async (req, res, next) => {
+    try {
+      const parsed = BoolBody.safeParse(req.body);
+      if (!parsed.success) {
+        apiError(res, 400, 'VALIDATION', 'value must be boolean');
+        return;
+      }
+      if (isSuperAdmin(req.params.userId)) {
+        apiError(res, 400, 'VALIDATION', 'cannot block the super admin');
+        return;
+      }
+      await setUserBlocked(req.params.userId, parsed.data.value);
+      res.json({ ok: true });
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.post('/users/:userId/premium', async (req, res, next) => {
     try {
       const parsed = BoolBody.safeParse(req.body);
@@ -100,19 +130,6 @@ export function adminRouter(rest: DiscordRest): Router {
     }
   });
 
-  router.post('/guilds/:id/premium', async (req, res, next) => {
-    try {
-      const parsed = BoolBody.safeParse(req.body);
-      if (!parsed.success) {
-        apiError(res, 400, 'VALIDATION', 'value must be boolean');
-        return;
-      }
-      await setGuildPremium(req.params.id, parsed.data.value);
-      res.json({ ok: true });
-    } catch (err) {
-      next(err);
-    }
-  });
 
   return router;
 }

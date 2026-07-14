@@ -13,3 +13,9 @@ export async function connectDb(uri: string): Promise<void> {
 export async function disconnectDb(): Promise<void> {
   await mongoose.disconnect();
 }
+
+/** True while a live Mongo connection exists — lets best-effort middleware
+ * (e.g. the blocked-user gate) fail open instead of buffering forever. */
+export function isDbConnected(): boolean {
+  return mongoose.connection.readyState === 1;
+}

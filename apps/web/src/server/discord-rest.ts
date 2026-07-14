@@ -39,6 +39,9 @@ export interface DiscordRest {
     boostTier: number;
     boostCount: number;
   } | null>;
+  /** A user's public identity via the bot token — for admin lists where the
+   * account predates login tracking. Null when the user cannot be fetched. */
+  getUser(userId: string): Promise<{ id: string; username: string; avatar: string | null } | null>;
   /** Makes the bot leave a guild (DELETE /users/@me/guilds/:id with the bot token). */
   leaveGuild(guildId: string): Promise<void>;
   /**
@@ -255,6 +258,16 @@ export function createDiscordRest(): DiscordRest {
         boostTier: g.premium_tier ?? 0,
         boostCount: g.premium_subscription_count ?? 0,
       };
+    },
+    async getUser(userId) {
+      try {
+        const res = await discordFetch(`${API}/users/${userId}`, { headers: bot });
+        if (!res.ok) return null;
+        const u = (await res.json()) as { id: string; username: string; avatar: string | null };
+        return { id: u.id, username: u.username, avatar: u.avatar ?? null };
+      } catch {
+        return null;
+      }
     },
     async leaveGuild(guildId) {
       // Must NOT swallow failures: the admin routes record the guild as left

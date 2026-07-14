@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import {
-  getGuildConfig, updateGuildConfig, getGuildAsset, setGuildPremium,
+  getGuildConfig, updateGuildConfig, getGuildAsset, linkGuild, unlinkGuild,
   startVoiceSession, incrementListenSeconds, incrementAiQuestions, recordBotHeartbeat, clearBotHeartbeat,
 } from '@gamebot/db';
 import { todayKey } from '@gamebot/shared';
@@ -210,9 +210,9 @@ describe('journey: read-only dashboards (stats, usage, voice-log, status)', () =
     const agent = await login(app);
 
     // voice log is premium-gated
-    await setGuildPremium('g1', false);
+    await unlinkGuild('linker', 'g1');
     expect((await agent.get('/api/guilds/g1/voice-log')).status).toBe(403);
-    await setGuildPremium('g1', true);
+    await linkGuild('linker', 'g1');
 
     const log = await agent.get('/api/guilds/g1/voice-log');
     expect(log.status).toBe(200);

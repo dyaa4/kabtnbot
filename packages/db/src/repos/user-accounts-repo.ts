@@ -70,6 +70,7 @@ export interface UserAccountSummary {
   uname: string;
   avatar: string | null;
   premium_active: boolean;
+  blocked: boolean;
   linked_guild_ids: string[];
   last_login: string | null;
 }
@@ -81,9 +82,32 @@ export async function listUserAccounts(limit = 200): Promise<UserAccountSummary[
     uname: d.uname ?? '',
     avatar: d.avatar ?? null,
     premium_active: d.premium_active,
+    blocked: d.blocked ?? false,
     linked_guild_ids: d.linked_guild_ids ?? [],
     last_login: d.last_login ? d.last_login.toISOString() : null,
   }));
+}
+
+/** Identity refresh WITHOUT touching last_login (admin-list enrichment). */
+export async function updateUserIdentity(userId: string, uname: string, avatar: string | null): Promise<void> {
+  await retryOnDupKey(() => UserAccountModel.updateOne(
+    { user_id: userId },
+    { $set: { uname, avatar, updated_at: new Date() } },
+    { upsert: true },
+  ));
+}
+
+export async function setUserBlocked(userId: string, blocked: boolean): Promise<void> {
+  await retryOnDupKey(() => UserAccountModel.updateOne(
+    { user_id: userId },
+    { $set: { blocked, updated_at: new Date() } },
+    { upsert: true },
+  ));
+}
+
+export async function isUserBlocked(userId: string): Promise<boolean> {
+  const doc = await UserAccountModel.findOne({ user_id: userId }).select('blocked').lean();
+  return doc?.blocked ?? false;
 }
 
 /** Premium gate: a guild has premium features when ANY account links it. */

@@ -77,6 +77,10 @@ export class FakeDiscordRest implements DiscordRest {
   async getGuildInfo(guildId: string) {
     return this.guildInfo.get(guildId) ?? null;
   }
+  async getUser(_userId: string) {
+    return null;
+  }
+
   async leaveGuild(guildId: string) {
     this.leftGuilds.push(guildId);
   }
