@@ -399,12 +399,17 @@ describe('api routes', () => {
       { id: 'u7', username: 'أبو فهد', avatar: null, joined_at: '2026-07-01T00:00:00Z' },
     ]);
     rest.textChannels.set('g1', [{ id: 'tc1', name: 'general' }]);
+    rest.voiceChannels.set('g1', [{ id: 'vc1', name: 'Gaming' }]);
     await recordChatMessage({ guildId: 'g1', userId: 'u7', channelId: 'tc1', messageId: 'm1', content: 'hi there' });
+    // A message in a voice channel's built-in text chat must resolve too.
+    await recordChatMessage({ guildId: 'g1', userId: 'u7', channelId: 'vc1', messageId: 'm2', content: 'in voice chat' });
 
     const res = await request(app).get('/api/guilds/g1/chat-log').set('Cookie', cookie);
     expect(res.status).toBe(200);
-    expect(res.body.messages).toHaveLength(1);
-    expect(res.body.messages[0]).toMatchObject({ name: 'أبو فهد', channel_name: 'general', content: 'hi there' });
+    expect(res.body.messages).toHaveLength(2);
+    const byId = Object.fromEntries(res.body.messages.map((m: { channel_id: string }) => [m.channel_id, m]));
+    expect(byId.tc1).toMatchObject({ name: 'أبو فهد', channel_name: 'general', content: 'hi there' });
+    expect(byId.vc1).toMatchObject({ channel_name: 'Gaming', content: 'in voice chat' });
 
     await unlinkGuild('linker', 'g1'); // reset for other tests
     expect((await request(app).get('/api/guilds/gX/chat-log').set('Cookie', cookie)).status).toBe(403);
