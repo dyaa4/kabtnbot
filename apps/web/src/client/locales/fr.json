@@ -226,6 +226,8 @@
   "admin.users.links": "Serveurs liés",
   "admin.users.lastLogin": "Dernière connexion",
   "admin.users.empty": "Aucun utilisateur pour l'instant — toute connexion au tableau de bord apparaît ici.",
+  "admin.search": "Rechercher…",
+  "admin.noResults": "Aucun résultat pour cette recherche.",
   "admin.servers.title": "Serveurs",
   "admin.notAllowed": "Tu n'as pas accès au panneau d'administration.",
   "admin.serversCount": "serveurs",

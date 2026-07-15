@@ -226,6 +226,8 @@
   "admin.users.links": "السيرفرات المرتبطة",
   "admin.users.lastLogin": "آخر دخول",
   "admin.users.empty": "لا مستخدمين بعد — يظهر هنا كل من سجّل دخوله إلى لوحة التحكم.",
+  "admin.search": "بحث…",
+  "admin.noResults": "لا توجد نتائج لهذا البحث.",
   "admin.servers.title": "السيرفرات",
   "admin.notAllowed": "ما عندك صلاحية دخول لوحة الإدارة.",
   "admin.serversCount": "سيرفر",

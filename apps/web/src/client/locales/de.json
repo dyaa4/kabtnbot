@@ -226,6 +226,8 @@
   "admin.users.links": "Verknüpfte Server",
   "admin.users.lastLogin": "Letzter Login",
   "admin.users.empty": "Noch keine Benutzer — jeder Dashboard-Login erscheint hier.",
+  "admin.search": "Suchen…",
+  "admin.noResults": "Keine Treffer für diese Suche.",
   "admin.servers.title": "Server",
   "admin.notAllowed": "Du hast keinen Zugriff auf das Admin-Panel.",
   "admin.serversCount": "Server",

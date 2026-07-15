@@ -226,6 +226,8 @@
   "admin.users.links": "Bağlı sunucular",
   "admin.users.lastLogin": "Son giriş",
   "admin.users.empty": "Henüz kullanıcı yok — panele giriş yapan herkes burada görünür.",
+  "admin.search": "Ara…",
+  "admin.noResults": "Bu arama için sonuç yok.",
   "admin.servers.title": "Sunucular",
   "admin.notAllowed": "Yönetim paneline erişimin yok.",
   "admin.serversCount": "sunucu",

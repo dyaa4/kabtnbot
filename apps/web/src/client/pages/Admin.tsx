@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import { Search } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -24,10 +26,27 @@ interface AdminGuild {
 
 const BTN = 'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold transition';
 
+function SearchBox({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <label className="mb-3 flex w-full max-w-xs items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 focus-within:border-blue-400/50">
+      <Search className="h-4 w-4 shrink-0 text-slate-500" />
+      <input
+        type="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-500 outline-none"
+      />
+    </label>
+  );
+}
+
 export function Admin() {
   const { t, lang } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
+  const [userQuery, setUserQuery] = useState('');
+  const [guildQuery, setGuildQuery] = useState('');
 
   const me = useQuery({ queryKey: ['admin-me'], queryFn: () => api<{ isSuperAdmin: boolean }>('/api/admin/me'), retry: false });
   const guilds = useQuery({
@@ -56,11 +75,29 @@ export function Admin() {
 
   const fmtDate = (iso: string) => new Date(iso).toLocaleDateString(lang === 'ar' ? 'ar' : 'en-GB');
 
+  // Resolve linked guild ids to names via the already-fetched servers list;
+  // guilds the bot has since left fall back to the raw id.
+  const guildName = new Map(guilds.data?.map((g) => [g.guild_id, g.name || g.guild_id]) ?? []);
+  const linkedNames = (u: AdminUser) => u.linked_guild_ids.map((id) => guildName.get(id) ?? id);
+
+  const uq = userQuery.trim().toLowerCase();
+  const filteredUsers = (users.data ?? []).filter((u) =>
+    !uq ||
+    (u.uname || '').toLowerCase().includes(uq) ||
+    u.user_id.includes(uq) ||
+    linkedNames(u).some((n) => n.toLowerCase().includes(uq)),
+  );
+  const gq = guildQuery.trim().toLowerCase();
+  const filteredGuilds = (guilds.data ?? []).filter(
+    (g) => !gq || g.name.toLowerCase().includes(gq) || g.guild_id.includes(gq),
+  );
+
   return (
     <Layout>
       <h1 className="mb-2 text-2xl font-bold">{t('admin.title')}</h1>
 
       <h2 className="mb-2 mt-4 text-lg font-semibold">{t('admin.users.title')}</h2>
+      <SearchBox value={userQuery} onChange={setUserQuery} placeholder={t('admin.search')} />
       <div className="mb-8 overflow-x-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
         <table className="w-full text-sm">
           <thead>
@@ -75,7 +112,10 @@ export function Admin() {
             {users.data?.length === 0 && (
               <tr><td colSpan={4} className="p-4 text-center text-slate-500">{t('admin.users.empty')}</td></tr>
             )}
-            {users.data?.map((u) => (
+            {users.data && users.data.length > 0 && filteredUsers.length === 0 && (
+              <tr><td colSpan={4} className="p-4 text-center text-slate-500">{t('admin.noResults')}</td></tr>
+            )}
+            {filteredUsers.map((u) => (
               <tr key={u.user_id} className="border-t border-white/5">
                 <td className="p-3">
                   <div className="flex items-center gap-2">
@@ -95,6 +135,15 @@ export function Admin() {
                       <span className="ms-1 rounded-full border border-red-500/40 bg-red-950/40 px-2 py-0.5 text-xs text-red-300">{t('admin.blocked')}</span>
                     )}
                   </div>
+                  {u.linked_guild_ids.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {u.linked_guild_ids.map((id) => (
+                        <span key={id} className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs text-slate-400">
+                          {guildName.get(id) ?? id}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="p-3 text-slate-400" dir="ltr">{u.linked_guild_ids.length}/{u.premium_active ? 3 : 1}</td>
                 <td className="p-3 text-slate-400" dir="ltr">{u.last_login ? fmtDate(u.last_login) : '—'}</td>
@@ -124,8 +173,9 @@ export function Admin() {
 
       <h2 className="mb-2 text-lg font-semibold">{t('admin.servers.title')}</h2>
       {guilds.data && (
-        <p className="mb-6 text-sm text-slate-400">{guilds.data.length} {t('admin.serversCount')}</p>
+        <p className="mb-3 text-sm text-slate-400">{guilds.data.length} {t('admin.serversCount')}</p>
       )}
+      <SearchBox value={guildQuery} onChange={setGuildQuery} placeholder={t('admin.search')} />
       <div className="overflow-x-auto rounded-2xl border border-white/10 bg-white/5 backdrop-blur-md">
         <table className="w-full text-sm">
           <thead>
@@ -140,7 +190,10 @@ export function Admin() {
             {guilds.data?.length === 0 && (
               <tr><td colSpan={4} className="p-4 text-center text-slate-500">{t('admin.empty')}</td></tr>
             )}
-            {guilds.data?.map((g) => (
+            {guilds.data && guilds.data.length > 0 && filteredGuilds.length === 0 && (
+              <tr><td colSpan={4} className="p-4 text-center text-slate-500">{t('admin.noResults')}</td></tr>
+            )}
+            {filteredGuilds.map((g) => (
               <tr key={g.guild_id} className="border-t border-white/5">
                 <td className="p-3">
                   <div className="flex items-center gap-2 font-semibold text-slate-200">

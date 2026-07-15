@@ -226,6 +226,8 @@
   "admin.users.links": "Linked servers",
   "admin.users.lastLogin": "Last login",
   "admin.users.empty": "No users yet — everyone who signs into the dashboard shows up here.",
+  "admin.search": "Search…",
+  "admin.noResults": "No results for this search.",
   "admin.servers.title": "Servers",
   "admin.notAllowed": "You don't have access to the admin panel.",
   "admin.serversCount": "servers",

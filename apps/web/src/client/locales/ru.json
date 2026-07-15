@@ -226,6 +226,8 @@
   "admin.users.links": "Привязанные серверы",
   "admin.users.lastLogin": "Последний вход",
   "admin.users.empty": "Пока нет пользователей — здесь появляется каждый, кто вошёл в панель.",
+  "admin.search": "Поиск…",
+  "admin.noResults": "Ничего не найдено по этому запросу.",
   "admin.servers.title": "Серверы",
   "admin.notAllowed": "У тебя нет доступа к админ-панели.",
   "admin.serversCount": "серверов",
