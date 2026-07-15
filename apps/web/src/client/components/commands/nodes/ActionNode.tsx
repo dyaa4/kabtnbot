@@ -80,7 +80,9 @@ function MessageField({
           <MemberSearchBox
             guildId={guildId}
             onPick={(m) => {
-              insert(`<@${m.id}>`);
+              // Trailing space: a mention glued to the next word (<@id>play)
+              // is invisible in the editor but breaks other bots' parsers.
+              insert(`<@${m.id}> `);
               setMentionOpen(false);
             }}
           />
