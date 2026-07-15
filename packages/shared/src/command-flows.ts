@@ -47,6 +47,9 @@ export const FlowActionSchema = z.discriminatedUnion('type', [
   // {user} = invoker display name, {args} = captured remainder of a prefix trigger
   z.object({ ...actionBase, type: z.literal('speak_tts'), text: z.string().min(1).max(500) }),
   z.object({ ...actionBase, type: z.literal('send_message'), channel_id: z.string().min(1), text: z.string().min(1).max(2000) }),
+  // Posts into the text chat of the voice channel the bot/invoker is in —
+  // no channel pick needed, resolved at execution time.
+  z.object({ ...actionBase, type: z.literal('send_voice_chat'), text: z.string().min(1).max(2000) }),
   z.object({ ...actionBase, type: z.literal('timeout_user'), ...targetedBase, duration_minutes: z.number().int().min(1).max(10080) }),
   z.object({ ...actionBase, type: z.literal('role_add'), ...targetedBase, role_id: z.string().min(1) }),
   z.object({ ...actionBase, type: z.literal('role_remove'), ...targetedBase, role_id: z.string().min(1) }),

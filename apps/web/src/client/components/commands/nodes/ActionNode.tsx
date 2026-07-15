@@ -187,6 +187,16 @@ function Params({
           onChange={(text) => update({ text } as Partial<FlowAction>)}
         />
       );
+    case 'send_voice_chat':
+      return (
+        <MessageField
+          guildId={guildId}
+          value={action.text}
+          maxLength={2000}
+          onChange={(text) => update({ text } as Partial<FlowAction>)}
+          hint={t('commands.action.voiceChatHint')}
+        />
+      );
     case 'send_message':
       return (
         <>

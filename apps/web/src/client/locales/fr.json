@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Déplacer un membre vers un salon",
   "commands.action.speak_tts": "Dire un texte (TTS)",
   "commands.action.send_message": "Envoyer un message dans un salon",
+  "commands.action.send_voice_chat": "Écrire dans le chat vocal",
+  "commands.action.voiceChatHint": "Publie dans le chat texte du salon vocal où se trouve le bot.",
   "commands.action.timeout_user": "Exclure temporairement un membre",
   "commands.action.role_add": "Donner un rôle",
   "commands.action.role_remove": "Retirer un rôle",

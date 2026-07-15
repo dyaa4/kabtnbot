@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Üyeyi kanala taşı",
   "commands.action.speak_tts": "Metin söyle (TTS)",
   "commands.action.send_message": "Kanala mesaj gönder",
+  "commands.action.send_voice_chat": "Sesli sohbete yaz",
+  "commands.action.voiceChatHint": "Botun bulunduğu ses kanalının metin sohbetine gönderilir.",
   "commands.action.timeout_user": "Üyeye zaman aşımı ver",
   "commands.action.role_add": "Rol ver",
   "commands.action.role_remove": "Rolü kaldır",

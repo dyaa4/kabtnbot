@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Move member to channel",
   "commands.action.speak_tts": "Say text (TTS)",
   "commands.action.send_message": "Send channel message",
+  "commands.action.send_voice_chat": "Write in voice chat",
+  "commands.action.voiceChatHint": "Posts into the text chat of the voice channel the bot is in.",
   "commands.action.timeout_user": "Timeout member",
   "commands.action.role_add": "Give role",
   "commands.action.role_remove": "Remove role",

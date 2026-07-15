@@ -52,7 +52,7 @@ const nodeTypes = {
 // Action types grouped for the pickers (add-action select + in-node type
 // select) — the group order mirrors how often each family is used.
 export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
-  ['messages', ['speak_tts', 'send_message', 'ai_reply', 'dm_user', 'dm_inactive_members']],
+  ['messages', ['speak_tts', 'send_message', 'send_voice_chat', 'ai_reply', 'dm_user', 'dm_inactive_members']],
   ['voice', ['voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user']],
   ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
@@ -77,6 +77,10 @@ export const ACTION_STYLES: Record<FlowActionType, ActionStyle> = {
   send_message: {
     card: 'border-blue-400/40 shadow-[0_0_24px_-8px_rgba(96,165,250,0.5)]',
     accent: 'text-blue-300', badge: 'bg-blue-400/25 text-blue-300', handle: '!bg-blue-400', hex: '#60a5fa',
+  },
+  send_voice_chat: {
+    card: 'border-lime-400/40 shadow-[0_0_24px_-8px_rgba(163,230,53,0.5)]',
+    accent: 'text-lime-300', badge: 'bg-lime-400/25 text-lime-300', handle: '!bg-lime-400', hex: '#a3e635',
   },
   ai_reply: {
     card: 'border-violet-400/40 shadow-[0_0_24px_-8px_rgba(167,139,250,0.5)]',
@@ -135,6 +139,7 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
     case 'voice_move_user':
       return { ...base, type, ...targeted, channel_id: '' };
     case 'speak_tts':
+    case 'send_voice_chat':
       return { ...base, type, text: '' };
     case 'send_message':
       return { ...base, type, channel_id: '', text: '' };

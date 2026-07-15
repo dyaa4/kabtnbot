@@ -47,6 +47,15 @@ describe('GuildCommandFlowsSchema', () => {
     expect(f.actions[0].pos).toEqual({ x: 0, y: 0 });
   });
 
+  it('accepts a send_voice_chat action (no channel pick) and rejects empty text', () => {
+    const withText = (text: string) => ({
+      id: 'x', name: 'VC', triggers: ['hi'],
+      actions: [{ id: 'a', type: 'send_voice_chat', text }],
+    });
+    expect(CommandFlowSchema.parse(withText('yo')).actions[0].type).toBe('send_voice_chat');
+    expect(() => CommandFlowSchema.parse(withText(''))).toThrow();
+  });
+
   it('rejects a flow without triggers or actions', () => {
     expect(() =>
       GuildCommandFlowsSchema.parse({

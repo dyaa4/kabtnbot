@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "نقل عضو إلى قناة",
   "commands.action.speak_tts": "قول نص (TTS)",
   "commands.action.send_message": "إرسال رسالة في قناة",
+  "commands.action.send_voice_chat": "كتابة في الشات الصوتي",
+  "commands.action.voiceChatHint": "تُرسل الرسالة في الشات النصي للقناة الصوتية التي يجلس فيها البوت.",
   "commands.action.timeout_user": "إسكات عضو مؤقتاً",
   "commands.action.role_add": "إعطاء رتبة",
   "commands.action.role_remove": "إزالة رتبة",

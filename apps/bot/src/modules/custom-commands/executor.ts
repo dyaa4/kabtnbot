@@ -153,6 +153,20 @@ export async function executeActions(
             .catch(() => {});
           break;
         }
+        case 'send_voice_chat': {
+          // The voice channel's built-in text chat: the active session's
+          // channel, else the channel the invoker is sitting in. Voice
+          // channels are text-based in discord.js, so .send works directly.
+          const channelId =
+            ctx.session?.channelId ?? ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;
+          const channel = channelId ? ctx.guild.channels.cache.get(channelId) : undefined;
+          if (!channel?.isVoiceBased()) break;
+          const content = expand(action.text, ctx).slice(0, 2000);
+          await channel
+            .send({ content, allowedMentions: { parse: [], users: mentionedIdsIn(content) } })
+            .catch(() => {});
+          break;
+        }
         case 'timeout_user': {
           const member = await resolveTargetMember(action, ctx);
           if (!member) { replies.push(strings.kickNoMatch); break; }
