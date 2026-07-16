@@ -47,6 +47,23 @@ describe('GuildCommandFlowsSchema', () => {
     expect(f.actions[0].pos).toEqual({ x: 0, y: 0 });
   });
 
+  it('daily schedules parse with time+offset+run limit; bad times are rejected', () => {
+    const withSchedule = (schedule: object) => ({
+      id: 'x', name: 'S', triggers: [],
+      schedule: { enabled: true, channel_id: 'c1', ...schedule },
+      actions: [{ id: 'a', type: 'send_message', channel_id: 'c1', text: 'gm' }],
+    });
+    const parsed = CommandFlowSchema.parse(
+      withSchedule({ mode: 'daily', at: '21:15', tz_offset_minutes: 180, max_runs: 3 }),
+    );
+    expect(parsed.schedule).toMatchObject({ mode: 'daily', at: '21:15', tz_offset_minutes: 180, max_runs: 3 });
+    // Defaults keep old documents valid: interval mode, no run limit.
+    const defaults = CommandFlowSchema.parse(withSchedule({}));
+    expect(defaults.schedule).toMatchObject({ mode: 'every', max_runs: 0 });
+    expect(() => CommandFlowSchema.parse(withSchedule({ mode: 'daily', at: '24:00' }))).toThrow();
+    expect(() => CommandFlowSchema.parse(withSchedule({ mode: 'daily', at: '9:00' }))).toThrow(); // needs HH:MM
+  });
+
   it('accepts a voice_join action; channel_id defaults to "" (= invoker channel)', () => {
     const parsed = CommandFlowSchema.parse({
       id: 'x', name: 'Join', triggers: ['تعال'],
@@ -84,14 +101,20 @@ describe('GuildCommandFlowsSchema', () => {
         },
       ],
     });
-    expect(parsed.flows[0].schedule).toEqual({ enabled: true, every_minutes: 1440, channel_id: 'c1' });
+    expect(parsed.flows[0].schedule).toEqual({
+      enabled: true, mode: 'every', every_minutes: 1440,
+      at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: 'c1',
+    });
   });
 
   it('defaults schedule to disabled for existing flows', () => {
     const parsed = GuildCommandFlowsSchema.parse({
       flows: [{ id: 'x', name: 'Old', triggers: ['hi'], actions: [{ id: 'a', type: 'voice_leave' }] }],
     });
-    expect(parsed.flows[0].schedule).toEqual({ enabled: false, every_minutes: 60, channel_id: '' });
+    expect(parsed.flows[0].schedule).toEqual({
+      enabled: false, mode: 'every', every_minutes: 60,
+      at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: '',
+    });
   });
 
   it('rejects an enabled schedule without an output channel', () => {

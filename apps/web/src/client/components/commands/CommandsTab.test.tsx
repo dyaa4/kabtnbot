@@ -26,7 +26,7 @@ const FLOWS = {
       enabled: true,
       sources: { voice: true, text: false },
       triggers: ['geh raus'],
-      schedule: { enabled: false, every_minutes: 60, channel_id: '' },
+      schedule: { enabled: false, mode: 'every', every_minutes: 60, at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: '' },
       match_mode: 'exact',
       llm_fallback: true,
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },
@@ -198,7 +198,7 @@ describe('CommandsTab', () => {
     // schedule enabled → checkbox appears; enabling it shows the interval picker
     mockFetch({
       ...FLOWS_TWO,
-      flows: [{ ...FLOWS_TWO.flows[0], schedule: { enabled: true, every_minutes: 60, channel_id: 'c9' } }],
+      flows: [{ ...FLOWS_TWO.flows[0], schedule: { enabled: true, mode: 'every', every_minutes: 60, at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: 'c9' } }],
     });
     renderTab();
     await user.click(await screen.findByText('Zwei Aktionen'));

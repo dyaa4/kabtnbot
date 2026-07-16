@@ -1,6 +1,6 @@
 import type { Client, Guild, TextChannel } from 'discord.js';
-import { getScheduleRuns, setScheduleRun } from '@gamebot/db';
-import type { CommandFlow, FlowAction } from '@gamebot/shared';
+import { getScheduleRuns, setScheduleRun, type ScheduleRun } from '@gamebot/db';
+import type { CommandFlow, FlowAction, FlowSchedule } from '@gamebot/shared';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { getSession, playSpeech } from '../voice-ai/sessions.js';
@@ -28,7 +28,10 @@ export interface ScheduledUnit {
   key: string;
   flow: CommandFlow;
   actions: FlowAction[];
-  every_minutes: number;
+  /** Interval cadence in minutes; null = daily mode (fires at flow.schedule.at). */
+  every_minutes: number | null;
+  /** Stop after N executed runs (0 = unlimited). */
+  max_runs: number;
 }
 
 export function scheduledUnits(flows: CommandFlow[]): ScheduledUnit[] {
@@ -37,11 +40,24 @@ export function scheduledUnits(flows: CommandFlow[]): ScheduledUnit[] {
     if (!flow.enabled || !flow.schedule.enabled || !flow.schedule.channel_id) continue;
     const base = flow.actions.filter((a) => a.repeat_minutes === 0);
     if (base.length > 0) {
-      units.push({ key: flow.id, flow, actions: base, every_minutes: flow.schedule.every_minutes });
+      units.push({
+        key: flow.id,
+        flow,
+        actions: base,
+        every_minutes: flow.schedule.mode === 'daily' ? null : flow.schedule.every_minutes,
+        max_runs: flow.schedule.max_runs,
+      });
     }
+    // Per-action cadences are always intervals, even under a daily flow.
     for (const action of flow.actions) {
       if (action.repeat_minutes > 0) {
-        units.push({ key: `${flow.id}:${action.id}`, flow, actions: [action], every_minutes: action.repeat_minutes });
+        units.push({
+          key: `${flow.id}:${action.id}`,
+          flow,
+          actions: [action],
+          every_minutes: action.repeat_minutes,
+          max_runs: flow.schedule.max_runs,
+        });
       }
     }
   }
@@ -49,28 +65,49 @@ export function scheduledUnits(flows: CommandFlow[]): ScheduledUnit[] {
 }
 
 /**
- * Pure partition of a guild's scheduled units: `due` = interval elapsed since
- * last run; `init` = never seen before (gets a last-run stamp WITHOUT
- * executing, so enabling a schedule doesn't fire instantly on save).
+ * Today's occurrence of `at` (HH:MM on the schedule's own wall clock) as real
+ * UTC. tz_offset_minutes was captured from the admin's browser — the bot
+ * host's timezone never matters.
+ */
+export function dailyTargetUtc(schedule: Pick<FlowSchedule, 'at' | 'tz_offset_minutes'>, now: Date): Date {
+  const shifted = new Date(now.getTime() + schedule.tz_offset_minutes * 60_000);
+  const [h, m] = schedule.at.split(':').map(Number);
+  const targetShifted = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate(), h, m);
+  return new Date(targetShifted - schedule.tz_offset_minutes * 60_000);
+}
+
+/**
+ * Pure partition of a guild's scheduled units: `due` = cadence reached
+ * (interval elapsed, or today's daily time passed without a run since) and
+ * the run allowance not exhausted; `init` = never seen before (gets a
+ * last-run stamp WITHOUT executing, so enabling a schedule doesn't fire
+ * instantly on save).
  */
 export function partitionScheduled(
   flows: CommandFlow[],
-  lastRuns: Map<string, Date>,
+  lastRuns: Map<string, ScheduleRun>,
   now: Date,
 ): { due: ScheduledUnit[]; init: ScheduledUnit[] } {
   const due: ScheduledUnit[] = [];
   const init: ScheduledUnit[] = [];
   for (const unit of scheduledUnits(flows)) {
     const last = lastRuns.get(unit.key);
-    if (!last) init.push(unit);
-    else if (now.getTime() - last.getTime() >= unit.every_minutes * 60_000) due.push(unit);
+    if (!last) { init.push(unit); continue; }
+    if (unit.max_runs > 0 && last.count >= unit.max_runs) continue;
+    if (unit.every_minutes === null) {
+      const target = dailyTargetUtc(unit.flow.schedule, now);
+      if (now.getTime() >= target.getTime() && last.at.getTime() < target.getTime()) due.push(unit);
+    } else if (now.getTime() - last.at.getTime() >= unit.every_minutes * 60_000) {
+      due.push(unit);
+    }
   }
   return { due, init };
 }
 
 async function runUnit(guild: Guild, unit: ScheduledUnit, now: Date): Promise<void> {
-  // Stamp BEFORE executing — a slow action must not double-fire on the next tick.
-  await setScheduleRun(guild.id, unit.key, now);
+  // Stamp BEFORE executing — a slow action must not double-fire on the next
+  // tick. countRun=true: this stamp consumes one of the unit's max_runs.
+  await setScheduleRun(guild.id, unit.key, now, true);
 
   const config = await getCachedGuildConfig(guild.id);
   const session = getSession(guild.id);

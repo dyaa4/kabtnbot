@@ -4,7 +4,7 @@ import {
   getGuildConfig, updateGuildConfig, getUsage,
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
-  getCommandFlows, putCommandFlows, listChatMessages,
+  getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isUserBlocked, isDbConnected,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
@@ -272,7 +272,21 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 403, 'PREMIUM_REQUIRED', 'Command flows require premium');
         return;
       }
+      const before = await getCommandFlows(req.params.guildId);
       const saved = await putCommandFlows(req.params.guildId, req.body);
+      // A changed schedule resets that flow's run bookkeeping: a new daily
+      // time must take effect today (not be blocked by an older stamp) and an
+      // edited run limit must count from zero again. Best-effort like the
+      // slash sync below.
+      const prevSchedules = new Map(before.flows.map((f) => [f.id, JSON.stringify(f.schedule)]));
+      await Promise.all(
+        saved.flows
+          .filter((f) => {
+            const prev = prevSchedules.get(f.id);
+            return prev !== undefined && prev !== JSON.stringify(f.schedule);
+          })
+          .map((f) => resetScheduleRuns(req.params.guildId, f.id).catch(() => {})),
+      );
       // Mirror flows with a slash_name into Discord's per-guild slash commands
       // (PUT replaces the guild set, so removals disappear too). Best-effort:
       // a Discord hiccup must not fail the save itself.

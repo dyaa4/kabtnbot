@@ -39,9 +39,14 @@ const actionBase = {
   repeat_minutes: z.union([z.literal(0), z.number().int().min(1).max(10080)]).default(0),
 };
 
+/** Sentinel channel_id for voice_join: join the busiest voice channel.
+ * Starts with '@' so it can never collide with a numeric Discord id. */
+export const JOIN_BUSIEST_CHANNEL = '@busiest';
+
 export const FlowActionSchema = z.discriminatedUnion('type', [
-  // channel_id '' = the invoker's current voice channel ("join me"); a picked
-  // channel is the only form that can work on scheduled runs.
+  // channel_id '' = the invoker's current voice channel ("join me");
+  // JOIN_BUSIEST_CHANNEL = the voice channel with the most human members;
+  // anything else = that picked channel. Scheduled runs need picked/busiest.
   z.object({ ...actionBase, type: z.literal('voice_join'), channel_id: z.string().default('') }),
   z.object({ ...actionBase, type: z.literal('voice_leave') }),
   z.object({ ...actionBase, type: z.literal('voice_stop_listening') }),
@@ -85,14 +90,24 @@ export const FlowConditionsSchema = z
   .default({});
 export type FlowConditions = z.infer<typeof FlowConditionsSchema>;
 
-// Scheduled runs: "every X minutes" (1 min – 7 days; the bot's scheduler ticks
-// every 60s, so 1 minute is the real floor). Output is posted to
-// channel_id (and spoken too when the bot sits in a voice channel). A flow may
-// be phrase-triggered, scheduled, or both.
+// Scheduled runs: either "every X minutes" (1 min – 7 days; the bot's
+// scheduler ticks every 60s, so 1 minute is the real floor) or "daily at a
+// fixed local time". Output is posted to channel_id (and spoken too when the
+// bot sits in a voice channel). A flow may be phrase-triggered, scheduled, or both.
 export const FlowScheduleSchema = z
   .object({
     enabled: z.boolean().default(false),
+    // 'every' = interval cadence; 'daily' = once a day at `at` local time.
+    mode: z.enum(['every', 'daily']).default('every'),
     every_minutes: z.number().int().min(1).max(10080).default(60),
+    // 'daily' mode: wall-clock "HH:MM" in the editor's timezone, stored with
+    // the UTC offset in minutes EAST of UTC (+180 = UTC+3) captured from the
+    // browser — the bot host's own timezone must never matter.
+    at: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'at must be HH:MM').default('20:00'),
+    tz_offset_minutes: z.number().int().min(-720).max(840).default(0),
+    // Stop after N runs (0 = unlimited). Run counters live in the bot's
+    // schedule bookkeeping and reset whenever the schedule is edited.
+    max_runs: z.number().int().min(0).max(1000).default(0),
     channel_id: z.string().default(''),
   })
   .default({});

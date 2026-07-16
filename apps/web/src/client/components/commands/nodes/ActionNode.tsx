@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, AtSign, Copy, MessageSquareText, Timer, User, X, Zap } from 'lucide-react';
 import { memo, useRef, useState, type ReactNode } from 'react';
 import { Handle, Position } from '@xyflow/react';
-import type { CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
+import { JOIN_BUSIEST_CHANNEL, type CommandFlow, type FlowAction, type FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../../i18n.js';
 import { ACTION_GROUPS, ACTION_STYLES, defaultAction, useCanvas } from '../FlowCanvas.js';
 import { IntervalPicker } from '../IntervalPicker.js';
@@ -174,7 +174,24 @@ function Params({
       return (
         <>
           <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.condition.channels')}</label>
-          {channelSelect(voiceChannels.data ?? [], action.channel_id)}
+          <select
+            className={INPUT_CLASS}
+            value={action.channel_id}
+            onChange={(e) => update({ channel_id: e.target.value } as Partial<FlowAction>)}
+          >
+            <option value="">{t('commands.action.join.invoker')}</option>
+            <option value={JOIN_BUSIEST_CHANNEL}>{t('commands.action.join.busiest')}</option>
+            {(voiceChannels.data ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                #{c.name}
+              </option>
+            ))}
+            {action.channel_id &&
+              action.channel_id !== JOIN_BUSIEST_CHANNEL &&
+              !voiceChannels.data?.some((c) => c.id === action.channel_id) && (
+                <option value={action.channel_id}>{action.channel_id}</option>
+              )}
+          </select>
           <p className="mt-1 text-xs text-slate-500">{t('commands.action.joinHint')}</p>
         </>
       );

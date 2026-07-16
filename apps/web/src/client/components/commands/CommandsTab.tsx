@@ -190,7 +190,7 @@ export function CommandsTab({ guildId }: { guildId: string }) {
       enabled: true,
       sources: { voice: true, text: false },
       triggers: type && type !== 'scheduled' ? [t('commands.template.trigger')] : [],
-      schedule: { enabled: type === 'scheduled', every_minutes: 1440, channel_id: '' },
+      schedule: { enabled: type === 'scheduled', mode: 'every', every_minutes: 1440, at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: '' },
       match_mode: type === 'ai_reply' ? 'prefix' : 'exact',
       llm_fallback: true,
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },

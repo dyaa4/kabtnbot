@@ -12,7 +12,7 @@ import {
   activeVoiceSessions, listVoiceSessions,
 } from './voice-log-repo.js';
 import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
-import { getScheduleRuns, setScheduleRun } from './schedule-runs-repo.js';
+import { getScheduleRuns, setScheduleRun, resetScheduleRuns } from './schedule-runs-repo.js';
 import { recordChatMessage, listChatMessages } from './chat-log-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -99,9 +99,29 @@ describe('schedule-runs-repo', () => {
     await setScheduleRun('gS', 'flow2', t0);
     await setScheduleRun('gS', 'flow1', t1); // update, not duplicate
     const runs = await getScheduleRuns('gS');
-    expect(runs.get('flow1')?.toISOString()).toBe(t1.toISOString());
-    expect(runs.get('flow2')?.toISOString()).toBe(t0.toISOString());
+    expect(runs.get('flow1')?.at.toISOString()).toBe(t1.toISOString());
+    expect(runs.get('flow2')?.at.toISOString()).toBe(t0.toISOString());
     expect((await getScheduleRuns('gOther')).size).toBe(0); // guild-scoped
+  });
+
+  it('counts executed runs (not init stamps) and resets a flow with its action keys', async () => {
+    const t0 = new Date('2026-07-13T10:00:00Z');
+    await setScheduleRun('gS2', 'f1', t0); // init stamp — no run consumed
+    expect((await getScheduleRuns('gS2')).get('f1')?.count).toBe(0);
+
+    await setScheduleRun('gS2', 'f1', t0, true);
+    await setScheduleRun('gS2', 'f1', t0, true);
+    await setScheduleRun('gS2', 'f1:a1', t0, true);
+    await setScheduleRun('gS2', 'other', t0, true);
+    let runs = await getScheduleRuns('gS2');
+    expect(runs.get('f1')?.count).toBe(2);
+    expect(runs.get('f1:a1')?.count).toBe(1);
+
+    await resetScheduleRuns('gS2', 'f1'); // drops f1 AND f1:a1, keeps 'other'
+    runs = await getScheduleRuns('gS2');
+    expect(runs.has('f1')).toBe(false);
+    expect(runs.has('f1:a1')).toBe(false);
+    expect(runs.get('other')?.count).toBe(1);
   });
 });
 

@@ -255,12 +255,15 @@ export interface ScheduleRunDoc {
   guild_id: string;
   flow_id: string;
   last_run_at: Date;
+  // Executed runs (init stamps don't count) — enforces schedule.max_runs.
+  run_count: number;
 }
 
 const scheduleRunSchema = new Schema<ScheduleRunDoc>({
   guild_id: { type: String, required: true },
   flow_id: { type: String, required: true },
   last_run_at: { type: Date, required: true },
+  run_count: { type: Number, default: 0 },
 });
 scheduleRunSchema.index({ guild_id: 1, flow_id: 1 }, { unique: true });
 

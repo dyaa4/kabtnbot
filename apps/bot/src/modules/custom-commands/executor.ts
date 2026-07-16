@@ -1,7 +1,7 @@
-import type { Guild, GuildMember, TextChannel } from 'discord.js';
+import type { Guild, GuildMember, TextChannel, VoiceBasedChannel } from 'discord.js';
 import { PermissionFlagsBits } from 'discord.js';
 import { activeUserIds } from '@gamebot/db';
-import type { FlowAction, GuildConfig } from '@gamebot/shared';
+import { JOIN_BUSIEST_CHANNEL, type FlowAction, type GuildConfig } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
 import { getAIProvider } from '../voice-ai/providers.js';
@@ -95,6 +95,27 @@ function botHas(ctx: ExecContext, flag: bigint): boolean {
 }
 
 /**
+ * The joinable voice channel with the most HUMAN members (bots don't count,
+ * ties keep the first seen). Respects the guild's allowed-channels list and
+ * never returns an empty channel — joining nobody is pointless.
+ */
+function busiestVoiceChannel(ctx: ExecContext): VoiceBasedChannel | undefined {
+  const allowed = ctx.config.voice.allowed_channel_ids;
+  let best: VoiceBasedChannel | undefined;
+  let bestCount = 0;
+  for (const ch of ctx.guild.channels.cache.values()) {
+    if (!ch.isVoiceBased() || !ch.joinable) continue;
+    if (allowed.length > 0 && !allowed.includes(ch.id)) continue;
+    const count = [...ch.members.values()].filter((m) => !m.user.bot).length;
+    if (count > bestCount) {
+      best = ch;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/**
  * Runs a flow's actions sequentially. Each action is isolated — one failure is
  * logged and the chain continues. Returns the accumulated reply text (spoken
  * via TTS for voice, sent as a message reply for text).
@@ -110,12 +131,18 @@ export async function executeActions(
     try {
       switch (action.type) {
         case 'voice_join': {
-          // A picked channel wins (the only form that works on scheduled
-          // runs); '' falls back to the invoker's current voice channel.
-          const channelId =
-            action.channel_id || ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;
-          const channel = channelId ? ctx.guild.channels.cache.get(channelId) : undefined;
-          if (!channel?.isVoiceBased()) { replies.push(strings.voiceJoinFailed); break; }
+          // '@busiest' = the fullest voice channel; a picked channel wins
+          // otherwise; '' falls back to the invoker's current voice channel.
+          let channel: VoiceBasedChannel | undefined;
+          if (action.channel_id === JOIN_BUSIEST_CHANNEL) {
+            channel = busiestVoiceChannel(ctx);
+          } else {
+            const channelId =
+              action.channel_id || ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;
+            const ch = channelId ? ctx.guild.channels.cache.get(channelId) : undefined;
+            channel = ch?.isVoiceBased() ? ch : undefined;
+          }
+          if (!channel) { replies.push(strings.voiceJoinFailed); break; }
           // Same gate as /join — an automation must not drag the bot into a
           // channel the admins excluded in the settings.
           if (

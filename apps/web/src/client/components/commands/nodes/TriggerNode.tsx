@@ -86,8 +86,47 @@ function ScheduleSection({
       <p className="mt-1 text-xs text-slate-500">{t('commands.schedule.hint')}</p>
       {schedule.enabled && (
         <>
-          <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.every')}</label>
-          <IntervalPicker minutes={schedule.every_minutes} onChange={(every_minutes) => onChange({ ...schedule, every_minutes })} />
+          <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.mode')}</label>
+          <select
+            className={INPUT_CLASS}
+            value={schedule.mode}
+            onChange={(e) => onChange({ ...schedule, mode: e.target.value as FlowSchedule['mode'] })}
+          >
+            <option value="every">{t('commands.schedule.mode.every')}</option>
+            <option value="daily">{t('commands.schedule.mode.daily')}</option>
+          </select>
+          {schedule.mode === 'every' ? (
+            <>
+              <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.every')}</label>
+              <IntervalPicker minutes={schedule.every_minutes} onChange={(every_minutes) => onChange({ ...schedule, every_minutes })} />
+            </>
+          ) : (
+            <>
+              <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.at')}</label>
+              <input
+                type="time"
+                className={INPUT_CLASS}
+                value={schedule.at}
+                onChange={(e) =>
+                  e.target.value &&
+                  // Stamp the editor's UTC offset alongside the wall-clock time —
+                  // getTimezoneOffset() is minutes WEST of UTC, the schema wants EAST.
+                  onChange({ ...schedule, at: e.target.value, tz_offset_minutes: -new Date().getTimezoneOffset() })
+                }
+              />
+              <p className="mt-1 text-xs text-slate-500">{t('commands.schedule.atHint')}</p>
+            </>
+          )}
+          <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.maxRuns')}</label>
+          <input
+            type="number"
+            min={0}
+            max={1000}
+            className={INPUT_CLASS}
+            value={schedule.max_runs}
+            onChange={(e) => onChange({ ...schedule, max_runs: Math.min(1000, Math.max(0, Math.round(Number(e.target.value) || 0))) })}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('commands.schedule.maxRunsHint')}</p>
           <label className="mb-1 mt-2 block text-xs text-slate-400">{t('commands.schedule.channel')}</label>
           <select
             className={INPUT_CLASS}

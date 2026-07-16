@@ -42,7 +42,7 @@ export function FolderSidebar({
           enabled: true,
           sources: { voice: true, text: false },
           triggers: [],
-          schedule: { enabled: false, every_minutes: 60, channel_id: '' },
+          schedule: { enabled: false, mode: 'every', every_minutes: 60, at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: '' },
           match_mode: 'exact',
           llm_fallback: true,
           conditions: { role_ids: [], user_ids: [], channel_ids: [] },
