@@ -171,6 +171,8 @@
   "welcome.showName": "Mitgliedsname auf dem Banner anzeigen",
   "welcome.showName.hint": "Schreibt den Namen des neuen Mitglieds unter seinen Avatar auf dem Willkommensbild.",
   "welcome.farewell": "Abschiedsnachrichten",
+  "welcome.farewellChannel": "Abschieds-Kanal",
+  "welcome.farewellChannel.hint": "Leer lassen, um Abschiede in den Willkommens-Kanal zu senden.",
   "welcome.farewell.hint": "Eine Textnachricht im selben Willkommenskanal, wenn ein Mitglied den Server verlässt.",
   "welcome.farewellMessage": "Abschiedsnachricht",
   "welcome.farewellMessage.hint": "Nutze {user} für den Namen des scheidenden Mitglieds, dazu {server} und {count} wie gewohnt.",

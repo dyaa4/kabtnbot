@@ -18,6 +18,7 @@ interface GuildConfigResp {
     auto_role_id: string | null;
     farewell_enabled: boolean;
     farewell_message: string;
+    farewell_channel_id: string | null;
     avatar_x: number;
     avatar_y: number;
     avatar_size: number;
@@ -138,6 +139,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
   const [autoRoleId, setAutoRoleId] = useState('');
   const [farewellEnabled, setFarewellEnabled] = useState(false);
   const [farewellMessage, setFarewellMessage] = useState('');
+  const [farewellChannelId, setFarewellChannelId] = useState('');
   const [message, setMessage] = useState('');
   const [showName, setShowName] = useState(true);
   const [pos, setPos] = useState<Pos>(DEFAULT_POS);
@@ -158,6 +160,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
       setAutoRoleId(w.auto_role_id ?? '');
       setFarewellEnabled(w.farewell_enabled);
       setFarewellMessage(w.farewell_message);
+      setFarewellChannelId(w.farewell_channel_id ?? '');
       setMessage(w.message);
       setShowName(w.show_name);
       setPos({ x: w.avatar_x, y: w.avatar_y, size: w.avatar_size });
@@ -275,6 +278,7 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         auto_role_id: autoRoleId === '' ? null : autoRoleId,
         farewell_enabled: farewellEnabled,
         farewell_message: farewellMessage,
+        farewell_channel_id: farewellChannelId.trim() === '' ? null : farewellChannelId.trim(),
         message,
         avatar_x: pos.x,
         avatar_y: pos.y,
@@ -333,6 +337,11 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
         <p className="mb-3 ms-6 text-xs text-slate-500">{t('welcome.farewell.hint')}</p>
         {farewellEnabled && (
           <>
+            <label className="mb-1 block">
+              <span className="mb-1 block text-sm text-slate-400">{t('welcome.farewellChannel')}</span>
+              <ChannelSelect guildId={guildId} value={farewellChannelId} onChange={setFarewellChannelId} />
+            </label>
+            <p className="mb-4 text-xs text-slate-500">{t('welcome.farewellChannel.hint')}</p>
             <MessageEditor
               label={t('welcome.farewellMessage')}
               hint={t('welcome.farewellMessage.hint')}

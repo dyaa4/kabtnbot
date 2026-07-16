@@ -31,8 +31,10 @@ export function registerWelcome(client: Client): void {
   client.on('guildMemberRemove', async (member) => {
     try {
       const config = await getGuildConfigRead(member.guild.id);
-      if (!config.welcome.farewell_enabled || !config.welcome.channel_id) return;
-      const channel = member.guild.channels.cache.get(config.welcome.channel_id);
+      // Farewell has its own channel; unset = the welcome channel (legacy).
+      const channelId = config.welcome.farewell_channel_id ?? config.welcome.channel_id;
+      if (!config.welcome.farewell_enabled || !channelId) return;
+      const channel = member.guild.channels.cache.get(channelId);
       if (!channel?.isTextBased()) return;
 
       const strings = t(config.language);

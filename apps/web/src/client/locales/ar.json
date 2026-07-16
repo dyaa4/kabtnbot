@@ -171,6 +171,8 @@
   "welcome.showName": "إظهار اسم العضو على البانر",
   "welcome.showName.hint": "كتابة اسم العضو الجديد تحت صورته الرمزية على صورة الترحيب.",
   "welcome.farewell": "رسائل الوداع",
+  "welcome.farewellChannel": "قناة الوداع",
+  "welcome.farewellChannel.hint": "اتركها فارغة لإرسال رسائل الوداع في قناة الترحيب نفسها.",
   "welcome.farewell.hint": "رسالة نصية في نفس قناة الترحيب عندما يغادر عضو السيرفر.",
   "welcome.farewellMessage": "رسالة الوداع",
   "welcome.farewellMessage.hint": "استخدم {user} لاسم العضو المغادر و{server} و{count} كالمعتاد.",

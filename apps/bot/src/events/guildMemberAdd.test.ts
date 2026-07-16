@@ -53,6 +53,25 @@ describe('guildMemberRemove — farewell', () => {
     expect(channel.send).toHaveBeenCalledWith({ content: 'وداعاً أبو فهد — بقينا 4' });
   });
 
+  it('posts into the dedicated farewell channel when one is set', async () => {
+    const welcomeChannel = { isTextBased: () => true, send: vi.fn(async () => ({})) };
+    const farewellChannel = { isTextBased: () => true, send: vi.fn(async () => ({})) };
+    await updateGuildConfig('gFWch', {
+      welcome: { farewell_enabled: true, channel_id: 'ch1', farewell_channel_id: 'ch2' },
+    });
+    const handlers = capture();
+    const member = {
+      user: { username: 'أبو فهد' },
+      guild: {
+        id: 'gFWch', name: 'ARAB', memberCount: 4,
+        channels: { cache: new Map([['ch1', welcomeChannel], ['ch2', farewellChannel]]) },
+      },
+    };
+    await handlers.guildMemberRemove(member as never);
+    expect(farewellChannel.send).toHaveBeenCalled();
+    expect(welcomeChannel.send).not.toHaveBeenCalled();
+  });
+
   it('stays silent when farewell is disabled', async () => {
     await updateGuildConfig('gFWoff', { welcome: { farewell_enabled: false, channel_id: 'ch1' } });
     const handlers = capture();

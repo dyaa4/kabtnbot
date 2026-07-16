@@ -41,6 +41,7 @@ describe('GuildConfigSchema', () => {
       auto_role_id: null,
       farewell_enabled: false,
       farewell_message: '',
+      farewell_channel_id: null,
       avatar_x: 0.5,
       avatar_y: 0.4,
       avatar_size: 0.25,

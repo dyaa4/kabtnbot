@@ -171,6 +171,8 @@
   "welcome.showName": "Показывать имя участника на баннере",
   "welcome.showName.hint": "Пишет имя нового участника под его аватаром на приветственной картинке.",
   "welcome.farewell": "Прощальные сообщения",
+  "welcome.farewellChannel": "Канал прощаний",
+  "welcome.farewellChannel.hint": "Оставьте пустым, чтобы отправлять прощания в канал приветствий.",
   "welcome.farewell.hint": "Текстовое сообщение в том же канале приветствий, когда участник покидает сервер.",
   "welcome.farewellMessage": "Прощальное сообщение",
   "welcome.farewellMessage.hint": "Используй {user} для имени ушедшего участника, а также {server} и {count} как обычно.",

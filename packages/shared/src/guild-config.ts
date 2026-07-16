@@ -52,6 +52,8 @@ export const GuildConfigSchema = z.object({
       auto_role_id: z.string().nullable().default(null),
       farewell_enabled: z.boolean().default(false),
       farewell_message: z.string().max(2000).default(''),
+      // null = fall back to the welcome channel (pre-existing behavior).
+      farewell_channel_id: z.string().nullable().default(null),
       avatar_x: z.number().min(0).max(1).default(0.5),
       avatar_y: z.number().min(0).max(1).default(0.4),
       avatar_size: z.number().min(0.05).max(0.6).default(0.25),

@@ -171,6 +171,8 @@
   "welcome.showName": "Afficher le nom du membre sur la bannière",
   "welcome.showName.hint": "Écrit le nom du nouveau membre sous son avatar sur l'image de bienvenue.",
   "welcome.farewell": "Messages d'adieu",
+  "welcome.farewellChannel": "Salon d'adieu",
+  "welcome.farewellChannel.hint": "Laisse vide pour publier les adieux dans le salon de bienvenue.",
   "welcome.farewell.hint": "Un message texte dans le même salon de bienvenue quand un membre quitte le serveur.",
   "welcome.farewellMessage": "Message d'adieu",
   "welcome.farewellMessage.hint": "Utilise {user} pour le nom du membre qui part, plus {server} et {count} comme d'habitude.",

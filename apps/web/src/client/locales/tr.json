@@ -171,6 +171,8 @@
   "welcome.showName": "Üye adını bannerda göster",
   "welcome.showName.hint": "Yeni üyenin adını karşılama görselinde avatarının altına yazar.",
   "welcome.farewell": "Veda mesajları",
+  "welcome.farewellChannel": "Veda kanalı",
+  "welcome.farewellChannel.hint": "Boş bırakılırsa veda mesajları karşılama kanalına gönderilir.",
   "welcome.farewell.hint": "Bir üye sunucudan ayrıldığında aynı karşılama kanalına bir metin mesajı.",
   "welcome.farewellMessage": "Veda mesajı",
   "welcome.farewellMessage.hint": "Ayrılan üyenin adı için {user}, ayrıca her zamanki gibi {server} ve {count} kullan.",

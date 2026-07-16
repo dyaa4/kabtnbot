@@ -56,6 +56,7 @@ const ConfigPatch = z
         auto_role_id: z.string().nullable().optional(),
         farewell_enabled: z.boolean().optional(),
         farewell_message: z.string().max(2000).optional(),
+        farewell_channel_id: z.string().nullable().optional(),
         avatar_x: z.number().min(0).max(1).optional(),
         avatar_y: z.number().min(0).max(1).optional(),
         avatar_size: z.number().min(0.05).max(0.6).optional(),

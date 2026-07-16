@@ -171,6 +171,8 @@
   "welcome.showName": "Show member name on the banner",
   "welcome.showName.hint": "Draws the new member's name under their avatar on the welcome image.",
   "welcome.farewell": "Farewell messages",
+  "welcome.farewellChannel": "Farewell channel",
+  "welcome.farewellChannel.hint": "Leave empty to post farewells into the welcome channel.",
   "welcome.farewell.hint": "A text message in the same welcome channel when a member leaves the server.",
   "welcome.farewellMessage": "Farewell message",
   "welcome.farewellMessage.hint": "Use {user} for the departing member's name, plus {server} and {count} as usual.",
