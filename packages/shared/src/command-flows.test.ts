@@ -47,6 +47,14 @@ describe('GuildCommandFlowsSchema', () => {
     expect(f.actions[0].pos).toEqual({ x: 0, y: 0 });
   });
 
+  it('accepts a voice_join action; channel_id defaults to "" (= invoker channel)', () => {
+    const parsed = CommandFlowSchema.parse({
+      id: 'x', name: 'Join', triggers: ['تعال'],
+      actions: [{ id: 'a', type: 'voice_join' }],
+    });
+    expect(parsed.actions[0]).toMatchObject({ type: 'voice_join', channel_id: '' });
+  });
+
   it('accepts a send_voice_chat action (no channel pick) and rejects empty text', () => {
     const withText = (text: string) => ({
       id: 'x', name: 'VC', triggers: ['hi'],

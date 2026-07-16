@@ -40,6 +40,9 @@ const actionBase = {
 };
 
 export const FlowActionSchema = z.discriminatedUnion('type', [
+  // channel_id '' = the invoker's current voice channel ("join me"); a picked
+  // channel is the only form that can work on scheduled runs.
+  z.object({ ...actionBase, type: z.literal('voice_join'), channel_id: z.string().default('') }),
   z.object({ ...actionBase, type: z.literal('voice_leave') }),
   z.object({ ...actionBase, type: z.literal('voice_stop_listening') }),
   z.object({ ...actionBase, type: z.literal('voice_disconnect_user'), ...targetedBase }),

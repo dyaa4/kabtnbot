@@ -8,6 +8,7 @@ export const fr = {
   notInVoiceChannel: "❌ Rejoins d'abord un salon vocal.",
   channelNotAllowed: "❌ Ce salon n'est pas autorisé pour le bot (voir /settings).",
   joinedVoice: '✅ Salon vocal rejoint, j\'écoute 🎙️ (dis « {wake} » puis ta commande)',
+  voiceJoinFailed: '❌ Impossible de rejoindre le salon vocal.',
   leftVoice: '👋 J\'ai quitté le salon vocal.',
   notConnected: "❌ Le bot n'est pas dans un salon vocal. Utilise /join",
   listenQuotaExhausted: "⏳ Les minutes d'écoute quotidiennes de ce serveur sont épuisées. À demain !",

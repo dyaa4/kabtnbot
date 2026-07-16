@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Переместить участника в канал",
   "commands.action.speak_tts": "Сказать текст (TTS)",
   "commands.action.send_message": "Отправить сообщение в канал",
+  "commands.action.voice_join": "Зайти в голосовой канал",
+  "commands.action.joinHint": "Без выбора — текущий голосовой канал вызвавшего. Для запусков по расписанию выберите канал.",
   "commands.action.send_voice_chat": "Написать в голосовой чат",
   "commands.action.voiceChatHint": "Пишет в текстовый чат голосового канала, где находится бот.",
   "commands.action.timeout_user": "Дать таймаут участнику",

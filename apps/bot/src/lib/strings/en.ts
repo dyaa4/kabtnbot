@@ -8,6 +8,7 @@ export const en = {
   notInVoiceChannel: '❌ Join a voice channel first.',
   channelNotAllowed: '❌ This channel is not allowed for the bot (see /settings).',
   joinedVoice: '✅ Joined voice and started listening 🎙️ (say "{wake}" followed by your command)',
+  voiceJoinFailed: '❌ Could not join the voice channel.',
   leftVoice: '👋 Left the voice channel.',
   notConnected: '❌ The bot is not in a voice channel. Use /join',
   listenQuotaExhausted: "⏳ Today's voice-listening minutes for this server are used up. Back tomorrow!",

@@ -6,8 +6,8 @@ import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
 import { getAIProvider } from '../voice-ai/providers.js';
 import { resolveKickTarget } from '../voice-ai/kick.js';
-import { leaveGuildVoice, type VoiceSession } from '../voice-ai/sessions.js';
-import { stopListening } from '../voice-ai/listen.js';
+import { joinGuildVoice, leaveGuildVoice, type VoiceSession } from '../voice-ai/sessions.js';
+import { startListening, stopListening } from '../voice-ai/listen.js';
 
 export interface ExecContext {
   guild: Guild;
@@ -109,6 +109,36 @@ export async function executeActions(
   for (const action of actions) {
     try {
       switch (action.type) {
+        case 'voice_join': {
+          // A picked channel wins (the only form that works on scheduled
+          // runs); '' falls back to the invoker's current voice channel.
+          const channelId =
+            action.channel_id || ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;
+          const channel = channelId ? ctx.guild.channels.cache.get(channelId) : undefined;
+          if (!channel?.isVoiceBased()) { replies.push(strings.voiceJoinFailed); break; }
+          // Same gate as /join — an automation must not drag the bot into a
+          // channel the admins excluded in the settings.
+          if (
+            ctx.config.voice.allowed_channel_ids.length > 0 &&
+            !ctx.config.voice.allowed_channel_ids.includes(channel.id)
+          ) {
+            replies.push(strings.channelNotAllowed);
+            break;
+          }
+          if (ctx.session?.channelId === channel.id) break; // already there
+          try {
+            const session = await joinGuildVoice(channel);
+            // Later actions in this run (TTS, voice chat, kicks) must see the
+            // fresh session, not the pre-join snapshot.
+            ctx.session = session;
+            // Quota-gated like /join; a false return means the bot sits in the
+            // channel without listening — intentional, the join itself succeeded.
+            await startListening(session, ctx.guild);
+          } catch {
+            replies.push(strings.voiceJoinFailed);
+          }
+          break;
+        }
         case 'voice_leave': {
           // leaveGuildVoice tears down subscriptions + handler itself.
           if (ctx.session) leaveGuildVoice(ctx.guild.id);

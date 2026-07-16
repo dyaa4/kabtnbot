@@ -9,6 +9,7 @@ export const ar = {
   notInVoiceChannel: '❌ ادخل روم صوتي أول.',
   channelNotAllowed: '❌ هذا الروم مو مسموح للبوت (راجع /settings).',
   joinedVoice: '✅ دخلت الفويس وبدأت الاستماع 🎙️ (قل "{wake}" وبعدها أمرك)',
+  voiceJoinFailed: '❌ ما قدرت أدخل القناة الصوتية.',
   leftVoice: '👋 طلعت من الفويس.',
   notConnected: '❌ البوت مو موجود في الفويس. استخدم /join',
   listenQuotaExhausted: '⏳ خلصت دقائق الاستماع اليومية لهذا السيرفر. نرجع بكرة!',

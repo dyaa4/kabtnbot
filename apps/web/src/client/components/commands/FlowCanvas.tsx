@@ -53,7 +53,7 @@ const nodeTypes = {
 // select) — the group order mirrors how often each family is used.
 export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
   ['messages', ['speak_tts', 'send_message', 'send_voice_chat', 'ai_reply', 'dm_user', 'dm_inactive_members']],
-  ['voice', ['voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user']],
+  ['voice', ['voice_join', 'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user']],
   ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
 
@@ -93,6 +93,10 @@ export const ACTION_STYLES: Record<FlowActionType, ActionStyle> = {
   dm_inactive_members: {
     card: 'border-fuchsia-400/40 shadow-[0_0_24px_-8px_rgba(232,121,249,0.5)]',
     accent: 'text-fuchsia-300', badge: 'bg-fuchsia-400/25 text-fuchsia-300', handle: '!bg-fuchsia-400', hex: '#e879f9',
+  },
+  voice_join: {
+    card: 'border-green-400/40 shadow-[0_0_24px_-8px_rgba(74,222,128,0.5)]',
+    accent: 'text-green-300', badge: 'bg-green-400/25 text-green-300', handle: '!bg-green-400', hex: '#4ade80',
   },
   voice_leave: {
     card: 'border-teal-400/40 shadow-[0_0_24px_-8px_rgba(45,212,191,0.5)]',
@@ -134,6 +138,8 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
     case 'voice_leave':
     case 'voice_stop_listening':
       return { ...base, type };
+    case 'voice_join':
+      return { ...base, type, channel_id: '' };
     case 'voice_disconnect_user':
       return { ...base, type, ...targeted };
     case 'voice_move_user':

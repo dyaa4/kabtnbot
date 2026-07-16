@@ -8,6 +8,7 @@ export const tr = {
   notInVoiceChannel: '❌ Önce bir ses kanalına gir.',
   channelNotAllowed: '❌ Bu kanal bot için izinli değil (bkz. /settings).',
   joinedVoice: '✅ Ses kanalına girdim ve dinlemeye başladım 🎙️ ("{wake}" de, ardından komutunu söyle)',
+  voiceJoinFailed: '❌ Ses kanalına katılamadım.',
   leftVoice: '👋 Ses kanalından çıktım.',
   notConnected: '❌ Bot bir ses kanalında değil. /join kullan',
   listenQuotaExhausted: '⏳ Bu sunucunun günlük dinleme dakikaları bitti. Yarın görüşürüz!',

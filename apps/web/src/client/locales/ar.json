@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "نقل عضو إلى قناة",
   "commands.action.speak_tts": "قول نص (TTS)",
   "commands.action.send_message": "إرسال رسالة في قناة",
+  "commands.action.voice_join": "دخول قناة صوتية",
+  "commands.action.joinHint": "بدون اختيار قناة: يدخل القناة الصوتية التي فيها صاحب الأمر. للتشغيل المجدول اختر قناة محددة.",
   "commands.action.send_voice_chat": "كتابة في الشات الصوتي",
   "commands.action.voiceChatHint": "تُرسل الرسالة في الشات النصي للقناة الصوتية التي يجلس فيها البوت.",
   "commands.action.timeout_user": "إسكات عضو مؤقتاً",

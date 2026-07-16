@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Mitglied in Kanal verschieben",
   "commands.action.speak_tts": "Text sagen (TTS)",
   "commands.action.send_message": "Kanalnachricht senden",
+  "commands.action.voice_join": "Sprachkanal beitreten",
+  "commands.action.joinHint": "Ohne Auswahl: der aktuelle Sprachkanal des Auslösers. Für geplante Läufe einen Kanal wählen.",
   "commands.action.send_voice_chat": "In den Voice-Chat schreiben",
   "commands.action.voiceChatHint": "Schreibt in den Text-Chat des Sprachkanals, in dem der Bot sitzt.",
   "commands.action.timeout_user": "Mitglied timeouten",

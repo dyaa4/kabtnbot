@@ -93,7 +93,9 @@ async function runUnit(guild: Guild, unit: ScheduledUnit, now: Date): Promise<vo
       .send({ content: reply.slice(0, 2000), allowedMentions: { parse: [], users: userIds } })
       .catch(() => {});
   }
-  if (session) await playSpeech(guild.id, reply).catch(() => {});
+  // Re-resolve instead of reusing the pre-run snapshot: a voice_join action
+  // may have just created the session, and its reply should be spoken too.
+  if (getSession(guild.id)) await playSpeech(guild.id, reply).catch(() => {});
 }
 
 export async function runScheduleSweep(client: Client, now: Date = new Date()): Promise<void> {

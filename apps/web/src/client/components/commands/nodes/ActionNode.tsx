@@ -170,6 +170,14 @@ function Params({
     case 'voice_leave':
     case 'voice_stop_listening':
       return null;
+    case 'voice_join':
+      return (
+        <>
+          <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.condition.channels')}</label>
+          {channelSelect(voiceChannels.data ?? [], action.channel_id)}
+          <p className="mt-1 text-xs text-slate-500">{t('commands.action.joinHint')}</p>
+        </>
+      );
     case 'voice_disconnect_user':
       return <TargetPicker guildId={guildId} target={action.target} userId={action.target_user_id} update={update} />;
     case 'voice_move_user':

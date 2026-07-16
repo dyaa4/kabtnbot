@@ -8,6 +8,7 @@ export const de = {
   notInVoiceChannel: '❌ Tritt zuerst einem Sprachkanal bei.',
   channelNotAllowed: '❌ Dieser Kanal ist für den Bot nicht freigegeben (siehe /settings).',
   joinedVoice: '✅ Sprachkanal betreten, ich höre zu 🎙️ (sag „{wake}" und dann deinen Befehl)',
+  voiceJoinFailed: '❌ Konnte dem Sprachkanal nicht beitreten.',
   leftVoice: '👋 Sprachkanal verlassen.',
   notConnected: '❌ Der Bot ist in keinem Sprachkanal. Nutze /join',
   listenQuotaExhausted: '⏳ Die täglichen Zuhör-Minuten dieses Servers sind aufgebraucht. Bis morgen!',

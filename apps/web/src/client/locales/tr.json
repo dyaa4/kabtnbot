@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Üyeyi kanala taşı",
   "commands.action.speak_tts": "Metin söyle (TTS)",
   "commands.action.send_message": "Kanala mesaj gönder",
+  "commands.action.voice_join": "Ses kanalına katıl",
+  "commands.action.joinHint": "Kanal seçilmezse komutu verenin ses kanalına girer. Zamanlanmış çalıştırmalar için bir kanal seçin.",
   "commands.action.send_voice_chat": "Sesli sohbete yaz",
   "commands.action.voiceChatHint": "Botun bulunduğu ses kanalının metin sohbetine gönderilir.",
   "commands.action.timeout_user": "Üyeye zaman aşımı ver",

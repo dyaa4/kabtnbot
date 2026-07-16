@@ -350,6 +350,8 @@
   "commands.action.voice_move_user": "Move member to channel",
   "commands.action.speak_tts": "Say text (TTS)",
   "commands.action.send_message": "Send channel message",
+  "commands.action.voice_join": "Join voice channel",
+  "commands.action.joinHint": "No channel picked = the invoker's current voice channel. Pick a channel for scheduled runs.",
   "commands.action.send_voice_chat": "Write in voice chat",
   "commands.action.voiceChatHint": "Posts into the text chat of the voice channel the bot is in.",
   "commands.action.timeout_user": "Timeout member",
