@@ -1,11 +1,13 @@
-import { Bot, Clock, Gem, MessageSquare, Plus, RotateCw, Settings, Trash2, Volume2 } from 'lucide-react';
+import { Bot, Clock, Gem, MessageSquare, Mic, Plus, RotateCw, Settings, Trash2, Volume2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   GuildCommandFlowsSchema,
+  JOIN_BUSIEST_CHANNEL,
   type BuiltinCommandKey,
   type BuiltinOverride,
   type CommandFlow,
+  type FlowAction,
   type GuildCommandFlows,
 } from '@gamebot/shared';
 import { api, ApiError } from '../../api.js';
@@ -176,25 +178,48 @@ export function CommandsTab({ guildId }: { guildId: string }) {
 
   // One-click starter templates for the empty state — a prefilled flow is far
   // easier to tweak than an empty canvas. `null` = blank command; 'scheduled'
-  // = a channel message on a timer instead of a phrase.
-  const createFromTemplate = (type: 'speak_tts' | 'ai_reply' | 'send_message' | 'scheduled' | null) => {
+  // = a channel message on a timer; 'daily_voice' = join the busiest voice
+  // channel every evening and greet.
+  const createFromTemplate = (type: 'speak_tts' | 'ai_reply' | 'send_message' | 'scheduled' | 'daily_voice' | null) => {
     const id = crypto.randomUUID();
-    const action = defaultAction(type === 'scheduled' ? 'send_message' : (type ?? 'speak_tts'), 0);
-    if (action.type === 'speak_tts' && type) action.text = t('commands.template.reply.text');
-    if (action.type === 'send_message') action.text = t('commands.template.reply.text');
-    if (action.type === 'ai_reply') action.system_prompt = t('commands.template.ai.prompt');
+    const actions: FlowAction[] = [];
+    if (type === 'daily_voice') {
+      const join = defaultAction('voice_join', 0);
+      if (join.type === 'voice_join') join.channel_id = JOIN_BUSIEST_CHANNEL;
+      const speak = defaultAction('speak_tts', 1);
+      if (speak.type === 'speak_tts') speak.text = t('commands.template.dailyVoice.text');
+      actions.push(join, speak);
+    } else {
+      const action = defaultAction(type === 'scheduled' ? 'send_message' : (type ?? 'speak_tts'), 0);
+      if (action.type === 'speak_tts' && type) action.text = t('commands.template.reply.text');
+      if (action.type === 'send_message') action.text = t('commands.template.reply.text');
+      if (action.type === 'ai_reply') action.system_prompt = t('commands.template.ai.prompt');
+      actions.push(action);
+    }
+    const scheduled = type === 'scheduled' || type === 'daily_voice';
     const flow: CommandFlow = {
       id,
-      name: type === 'scheduled' ? t('commands.template.scheduled.name') : t('commands.newName'),
+      name:
+        type === 'scheduled' ? t('commands.template.scheduled.name')
+        : type === 'daily_voice' ? t('commands.template.dailyVoice.name')
+        : t('commands.newName'),
       folder: '',
       enabled: true,
       sources: { voice: true, text: false },
-      triggers: type && type !== 'scheduled' ? [t('commands.template.trigger')] : [],
-      schedule: { enabled: type === 'scheduled', mode: 'every', every_minutes: 1440, at: '20:00', tz_offset_minutes: 0, max_runs: 0, channel_id: '' },
+      triggers: type && !scheduled ? [t('commands.template.trigger')] : [],
+      schedule: {
+        enabled: scheduled,
+        mode: type === 'daily_voice' ? 'daily' : 'every',
+        every_minutes: 1440,
+        at: '20:00',
+        tz_offset_minutes: type === 'daily_voice' ? -new Date().getTimezoneOffset() : 0,
+        max_runs: 0,
+        channel_id: '',
+      },
       match_mode: type === 'ai_reply' ? 'prefix' : 'exact',
       llm_fallback: true,
       conditions: { role_ids: [], user_ids: [], channel_ids: [] },
-      actions: [action],
+      actions,
       cooldown_seconds: 5,
       slash_name: '',
       layout: { trigger: { x: 0, y: 120 }, condition: { x: 320, y: 120 } },
@@ -334,8 +359,8 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                 <h3 className="text-lg font-semibold text-slate-200">{t('commands.start.title')}</h3>
                 <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">{t('commands.start.hint')}</p>
               </div>
-              <div className="grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {([['speak_tts', Volume2], ['ai_reply', Bot], ['send_message', MessageSquare], ['scheduled', Clock]] as const).map(([type, Icon]) => (
+              <div className="grid w-full max-w-4xl gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                {([['speak_tts', Volume2], ['ai_reply', Bot], ['send_message', MessageSquare], ['scheduled', Clock], ['daily_voice', Mic]] as const).map(([type, Icon]) => (
                   <button
                     key={type}
                     type="button"
@@ -343,7 +368,9 @@ export function CommandsTab({ guildId }: { guildId: string }) {
                     onClick={() => createFromTemplate(type)}
                   >
                     <Icon className="h-8 w-8 text-blue-300" />
-                    {type === 'scheduled' ? t('commands.template.scheduled.name') : t(`commands.action.${type}`)}
+                    {type === 'scheduled' ? t('commands.template.scheduled.name')
+                      : type === 'daily_voice' ? t('commands.template.dailyVoice.name')
+                      : t(`commands.action.${type}`)}
                   </button>
                 ))}
               </div>

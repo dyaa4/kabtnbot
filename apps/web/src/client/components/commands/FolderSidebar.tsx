@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { SLASH_COMMAND_KEYS, type BuiltinCommandKey, type GuildCommandFlows, type SlashCommandKey } from '@gamebot/shared';
 import { useI18n } from '../../i18n.js';
 import { BUILTIN_KEYS, builtinNameKey } from './builtin-meta.js';
+import { flowSummary } from './flow-summary.js';
 
 export type Selection =
   | { kind: 'flow'; id: string }
@@ -145,8 +146,14 @@ export function FolderSidebar({
                 onClick={() => onSelect({ kind: 'flow', id: flow.id })}
               >
                 <Dot on={flow.enabled} />
-                <span className="truncate">{flow.name}</span>
-                {flow.schedule.enabled && <span title={t('commands.schedule.title')}><Clock className="h-3.5 w-3.5 text-blue-300" /></span>}
+                <span className="min-w-0 flex-1 text-start">
+                  <span className="block truncate">{flow.name}</span>
+                  {/* Plain-language "when → what" line so a glance explains the flow. */}
+                  <span className="block truncate text-[11px] font-normal text-slate-500">
+                    {flowSummary(flow, t)}
+                  </span>
+                </span>
+                {flow.schedule.enabled && <span title={t('commands.schedule.title')}><Clock className="h-3.5 w-3.5 shrink-0 text-blue-300" /></span>}
               </button>
             ))}
             {flowsIn(folder).length === 0 && <p className="px-2.5 py-1 text-xs text-slate-600">—</p>}
