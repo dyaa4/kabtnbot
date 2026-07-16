@@ -12,14 +12,14 @@ export function intervalParts(minutes: number): { value: number; unit: 'minutes'
 }
 const UNIT_MINUTES = { minutes: 1, hours: 60, days: 1440 } as const;
 
-/** Value + unit editor for an every-N-minutes interval (5 min – 7 days). */
+/** Value + unit editor for an every-N-minutes interval (1 min – 7 days). */
 export function IntervalPicker({ minutes, onChange }: { minutes: number; onChange: (m: number) => void }) {
   const { t } = useI18n();
   const { value, unit } = intervalParts(minutes);
 
   const set = (v: number, u: 'minutes' | 'hours' | 'days') => {
-    // Clamp to the schema's 5 min – 7 days window.
-    onChange(Math.min(10080, Math.max(5, Math.round(v) * UNIT_MINUTES[u])));
+    // Clamp to the schema's 1 min – 7 days window.
+    onChange(Math.min(10080, Math.max(1, Math.round(v) * UNIT_MINUTES[u])));
   };
 
   return (

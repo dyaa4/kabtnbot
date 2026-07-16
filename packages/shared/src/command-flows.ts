@@ -34,9 +34,9 @@ const actionBase = {
   pos: NodePos.default({ x: 0, y: 0 }),
   // Own cadence for this step within a scheduled flow: 0 = run together with
   // the flow's schedule interval; >0 = run independently every N minutes
-  // (same 5 min – 7 days window as the flow schedule). Ignored while the
+  // (same 1 min – 7 days window as the flow schedule). Ignored while the
   // flow's schedule is disabled.
-  repeat_minutes: z.union([z.literal(0), z.number().int().min(5).max(10080)]).default(0),
+  repeat_minutes: z.union([z.literal(0), z.number().int().min(1).max(10080)]).default(0),
 };
 
 export const FlowActionSchema = z.discriminatedUnion('type', [
@@ -85,13 +85,14 @@ export const FlowConditionsSchema = z
   .default({});
 export type FlowConditions = z.infer<typeof FlowConditionsSchema>;
 
-// Scheduled runs: "every X minutes" (5 min – 7 days). Output is posted to
+// Scheduled runs: "every X minutes" (1 min – 7 days; the bot's scheduler ticks
+// every 60s, so 1 minute is the real floor). Output is posted to
 // channel_id (and spoken too when the bot sits in a voice channel). A flow may
 // be phrase-triggered, scheduled, or both.
 export const FlowScheduleSchema = z
   .object({
     enabled: z.boolean().default(false),
-    every_minutes: z.number().int().min(5).max(10080).default(60),
+    every_minutes: z.number().int().min(1).max(10080).default(60),
     channel_id: z.string().default(''),
   })
   .default({});
