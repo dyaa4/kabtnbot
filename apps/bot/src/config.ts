@@ -18,24 +18,17 @@ const Env = z.object({
   // 8b-instant produces broken, incoherent Arabic (esp. colloquial dialects);
   // 70b-versatile is far stronger at Arabic and still fast on Groq. See voice-ai.
   GROQ_MODEL: z.string().optional().default('llama-3.3-70b-versatile'),
-  // Groq Orpheus TTS (Arabic Saudi). One GROQ_API_KEY now covers STT + chat + TTS.
-  // Voices: Abdullah, Fahad, Sultan (m); Lulwa, Noura, Aisha (f).
-  GROQ_TTS_MODEL: z.string().optional().default('canopylabs/orpheus-arabic-saudi'),
-  GROQ_TTS_VOICE: z.string().optional().default('fahad'),
-  // English TTS: the Saudi Orpheus model is Arabic-only, so English replies use
-  // the English Orpheus model. Groq decommissioned PlayAI (2026) — a stale
-  // playai env value in prod is remapped so English TTS keeps working.
-  // Voices: autumn, diana, hannah (f); austin, daniel, troy (m).
-  GROQ_TTS_MODEL_EN: z.string().optional().default('canopylabs/orpheus-v1-english')
-    .transform((v) => (v === 'playai-tts' ? 'canopylabs/orpheus-v1-english' : v)),
-  GROQ_TTS_VOICE_EN: z.string().optional().default('troy')
-    .transform((v) => (v.endsWith('-PlayAI') ? 'troy' : v)),
   GEMINI_API_KEY: z.string().optional().default(''),
-  // ElevenLabs is now an OPTIONAL fallback — only used if a key is still set.
-  // Leave all three empty to run TTS purely on Groq Orpheus.
-  ELEVENLABS_API_KEY: z.string().optional().default(''),
-  ELEVENLABS_VOICE_ID: z.string().optional().default('21m00Tcm4TlvDq8ikWAM'),
-  ELEVENLABS_MODEL_ID: z.string().optional().default('eleven_flash_v2_5'),
+  // OpenAI powers the whole voice path: one Realtime session per guild for
+  // STT + conversation + spoken answers, REST TTS for verbatim announcements
+  // (/speak, warn/kick lines, scheduler) that must never be paraphrased.
+  OPENAI_API_KEY: z.string().optional().default(''),
+  OPENAI_REALTIME_MODEL: z.string().optional().default('gpt-realtime-mini'),
+  OPENAI_REALTIME_VOICE: z.string().optional().default('marin'),
+  // gpt-4o-*-transcribe supports a decode prompt (wake word + trigger phrases);
+  // gpt-realtime-whisper/whisper-1 do NOT — realtime.ts omits it for those.
+  OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-mini-transcribe'),
+  OPENAI_TTS_MODEL: z.string().optional().default('gpt-4o-mini-tts'),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
   // They need the privileged Message Content Intent; if the intent is missing

@@ -43,14 +43,18 @@ function sameIds(a: string[], b: string[]): boolean {
   return a.length === b.length && [...a].sort().join(',') === [...b].sort().join(',');
 }
 
-// Romanized name + gender symbol — language-neutral, no per-voice translation needed.
+// OpenAI voice ids, capitalized — language-neutral, no per-voice translation needed.
 const TTS_VOICE_LABELS: Record<(typeof TTS_VOICES)[number], string> = {
-  fahad: 'Fahad ♂',
-  abdullah: 'Abdullah ♂',
-  sultan: 'Sultan ♂',
-  noura: 'Noura ♀',
-  lulwa: 'Lulwa ♀',
-  aisha: 'Aisha ♀',
+  marin: 'Marin',
+  cedar: 'Cedar',
+  alloy: 'Alloy',
+  ash: 'Ash',
+  ballad: 'Ballad',
+  coral: 'Coral',
+  echo: 'Echo',
+  sage: 'Sage',
+  shimmer: 'Shimmer',
+  verse: 'Verse',
 };
 
 export function SettingsTab({ guildId }: { guildId: string }) {

@@ -15,6 +15,7 @@ import { getAIProvider } from './providers.js';
 import { buildSystemPrompt } from './prompts.js';
 import { resolveKickTarget } from './kick.js';
 import { leaveGuildVoice, type VoiceSession } from './sessions.js';
+import { getRealtime } from './realtime.js';
 import { stopListening } from './listen.js';
 
 interface CommandPatterns {
@@ -104,9 +105,13 @@ function matchBuiltin(
   return matchBuiltinExtraTriggers(overrides, q);
 }
 
+/**
+ * Resolves a wake-word query. Returns the reply text to speak/post, or
+ * `{ streamed: true }` when the realtime session answers directly with audio.
+ */
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
-): Promise<string> {
+): Promise<string | { streamed: true }> {
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
   const q = normalizeText(query.trim());
@@ -212,7 +217,10 @@ export async function routeVoiceCommand(
     }
   }
 
-  // 4. Free-form question → AI, answered in the guild's bot language.
+  // 4. Free-form question → the realtime session answers with audio directly
+  // (the utterance is already in its context). Falls back to the text
+  // Groq/Gemini path when the WS is down or a response is still playing.
+  if (getRealtime(guild.id)?.requestResponse()) return { streamed: true };
   try {
     const ai = getAIProvider();
     return await ai.generateResponse(q, {

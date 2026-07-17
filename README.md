@@ -48,7 +48,7 @@
 | pnpm | 9.x | حسب `packageManager` في `package.json` (`pnpm@9.15.0`). |
 | MongoDB | **6.0+** | رابط اتصال (URI) من MongoDB Atlas أو أي MongoDB متوافق مع Mongoose 8. |
 | تطبيق Discord (Developer Portal) | — | راجع القسم التالي لإعداد الصلاحيات والـ Intents. |
-| مفاتيح API | GROQ إلزامي، ELEVENLABS إلزامي للصوت، GEMINI اختياري | راجع "المفاتيح" أدناه. |
+| مفاتيح API | OPENAI إلزامي للصوت، GROQ إلزامي للنصوص، GEMINI اختياري | راجع "المفاتيح" أدناه. |
 
 ### إعداد تطبيق Discord
 
@@ -86,8 +86,8 @@
 |---|---|---|
 | `DISCORD_TOKEN` / `DISCORD_CLIENT_ID` | نعم | توكن البوت ومعرف التطبيق. |
 | `MONGODB_URI` | نعم | تخزين إعدادات السيرفر، إحصائيات النشاط اليومية، والحصص اليومية. |
-| `GROQ_API_KEY` | نعم | تحويل الصوت إلى نص (STT) وتوليد ردود الذكاء الاصطناعي. |
-| `ELEVENLABS_API_KEY` | نعم (للصوت) | تحويل النص إلى صوت (TTS) الذي يسمعه اللاعبون في الفويس. |
+| `OPENAI_API_KEY` | نعم (للصوت) | المحادثة الصوتية الفورية (Realtime speech-to-speech)، تحويل الكلام إلى نص للمراقبة، و TTS للإعلانات الحرفية. |
+| `GROQ_API_KEY` | نعم (للنصوص) | ميزات النصوص: /ask و /summarize وأوامر ai_reply ومصنّف النوايا. |
 | `GEMINI_API_KEY` | اختياري | مزود احتياطي للذكاء الاصطناعي إذا فشل Groq. |
 
 جميع المفاتيح موجودة كأسطر فارغة في `.env.example`.
@@ -97,7 +97,7 @@
 ```bash
 cp .env.example .env
 # ثم افتح .env واملأ القيم: DISCORD_TOKEN, DISCORD_CLIENT_ID, MONGODB_URI,
-# GROQ_API_KEY, ELEVENLABS_API_KEY (و GEMINI_API_KEY اختياريًا)
+# OPENAI_API_KEY, GROQ_API_KEY (و GEMINI_API_KEY اختياريًا)
 
 pnpm install
 pnpm build
@@ -128,8 +128,7 @@ docker run --env-file .env gamebot
 
 الصورة الأساسية `node:22.12-slim` (تطابق متطلب `@discordjs/voice` أعلاه). البناء يشمّل
 تثبيت الاعتماديات (`pnpm install --frozen-lockfile`)، بناء كل الحزم (`pnpm build`)، ثم
-تقليم اعتماديات التطوير (`pnpm prune --prod`). لا حاجة لحزم `apt` إضافية: ثنائي `ffmpeg`
-يأتي مع حزمة `ffmpeg-static` عبر npm، و `opusscript` و `libsodium-wrappers` جافاسكربت/WASM
+تقليم اعتماديات التطوير (`pnpm prune --prod`). لا حاجة لحزم `apt` إضافية: `opusscript` و `libsodium-wrappers` جافاسكربت/WASM
 خالص بدون بناء أصلي (`node-gyp`). كذلك `@napi-rs/canvas` (المستخدم لتوليد صورة الترحيب)
 يأتي كحزمة ثنائية جاهزة (prebuilt) لكل منصة عبر npm، بدون الحاجة لأي أدوات بناء أصلي
 (`node-gyp`, `cairo`, إلخ) على صورة الـ Docker أو بيئة التطوير.
@@ -204,8 +203,8 @@ pnpm restore <ملف النسخة>        # يستعيد بدمج (upsert) دو�
 2. `pnpm dev` — يجب أن تظهر رسالتا `[DB] Connected` ثم `[Ready] Logged in as ...`.
 3. داخل Discord:
    - `/ping` → رد بزمن الاستجابة.
-   - `/join` في روم صوتي → البوت ينضم؛ قول «يا كابتن السرعة» → رد صوتي مسموع (يتطلب مفاتيح
-     `GROQ_API_KEY` و `ELEVENLABS_API_KEY` فعلية).
+   - `/join` في روم صوتي → البوت ينضم؛ قول «يا كابتن السرعة» → رد صوتي مسموع (يتطلب مفتاح
+     `OPENAI_API_KEY` فعليًا).
    - كمن يملك صلاحية إدارية، قول «اطرد + اسم عضو» أثناء استماع البوت → طرد ذلك العضو من
      الفويس.
 4. `/settings voice dialect:مصرية` ثم `/settings view` → يجب أن تظهر القيمة محفوظة.

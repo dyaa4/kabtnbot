@@ -3,10 +3,11 @@ import {
   AudioPlayerStatus, VoiceConnectionStatus, entersState, StreamType,
   type VoiceConnection, type AudioPlayer,
 } from '@discordjs/voice';
-import { Readable } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import type { VoiceBasedChannel, VoiceState } from 'discord.js';
 import type OpusScript from 'opusscript';
 import { synthesizeSpeech } from './tts.js';
+import { closeRealtime } from './realtime.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
 export interface VoiceSession {
@@ -102,6 +103,7 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
 }
 
 export function leaveGuildVoice(guildId: string): boolean {
+  closeRealtime(guildId);
   const session = sessions.get(guildId);
   sessions.delete(guildId);
   // The flag must drop BEFORE the connection dies: an in-flight utterance
@@ -124,7 +126,21 @@ export async function playSpeech(guildId: string, text: string): Promise<void> {
   const session = sessions.get(guildId);
   if (!session) throw new Error('NOT_CONNECTED');
   const config = await getCachedGuildConfig(guildId);
+  // synthesizeSpeech returns 48kHz s16le stereo — exactly StreamType.Raw.
   const buffer = await synthesizeSpeech(text, { language: config.language, voice: config.voice.tts_voice });
-  const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Arbitrary });
+  const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Raw });
   session.player.play(resource);
+}
+
+/**
+ * Live playback sink for realtime answer audio: the returned stream accepts
+ * 48kHz s16le stereo chunks and plays as they arrive, so the reply starts
+ * before the model has finished speaking.
+ */
+export function playPcmStream(guildId: string): PassThrough | null {
+  const session = sessions.get(guildId);
+  if (!session) return null;
+  const stream = new PassThrough();
+  session.player.play(createAudioResource(stream, { inputType: StreamType.Raw }));
+  return stream;
 }

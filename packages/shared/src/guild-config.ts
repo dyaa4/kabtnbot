@@ -1,8 +1,10 @@
 import { z } from 'zod';
 
-// Groq Orpheus (Arabic Saudi) TTS voices. Male: fahad, abdullah, sultan.
-// Female: noura, lulwa, aisha. Lowercase to match Groq's voice ids.
-export const TTS_VOICES = ['fahad', 'abdullah', 'sultan', 'noura', 'lulwa', 'aisha'] as const;
+// OpenAI voice ids — shared by the realtime conversation voice and the
+// verbatim TTS announcements. All are multilingual.
+export const TTS_VOICES = [
+  'marin', 'cedar', 'alloy', 'ash', 'ballad', 'coral', 'echo', 'sage', 'shimmer', 'verse',
+] as const;
 export type TtsVoice = (typeof TTS_VOICES)[number];
 
 // Bot system-message languages: moderation notices, welcome/farewell
@@ -17,7 +19,10 @@ export const GuildConfigSchema = z.object({
     .object({
       enabled: z.boolean().default(true),
       wake_word: z.string().min(2).max(30).default('يا كابتن'),
-      tts_voice: z.enum(TTS_VOICES).default('fahad'),
+      // .catch self-heals guilds that still store a pre-migration Orpheus
+      // voice id ("fahad" etc.) — they coerce to the default on read; the web
+      // PATCH route still validates strictly against the current enum.
+      tts_voice: z.enum(TTS_VOICES).default('marin').catch('marin'),
       allowed_channel_ids: z.array(z.string()).default([]),
       personality_enabled: z.boolean().default(false),
     })

@@ -29,13 +29,20 @@ describe('guild-config-repo', () => {
   it('creates defaults on first access and persists patches', async () => {
     const c = await getGuildConfig('g1');
     expect(c.voice.wake_word).toBe('يا كابتن');
-    const updated = await updateGuildConfig('g1', { voice: { tts_voice: 'noura' } });
-    expect(updated.voice.tts_voice).toBe('noura');
+    const updated = await updateGuildConfig('g1', { voice: { tts_voice: 'cedar' } });
+    expect(updated.voice.tts_voice).toBe('cedar');
     expect(updated.voice.wake_word).toBe('يا كابتن'); // merge, not replace
   });
 
   it('rejects invalid patches', async () => {
-    await expect(updateGuildConfig('g1', { voice: { tts_voice: 'xx' } })).rejects.toThrow();
+    // tts_voice self-heals via .catch (pre-migration ids), so the strict-field
+    // check uses language instead.
+    await expect(updateGuildConfig('g1', { language: 'xx' })).rejects.toThrow();
+  });
+
+  it('coerces a legacy tts voice to the default instead of rejecting', async () => {
+    const updated = await updateGuildConfig('g1', { voice: { tts_voice: 'fahad' } });
+    expect(updated.voice.tts_voice).toBe('marin');
   });
 
   it('first access creates exactly one config document', async () => {

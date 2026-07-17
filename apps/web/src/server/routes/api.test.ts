@@ -123,10 +123,10 @@ describe('api routes', () => {
     const patch = await request(app)
       .patch('/api/guilds/g1/config')
       .set('Cookie', cookie)
-      .send({ voice: { tts_voice: 'noura' } });
+      .send({ voice: { tts_voice: 'cedar' } });
     expect(patch.status).toBe(200);
-    expect(patch.body.voice.tts_voice).toBe('noura');
-    expect((await getGuildConfig('g1')).voice.tts_voice).toBe('noura');
+    expect(patch.body.voice.tts_voice).toBe('cedar');
+    expect((await getGuildConfig('g1')).voice.tts_voice).toBe('cedar');
 
     const bad = await request(app)
       .patch('/api/guilds/g1/config')

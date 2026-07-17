@@ -31,7 +31,7 @@ auto-registers its slash commands on startup.
     **Message Content intent** enabled in the Discord Developer Portal. Without the intent the bot boots in a
     content-less fallback (those features stay dormant). Opt out of a feature with `ENABLE_CHAT_LOG=false`,
     `ENABLE_TEXT_COMMANDS=false`, `ENABLE_TEXT_PROTECTION=false` or `ENABLE_SUMMARY=false`.
-  - `GROQ_API_KEY`, `GEMINI_API_KEY`, `ELEVENLABS_API_KEY` *(for voice/AI; optional if unused)*
+  - `OPENAI_API_KEY` *(voice: realtime conversation + transcription + TTS)*, `GROQ_API_KEY`, `GEMINI_API_KEY` *(text AI features; optional if unused)*
   - **Do NOT set `DISCORD_GUILD_ID`** → commands register **globally** (all servers).
     Set it to a single server id only for instant testing in that one server.
 

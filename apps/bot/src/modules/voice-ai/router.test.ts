@@ -10,6 +10,12 @@ const baseConfig = (premiumActive: boolean) => ({
   premium: { active: premiumActive, listen_minutes_override: null, ai_questions_override: null },
 });
 
+// No realtime client by default → step 4 falls back to the text AI path.
+const realtimeMock = vi.hoisted(() => ({
+  client: undefined as undefined | { requestResponse: () => boolean },
+}));
+vi.mock('./realtime.js', () => ({ getRealtime: () => realtimeMock.client }));
+
 vi.mock('@gamebot/db', () => ({
   getGuildConfig: vi.fn(async () => baseConfig(true)),
   getGuildConfigRead: vi.fn(async () => baseConfig(true)),
@@ -62,6 +68,7 @@ describe('routeVoiceCommand', () => {
   beforeEach(() => {
     clearFlowsCache();
     clearCooldowns();
+    realtimeMock.client = undefined;
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({}));
   });
 
@@ -75,12 +82,29 @@ describe('routeVoiceCommand', () => {
     // the wake word alone (query ''). Silence here reads as "bot ignored me".
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), '', 'u-speaker');
     expect(reply).toBe(S.wakeAck);
-    expect(reply.length).toBeGreaterThan(0);
+    expect((reply as string).length).toBeGreaterThan(0);
   });
 
   it('returns help text', async () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد', 'u-speaker');
-    expect(reply.length).toBeGreaterThan(0);
+    expect((reply as string).length).toBeGreaterThan(0);
+  });
+
+  it('streams free-form questions through the realtime session when available', async () => {
+    const requestResponse = vi.fn(() => true);
+    realtimeMock.client = { requestResponse };
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'وش أفضل لعبة', 'u-speaker');
+    expect(reply).toEqual({ streamed: true });
+    expect(requestResponse).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to the text AI path when the realtime session is busy', async () => {
+    realtimeMock.client = { requestResponse: () => false };
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'وش أفضل لعبة', 'u-speaker');
+    // Busy realtime must NOT swallow the question — it degrades to a text
+    // reply (real answer or aiFailed, depending on configured keys).
+    expect(typeof reply).toBe('string');
+    expect((reply as string).length).toBeGreaterThan(0);
   });
 
   it('denies kick command from a non-admin speaker', async () => {

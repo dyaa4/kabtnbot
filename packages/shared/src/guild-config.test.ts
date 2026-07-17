@@ -20,7 +20,7 @@ describe('GuildConfigSchema', () => {
     const c = GuildConfigSchema.parse({});
     expect(c.admin_role_id).toBeNull();
     expect(c.voice.wake_word).toBe('يا كابتن');
-    expect(c.voice.tts_voice).toBe('fahad');
+    expect(c.voice.tts_voice).toBe('marin');
     expect(c.voice.personality_enabled).toBe(false);
     expect(c.protection).toEqual({
       enabled: false,
@@ -50,8 +50,11 @@ describe('GuildConfigSchema', () => {
     expect('customs' in c).toBe(false);
   });
 
-  it('rejects an invalid tts voice', () => {
-    expect(() => GuildConfigSchema.parse({ voice: { tts_voice: 'french' } })).toThrow();
+  it('coerces an unknown tts voice to the default instead of rejecting', () => {
+    // Guilds saved before the OpenAI migration still store Orpheus ids —
+    // reading their config must self-heal, not crash.
+    expect(GuildConfigSchema.parse({ voice: { tts_voice: 'fahad' } }).voice.tts_voice).toBe('marin');
+    expect(GuildConfigSchema.parse({ voice: { tts_voice: 'cedar' } }).voice.tts_voice).toBe('cedar');
   });
 
 });

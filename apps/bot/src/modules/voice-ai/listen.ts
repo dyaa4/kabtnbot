@@ -1,13 +1,12 @@
 import OpusScript from 'opusscript';
 import { EndBehaviorType } from '@discordjs/voice';
 import type { Guild, VoiceState } from 'discord.js';
-import { parseWakeWord, type GuildCommandFlows } from '@gamebot/shared';
+import { parseWakeWord } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
-import { getCachedCommandFlows } from '../../lib/flows-cache.js';
-import { transcribe } from './stt.js';
-import { pcmToWav } from './wav.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
-import { playSpeech, type VoiceSession, getSession } from './sessions.js';
+import { playSpeech, playPcmStream, type VoiceSession, getSession } from './sessions.js';
+import { ensureRealtime, getRealtime } from './realtime.js';
+import { downmixStereoToMono, downsample48to24, normalizeQuietAudio } from './audio-util.js';
 import { t } from '../../lib/strings.js';
 
 const SAMPLE_RATE = 48000;
@@ -23,19 +22,6 @@ function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
   } catch { /* connection already destroyed (leave path) */ }
 }
 
-/**
- * Whisper biases decoding toward its prompt, so seed it with the EXACT words
- * it must recognize: the wake word plus the guild's enabled trigger phrases.
- * Capped well under Whisper's 224-token prompt limit.
- */
-export function sttHint(wakeWord: string, flows: GuildCommandFlows | null): string {
-  const phrases = (flows?.flows ?? [])
-    .filter((f) => f.enabled && f.sources.voice)
-    .flatMap((f) => f.triggers)
-    .slice(0, 12);
-  return [wakeWord, ...phrases].join('، ').slice(0, 300);
-}
-
 export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
   if (session.listening) return true;
   if (await isListenQuotaExceeded(guild.id)) {
@@ -43,6 +29,27 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
     return false;
   }
+
+  // The realtime session transcribes EVERY utterance — profanity moderation
+  // depends on it, so listening without it is not allowed.
+  let client;
+  try {
+    client = await ensureRealtime(guild.id, guild);
+  } catch (err) {
+    console.error(`[Listen ${guild.id}] realtime unavailable:`, (err as Error)?.message ?? err);
+    return false;
+  }
+  client.callbacks = {
+    onTranscript: (userId, itemId, text) => {
+      handleTranscript(guild, userId, itemId, text)
+        .catch((err) => console.error(`[Listen ${guild.id}]`, err));
+    },
+    onAnswerText: (text) => {
+      mirrorAnswer(guild, text).catch(() => {});
+    },
+    openAudioSink: () => playPcmStream(guild.id),
+  };
+
   session.listening = true;
   setSelfDeaf(session, false);
 
@@ -88,7 +95,60 @@ export function stopListening(session: VoiceSession): void {
     decoder.delete();
   }
   session.subscriptions.clear();
+  // The realtime WS stays open on purpose: /listen resumes with the
+  // conversation memory intact, and the idle timer caps the cost.
   setSelfDeaf(session, true);
+}
+
+/**
+ * Runs for every transcribed utterance (wired as the realtime onTranscript
+ * callback): moderation first, then wake-word gating, then command routing.
+ * Utterances that don't address the bot are deleted from the model's context —
+ * conversation memory holds only real questions and answers.
+ */
+export async function handleTranscript(
+  guild: Guild, userId: string, itemId: string, text: string,
+): Promise<void> {
+  const session = getSession(guild.id);
+  if (!session) return;
+  const config = await getCachedGuildConfig(guild.id);
+  const client = getRealtime(guild.id);
+  console.log(`[Voice ${guild.id}] STT="${text}"`);
+
+  const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
+  // moderated → no reply, and the profanity never enters the model context.
+  if (await handleTranscriptModeration(guild, session, userId, text)) {
+    client?.deleteItem(itemId);
+    return;
+  }
+
+  const query = parseWakeWord(text, config.voice.wake_word);
+  console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
+  if (query === null) {
+    client?.deleteItem(itemId);
+    return;
+  }
+
+  const { routeVoiceCommand } = await import('./router.js');
+  const answer = await routeVoiceCommand(guild, session, query, userId);
+  // streamed: the answer audio comes straight from the realtime session and
+  // onAnswerText mirrors its transcript to the log channel.
+  if (typeof answer !== 'string') return;
+  if (answer) {
+    // Best-effort spoken reply...
+    await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
+    // ...and always a text reply so the answer is visible without TTS.
+    await mirrorAnswer(guild, answer);
+  }
+}
+
+/** Posts a spoken answer as text to the moderation/log channel. */
+async function mirrorAnswer(guild: Guild, text: string): Promise<void> {
+  const config = await getCachedGuildConfig(guild.id);
+  const { resolveModerationChannel } = await import('../protection/voice-mod.js');
+  await resolveModerationChannel(guild, config.protection.log_channel_id)
+    ?.send(`🤖 ${text}`.slice(0, 2000))
+    .catch(() => {});
 }
 
 function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): void {
@@ -99,9 +159,9 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   let totalFrames = 0;
 
   const stream = session.connection.receiver.subscribe(userId, {
-    // Shorter silence window = the utterance is sent to STT sooner after the
-    // speaker stops, so moderation/kick reacts faster. Too low would split
-    // normal sentences mid-word; 500ms is a snappy-but-safe balance.
+    // Shorter silence window = the utterance reaches transcription sooner
+    // after the speaker stops, so moderation/kick reacts faster. Too low would
+    // split normal sentences mid-word; 500ms is a snappy-but-safe balance.
     end: { behavior: EndBehaviorType.AfterSilence, duration: 500 },
   });
   session.subscriptions.set(userId, { decoder, stream });
@@ -116,8 +176,8 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   // the 'end' handler returns this very stream — already ended, forever
   // silent — and the member goes permanently deaf.
   //
-  // 'close' fires milliseconds after the utterance ends, long before STT and
-  // the reply finish, so the renewed subscription still captures anything
+  // 'close' fires milliseconds after the utterance ends, long before the
+  // reply finishes, so the renewed subscription still captures anything
   // said while the bot is thinking or talking.
   let decoderFreed = false;
   const freeDecoder = () => {
@@ -150,70 +210,23 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   stream.on('error', () => stream.destroy());
 
   async function onUtteranceEnd(): Promise<void> {
-    // Cleanup and renewal belong to 'close' — this function only processes
+    // Cleanup and renewal belong to 'close' — this function only ships
     // whatever audio the stream captured.
     if (!session.listening || totalFrames === 0) return;
-    const raw = Buffer.concat(pcmFrames);
-
-    // stereo → mono downmix
-    const monoLen = raw.length >> 1;
-    const mono = Buffer.alloc(monoLen);
-    for (let i = 0; i < monoLen; i += 2) {
-      const l = raw.readInt16LE(i << 1);
-      const r = raw.readInt16LE((i << 1) + 2);
-      mono.writeInt16LE(Math.max(-32768, Math.min(32767, (l + r) >> 1)), i);
-    }
-    // normalize quiet audio to ~80% peak
-    let peak = 0;
-    for (let i = 0; i < monoLen; i += 2) {
-      const s = Math.abs(mono.readInt16LE(i));
-      if (s > peak) peak = s;
-    }
-    if (peak > 0 && peak < 20000) {
-      const gain = 26214 / peak;
-      for (let i = 0; i < monoLen; i += 2) {
-        mono.writeInt16LE(
-          Math.max(-32768, Math.min(32767, Math.round(mono.readInt16LE(i) * gain))), i,
-        );
-      }
-    }
+    const mono = downmixStereoToMono(Buffer.concat(pcmFrames));
+    normalizeQuietAudio(mono);
 
     try {
       await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
-      const config = await getCachedGuildConfig(guild.id);
       if (await isListenQuotaExceeded(guild.id)) {
         stopListening(session);
-        await playSpeech(guild.id, t(config.language).listenQuotaExhausted).catch(() => {});
+        const { language } = await getCachedGuildConfig(guild.id);
+        await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
         return;
       }
-      const flows = await getCachedCommandFlows(guild.id).catch((): GuildCommandFlows | null => null);
-      const text = await transcribe(
-        pcmToWav(mono, SAMPLE_RATE, 1),
-        sttHint(config.voice.wake_word, flows),
-        config.language,
-      );
-      console.log(`[Voice ${guild.id}] STT="${text}"`);
-
-      const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
-      // moderated → skip wake-word handling (the 'close' renewal keeps
-      // listening; a subscription to a kicked member is inert).
-      if (await handleTranscriptModeration(guild, session, userId, text)) return;
-
-      const query = parseWakeWord(text, config.voice.wake_word);
-      console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
-      if (query !== null) {
-        const { routeVoiceCommand } = await import('./router.js');
-        const answer = await routeVoiceCommand(guild, session, query, userId);
-        if (answer) {
-          // Best-effort spoken reply (needs TTS/ElevenLabs)...
-          await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
-          // ...and always a text reply so the answer is visible without TTS.
-          const { resolveModerationChannel } = await import('../protection/voice-mod.js');
-          await resolveModerationChannel(guild, config.protection.log_channel_id)
-            ?.send(`🤖 ${answer}`.slice(0, 2000))
-            .catch(() => {});
-        }
-      }
+      // Transcription + moderation + wake-word handling continue in
+      // handleTranscript once the realtime server returns the transcript.
+      getRealtime(guild.id)?.sendUtterance(downsample48to24(mono), userId);
     } catch (err) {
       console.error(`[Listen ${guild.id}]`, err);
     }
