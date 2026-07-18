@@ -25,6 +25,11 @@ export const GuildConfigSchema = z.object({
       tts_voice: z.enum(TTS_VOICES).default('marin').catch('marin'),
       allowed_channel_ids: z.array(z.string()).default([]),
       personality_enabled: z.boolean().default(false),
+      // Conversation window: after a wake-word question, the SAME speaker can
+      // keep talking to the bot without repeating the wake word for this many
+      // seconds (each follow-up extends the window). 0 = off (wake word
+      // required every time).
+      follow_up_seconds: z.number().int().min(0).max(120).default(0),
     })
     .default({}),
   protection: z

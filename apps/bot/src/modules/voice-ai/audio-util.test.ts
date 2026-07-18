@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  downmixStereoToMono, downsample48to24, normalizeQuietAudio, upsample24to48Stereo,
+  downmixStereoToMono, downsample48to24, normalizeQuietAudio, pcmPeak, upsample24to48Stereo,
 } from './audio-util.js';
 
 function pcm(samples: number[]): Buffer {
@@ -19,6 +19,13 @@ describe('downmixStereoToMono', () => {
   it('averages left and right channels', () => {
     // L=100 R=200, L=-1000 R=1000
     expect(samples(downmixStereoToMono(pcm([100, 200, -1000, 1000])))).toEqual([150, 0]);
+  });
+});
+
+describe('pcmPeak', () => {
+  it('returns the highest absolute sample', () => {
+    expect(pcmPeak(pcm([100, -5000, 300]))).toBe(5000);
+    expect(pcmPeak(pcm([0, 0]))).toBe(0);
   });
 });
 

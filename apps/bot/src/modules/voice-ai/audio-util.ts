@@ -15,6 +15,17 @@ export function downmixStereoToMono(stereo: Buffer): Buffer {
   return mono;
 }
 
+/** Highest absolute sample value (0..32768) — the capture's loudness peak. */
+export function pcmPeak(mono: Buffer): number {
+  const len = mono.length & ~1;
+  let peak = 0;
+  for (let i = 0; i < len; i += 2) {
+    const s = Math.abs(mono.readInt16LE(i));
+    if (s > peak) peak = s;
+  }
+  return peak;
+}
+
 /**
  * Boost quiet captures in place to ~80% peak so far-from-mic speakers stay
  * intelligible for transcription. Audio already near full scale is untouched
@@ -22,11 +33,7 @@ export function downmixStereoToMono(stereo: Buffer): Buffer {
  */
 export function normalizeQuietAudio(mono: Buffer): void {
   const len = mono.length & ~1;
-  let peak = 0;
-  for (let i = 0; i < len; i += 2) {
-    const s = Math.abs(mono.readInt16LE(i));
-    if (s > peak) peak = s;
-  }
+  const peak = pcmPeak(mono);
   if (peak === 0 || peak >= 20000) return;
   const gain = 26214 / peak;
   for (let i = 0; i < len; i += 2) {

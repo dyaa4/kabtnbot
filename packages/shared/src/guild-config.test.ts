@@ -22,6 +22,7 @@ describe('GuildConfigSchema', () => {
     expect(c.voice.wake_word).toBe('يا كابتن');
     expect(c.voice.tts_voice).toBe('marin');
     expect(c.voice.personality_enabled).toBe(false);
+    expect(c.voice.follow_up_seconds).toBe(0);
     expect(c.protection).toEqual({
       enabled: false,
       voice_moderation: true,

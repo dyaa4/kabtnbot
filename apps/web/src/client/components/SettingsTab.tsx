@@ -14,11 +14,14 @@ import { SaveBar } from './SaveBar.js';
 import { FormSkeleton } from './Skeleton.js';
 import { useToast } from './Toast.js';
 
+const FOLLOW_UP_CHOICES = [0, 15, 30, 60] as const;
+
 const VoiceForm = z.object({
   enabled: z.boolean(),
   wake_word: z.string().min(2).max(30),
   tts_voice: z.enum(TTS_VOICES),
   personality_enabled: z.boolean(),
+  follow_up_seconds: z.number().int().min(0).max(120),
 });
 
 type VoiceValues = z.infer<typeof VoiceForm>;
@@ -32,6 +35,7 @@ interface GuildConfigResp {
     tts_voice: (typeof TTS_VOICES)[number];
     allowed_channel_ids: string[];
     personality_enabled: boolean;
+    follow_up_seconds: number;
   };
   summary?: {
     enabled: boolean;
@@ -165,6 +169,20 @@ export function SettingsTab({ guildId }: { guildId: string }) {
             </select>
           </label>
           <p className="mb-4 text-xs text-slate-500">{t('settings.voice.ttsVoice.hint')}</p>
+          <label className="mb-1 block">
+            <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.followUp')}</span>
+            <select
+              className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
+              {...voice.register('follow_up_seconds', { valueAsNumber: true })}
+            >
+              {FOLLOW_UP_CHOICES.map((s) => (
+                <option key={s} value={s}>
+                  {s === 0 ? t('settings.voice.followUp.off') : `${s}s`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p className="mb-4 text-xs text-slate-500">{t('settings.voice.followUp.hint')}</p>
           <label className="mb-1 flex items-center gap-2">
             <input type="checkbox" {...voice.register('personality_enabled')} />
             <span>{t('settings.personality')}</span>

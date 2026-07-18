@@ -199,7 +199,9 @@ export async function routeVoiceCommand(
   // Bare wake word (a pause split the utterance after "يا كابتن"): a short
   // acknowledgment beats silence — the speaker knows they were heard and
   // repeats the request. Placed after the matchers so '' can never run a flow.
-  if (!q) return strings.wakeAck;
+  // Cooldown: transcription can hallucinate the wake word out of noise; an
+  // un-throttled ack turns that into the bot chattering at nobody.
+  if (!q) return checkCooldown(`${guild.id}:wake-ack:${speakerId}`, 8) ? strings.wakeAck : '';
 
   // 3+4 share ONE quota consume: the intent classification and the free-form
   // answer are alternatives, not two questions.

@@ -9,7 +9,7 @@ import { SettingsTab } from './SettingsTab.js';
 
 const config = {
   admin_role_id: null,
-  voice: { enabled: true, wake_word: 'يا بوت', tts_voice: 'marin', allowed_channel_ids: [], personality_enabled: false },
+  voice: { enabled: true, wake_word: 'يا بوت', tts_voice: 'marin', allowed_channel_ids: [], personality_enabled: false, follow_up_seconds: 0 },
   quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
   premium: { active: false, listen_minutes_override: null, ai_questions_override: null },
   language: 'ar',

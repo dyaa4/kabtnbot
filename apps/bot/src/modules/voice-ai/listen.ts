@@ -6,12 +6,23 @@ import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
 import { playSpeech, playPcmStream, type VoiceSession, getSession } from './sessions.js';
 import { ensureRealtime, getRealtime } from './realtime.js';
-import { downmixStereoToMono, downsample48to24, normalizeQuietAudio } from './audio-util.js';
+import { downmixStereoToMono, downsample48to24, normalizeQuietAudio, pcmPeak } from './audio-util.js';
 import { t } from '../../lib/strings.js';
 
 const SAMPLE_RATE = 48000;
 const OPUS_CHANNELS = 2;
 const FRAME_SECONDS = 0.02; // one Opus frame ≈ 20 ms
+
+// ── Noise gate ──────────────────────────────────────────────────────────
+// Discord's voice-activity mode also transmits breathing, keyboard clicks and
+// background hum. Those blips used to reach transcription, where the
+// wake-word decode hint makes the model HALLUCINATE the wake word out of pure
+// noise — the bot then "answers" someone who never spoke. Anything shorter
+// than a spoken word or too quiet to be speech is dropped BEFORE quota
+// accounting and transcription. (normalizeQuietAudio would otherwise happily
+// amplify a whisper-quiet hum to 80% full scale.)
+const MIN_UTTERANCE_FRAMES = 15; // 300ms — the shortest real word
+const NOISE_FLOOR_PEAK = 1200; // ~3.7% full scale — below this is not speech
 
 // Self-deafen mirrors the listening state in the Discord UI: a crossed-out
 // headset shows members the bot genuinely cannot receive audio. A deafened
@@ -122,12 +133,25 @@ export async function handleTranscript(
     return;
   }
 
-  const query = parseWakeWord(text, config.voice.wake_word);
+  let query = parseWakeWord(text, config.voice.wake_word);
+  // Follow-up window: after addressing the bot once, the same speaker keeps
+  // the conversation open for follow_up_seconds — no wake word needed.
+  const windowMs = config.voice.follow_up_seconds * 1000;
+  if (query === null && windowMs > 0 && text.trim()) {
+    const fu = session.followUp;
+    if (fu && fu.userId === userId && Date.now() < fu.until) {
+      query = text;
+      console.log(`[Voice ${guild.id}] follow-up (${Math.round((fu.until - Date.now()) / 1000)}s left)`);
+    }
+  }
   console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
   if (query === null) {
     client?.deleteItem(itemId);
     return;
   }
+  // Every addressed utterance opens/extends the window (bare wake word too —
+  // "يا كابتن" … pause … question is the natural flow).
+  if (windowMs > 0) session.followUp = { userId, until: Date.now() + windowMs };
 
   const { routeVoiceCommand } = await import('./router.js');
   const answer = await routeVoiceCommand(guild, session, query, userId);
@@ -213,7 +237,13 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     // Cleanup and renewal belong to 'close' — this function only ships
     // whatever audio the stream captured.
     if (!session.listening || totalFrames === 0) return;
+    if (totalFrames < MIN_UTTERANCE_FRAMES) return;
     const mono = downmixStereoToMono(Buffer.concat(pcmFrames));
+    const peak = pcmPeak(mono);
+    if (peak < NOISE_FLOOR_PEAK) {
+      console.log(`[Listen ${guild.id}] gate: dropped ${Math.round(totalFrames * FRAME_SECONDS * 1000)}ms noise (peak=${peak})`);
+      return;
+    }
     normalizeQuietAudio(mono);
 
     try {
