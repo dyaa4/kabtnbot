@@ -5,7 +5,7 @@ import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-c
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
-import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
+import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
 import { getKv, setKv } from './kv-repo.js';
 import {
   startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
@@ -294,6 +294,19 @@ describe('user-accounts-repo', () => {
     await unlinkGuild('u3', 'gX');
     expect(await isGuildLinked('gX')).toBe(false);
     expect((await linkGuild('u3', 'gY'))?.linked_guild_ids).toEqual(['gY']);
+  });
+
+  it('isGuildPremium requires the linking account to be premium', async () => {
+    await linkGuild('u-free', 'gFree');
+    expect(await isGuildLinked('gFree')).toBe(true);
+    expect(await isGuildPremium('gFree')).toBe(false);
+
+    await setUserPremium('u-paid', true);
+    await linkGuild('u-paid', 'gPaid');
+    expect(await isGuildPremium('gPaid')).toBe(true);
+
+    await setUserPremium('u-paid', false);
+    expect(await isGuildPremium('gPaid')).toBe(false); // downgrade drops the boost
   });
 });
 

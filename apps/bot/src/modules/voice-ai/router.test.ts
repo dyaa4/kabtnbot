@@ -34,6 +34,7 @@ vi.mock('@gamebot/db', () => ({
   consumeAiQuestion: vi.fn(async () => 1),
   refundAiQuestion: vi.fn(async () => {}),
   incrementListenSeconds: vi.fn(async () => {}),
+  isGuildPremium: vi.fn(async () => false),
   getCommandFlows: vi.fn(async () => GuildCommandFlowsSchema.parse({})),
 }));
 

@@ -114,3 +114,8 @@ export async function isUserBlocked(userId: string): Promise<boolean> {
 export async function isGuildLinked(guildId: string): Promise<boolean> {
   return (await UserAccountModel.exists({ linked_guild_ids: guildId })) !== null;
 }
+
+/** Quota gate: premium limits apply when a PREMIUM account links the guild. */
+export async function isGuildPremium(guildId: string): Promise<boolean> {
+  return (await UserAccountModel.exists({ linked_guild_ids: guildId, premium_active: true })) !== null;
+}

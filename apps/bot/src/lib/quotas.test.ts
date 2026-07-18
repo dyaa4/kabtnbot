@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDb, disconnectDb, updateGuildConfig } from '@gamebot/db';
+import { connectDb, disconnectDb, updateGuildConfig, setUserPremium, linkGuild } from '@gamebot/db';
 import { tryConsumeAiQuestion, addListenSeconds, isListenQuotaExceeded, todayKey } from './quotas.js';
+import { clearPremiumCache } from './premium-cache.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -30,5 +31,15 @@ describe('quotas', () => {
     expect(await isListenQuotaExceeded('q2')).toBe(false);
     await addListenSeconds('q2', 61);
     expect(await isListenQuotaExceeded('q2')).toBe(true);
+  });
+
+  it('a guild linked by a premium account gets the premium AI quota', async () => {
+    await updateGuildConfig('q3', { quotas: { ai_questions_per_day: 1 } });
+    await setUserPremium('owner-premium', true);
+    await linkGuild('owner-premium', 'q3');
+    clearPremiumCache();
+    expect(await tryConsumeAiQuestion('q3')).toBe(true);
+    // Beyond the configured 1/day — the premium floor (500) applies instead.
+    expect(await tryConsumeAiQuestion('q3')).toBe(true);
   });
 });

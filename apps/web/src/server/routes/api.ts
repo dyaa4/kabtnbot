@@ -5,7 +5,7 @@ import {
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
-  getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isUserBlocked, isDbConnected,
+  getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, isUserBlocked, isDbConnected,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -588,11 +588,15 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
   router.get('/guilds/:guildId/usage', guard, async (req, res, next) => {
     try {
-      const [guildConfig, usage] = await Promise.all([
+      const [guildConfig, usage, linked, premium] = await Promise.all([
         getGuildConfig(req.params.guildId),
         getUsage(req.params.guildId, todayKey()),
+        isGuildLinked(req.params.guildId),
+        isGuildPremium(req.params.guildId),
       ]);
-      res.json({ ...usage, limits: effectiveQuotas(guildConfig), premium_active: await isGuildLinked(req.params.guildId) });
+      // limits reflect PREMIUM linking (higher daily quotas); premium_active
+      // keeps its existing meaning of "linked by anyone" (feature gate).
+      res.json({ ...usage, limits: effectiveQuotas(guildConfig, premium), premium_active: linked });
     } catch (err) {
       next(err);
     }
