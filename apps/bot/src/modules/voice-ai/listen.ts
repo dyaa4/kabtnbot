@@ -137,10 +137,12 @@ export async function handleTranscript(
   // Follow-up window: after addressing the bot once, the same speaker keeps
   // the conversation open for follow_up_seconds — no wake word needed.
   const windowMs = config.voice.follow_up_seconds * 1000;
+  let isFollowUp = false;
   if (query === null && windowMs > 0 && text.trim()) {
     const fu = session.followUp;
     if (fu && fu.userId === userId && Date.now() < fu.until) {
       query = text;
+      isFollowUp = true;
       console.log(`[Voice ${guild.id}] follow-up (${Math.round((fu.until - Date.now()) / 1000)}s left)`);
     }
   }
@@ -154,7 +156,7 @@ export async function handleTranscript(
   if (windowMs > 0) session.followUp = { userId, until: Date.now() + windowMs };
 
   const { routeVoiceCommand } = await import('./router.js');
-  const answer = await routeVoiceCommand(guild, session, query, userId);
+  const answer = await routeVoiceCommand(guild, session, query, userId, { followUp: isFollowUp });
   // streamed: the answer audio comes straight from the realtime session and
   // onAnswerText mirrors its transcript to the log channel.
   if (typeof answer !== 'string') return;

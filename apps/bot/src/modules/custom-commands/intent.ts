@@ -44,8 +44,10 @@ export async function classifyIntent(
   const systemPrompt =
     'You map a user utterance to one of the listed commands, or none.\n' +
     `Commands:\n${list}\n` +
-    'Reply with ONLY minified JSON: {"command_id":"<id>"} if the utterance clearly asks for one of the commands, ' +
-    'or {"command_id":null} otherwise. No other text.';
+    'Reply with ONLY minified JSON: {"command_id":"<id>"} if the utterance is an EXPLICIT request to run that command, ' +
+    'or {"command_id":null} otherwise. No other text.\n' +
+    'The audio comes from an open voice channel: the utterance may be casual conversation between people, background ' +
+    'chatter, or merely MENTION a related topic — none of those are requests; return null for them. When in doubt, return null.';
   const raw = await getAIProvider().generateResponse(query, {
     systemPrompt,
     username: 'classifier',

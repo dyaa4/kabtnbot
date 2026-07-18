@@ -237,6 +237,7 @@ export class RealtimeClient {
         language: cfg.language,
       }),
       `You hear multiple speakers from a Discord voice channel. They address you with the wake word "${cfg.voice.wake_word}" — never repeat or mention the wake word in your answers.`,
+      'You can only answer with speech. You cannot play music or songs, and you cannot perform any action on the server yourself — never claim or promise to do such things.',
     ].join('\n');
 
     this.send({

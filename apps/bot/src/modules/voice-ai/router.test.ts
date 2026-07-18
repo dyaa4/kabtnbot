@@ -16,6 +16,16 @@ const realtimeMock = vi.hoisted(() => ({
 }));
 vi.mock('./realtime.js', () => ({ getRealtime: () => realtimeMock.client }));
 
+// Hermetic intent classifier: no candidates by default (step 3 skipped).
+const intentMock = vi.hoisted(() => ({
+  candidates: [] as Array<{ id: string; name: string; triggers: string[] }>,
+  result: null as string | null,
+}));
+vi.mock('../custom-commands/intent.js', () => ({
+  candidatesOf: () => intentMock.candidates,
+  classifyIntent: async () => intentMock.result,
+}));
+
 vi.mock('@gamebot/db', () => ({
   getGuildConfig: vi.fn(async () => baseConfig(true)),
   getGuildConfigRead: vi.fn(async () => baseConfig(true)),
@@ -69,6 +79,8 @@ describe('routeVoiceCommand', () => {
     clearFlowsCache();
     clearCooldowns();
     realtimeMock.client = undefined;
+    intentMock.candidates = [];
+    intentMock.result = null;
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({}));
   });
 
@@ -88,6 +100,35 @@ describe('routeVoiceCommand', () => {
   it('returns help text', async () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ساعد', 'u-speaker');
     expect((reply as string).length).toBeGreaterThan(0);
+  });
+
+  it('intent fallback runs the matched flow for a wake-word query', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
+      }],
+    }));
+    intentMock.candidates = [{ id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'] }];
+    intentMock.result = 'f-songs';
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ابي اسمع شي', 'u-speaker');
+    expect(reply).toContain('الأغاني');
+  });
+
+  it('follow-up utterances skip the intent classifier (chat must not fire automations)', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
+      }],
+    }));
+    intentMock.candidates = [{ id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'] }];
+    intentMock.result = 'f-songs';
+    realtimeMock.client = { requestResponse: () => true };
+    const reply = await routeVoiceCommand(
+      fakeGuild([]), fakeSession(), 'ابي اسمع شي', 'u-speaker', { followUp: true },
+    );
+    expect(reply).toEqual({ streamed: true }); // answered conversationally, no flow fired
   });
 
   it('streams free-form questions through the realtime session when available', async () => {

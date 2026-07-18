@@ -108,9 +108,13 @@ function matchBuiltin(
 /**
  * Resolves a wake-word query. Returns the reply text to speak/post, or
  * `{ streamed: true }` when the realtime session answers directly with audio.
+ * `followUp` marks an utterance from the open conversation window (no wake
+ * word) — exact phrase triggers and built-ins still work there, but the loose
+ * LLM intent fallback is skipped so casual chat can never fire an automation.
  */
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
+  opts: { followUp?: boolean } = {},
 ): Promise<string | { streamed: true }> {
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
@@ -208,10 +212,13 @@ export async function routeVoiceCommand(
   if (!(await tryConsumeAiQuestion(guild.id))) return strings.aiQuotaExhausted;
 
   // 3. LLM intent fallback — did the speaker MEAN one of the custom commands?
-  const candidates = candidatesOf(flows.flows);
+  // Skipped for follow-ups: inside the conversation window the speaker is
+  // just TALKING; only an exact trigger phrase (step 1) may run a flow.
+  const candidates = opts.followUp ? [] : candidatesOf(flows.flows);
   if (candidates.length > 0) {
     const matchedId = await classifyIntent(q, candidates).catch(() => null);
     if (matchedId) {
+      console.log(`[Voice ${guild.id}] intent classifier → flow ${matchedId} for "${q}"`);
       const flow = flows.flows.find((f) => f.id === matchedId);
       // aiQuotaPrepaid: the consume above already paid for this question — an
       // ai_reply action in the flow must not charge a second unit.
