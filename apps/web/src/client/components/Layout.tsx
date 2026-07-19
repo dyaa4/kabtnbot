@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { LangSwitcher } from './LangSwitcher.js';
+import { ThemeToggle } from './ThemeToggle.js';
 
 interface Me {
   uid: string;
@@ -66,6 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </Link>
           )}
           <BotStatusBadge />
+          <ThemeToggle />
           <LangSwitcher />
           {me.data && (
             <div className="flex items-center gap-2">

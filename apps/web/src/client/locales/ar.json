@@ -74,6 +74,8 @@
   "pricing.premium.noCheckin": "تعمل 24/7 — بدون تأكيد دوري وبدون إعلانات",
   "nav.logout": "خروج",
   "lang.switch": "EN",
+  "theme.light": "الوضع الفاتح",
+  "theme.dark": "الوضع الداكن",
   "guilds.title": "سيرفراتك",
   "guilds.add": "أضف سيرفر",
   "guilds.addLimit": "وصلت الحد الأقصى لإضافة السيرفرات لخطتك — رقِّ إلى بريميوم لإضافة المزيد.",

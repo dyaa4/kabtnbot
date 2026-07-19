@@ -74,6 +74,8 @@
   "pricing.premium.noCheckin": "Tourne 24h/24 — sans confirmation et sans publicité",
   "nav.logout": "Déconnexion",
   "lang.switch": "Langue",
+  "theme.light": "Mode clair",
+  "theme.dark": "Mode sombre",
   "guilds.title": "Tes serveurs",
   "guilds.add": "Ajouter un serveur",
   "guilds.addLimit": "Tu as atteint la limite de serveurs de ton plan — passe à premium pour en ajouter plus.",

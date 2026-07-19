@@ -200,3 +200,81 @@ body {
   background-color: #475569;
   background-clip: content-box;
 }
+
+/* ——— Light mode ———————————————————————————————————————————————————————
+   The app is authored dark-first with a small set of shared utility
+   patterns. `html.light` re-skins exactly those utilities here — THE single
+   place light-mode colors live — so components never need dark:/light:
+   variants. `.light .util` (0,2,0) outranks the utility (0,1,0); no
+   !important needed. The ThemeToggle component flips the class; an inline
+   script in index.html restores it before first paint. */
+
+html.light body {
+  color: #0f172a;
+  background-color: #eef2f7;
+  background-image:
+    radial-gradient(ellipse 60% 50% at 0% 0%, rgba(99, 102, 241, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 100% 0%, rgba(34, 211, 238, 0.08), transparent 60%),
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(139, 92, 246, 0.06), transparent 60%);
+}
+
+/* dark page surfaces → light */
+.light .bg-slate-950 { background-color: #eef2f7; }
+.light .bg-slate-950\/70 { background-color: rgba(255, 255, 255, 0.78); }
+.light .bg-slate-900 { background-color: #e2e8f0; }
+
+/* white-alpha cards / borders → slate-alpha */
+.light .bg-white\/5 { background-color: rgba(15, 23, 42, 0.045); }
+.light .bg-white\/10 { background-color: rgba(15, 23, 42, 0.08); }
+.light .bg-white\/\[0\.02\] { background-color: rgba(15, 23, 42, 0.02); }
+.light .border-white\/5 { border-color: rgba(15, 23, 42, 0.06); }
+.light .border-white\/10 { border-color: rgba(15, 23, 42, 0.10); }
+.light .border-white\/20 { border-color: rgba(15, 23, 42, 0.18); }
+
+/* light-on-dark text scale → dark-on-light */
+.light .text-slate-100 { color: #0f172a; }
+.light .text-slate-200 { color: #1e293b; }
+.light .text-slate-300 { color: #334155; }
+.light .text-slate-400 { color: #475569; }
+.light .text-slate-500 { color: #64748b; }
+.light .text-slate-600 { color: #94a3b8; }
+
+/* pale accent text needs saturated counterparts on light */
+.light .text-blue-200 { color: #1d4ed8; }
+.light .text-blue-300 { color: #1e40af; }
+.light .hover\:text-blue-200:hover { color: #1d4ed8; }
+.light .hover\:text-blue-300:hover { color: #1e40af; }
+.light .text-emerald-300 { color: #047857; }
+.light .text-red-300 { color: #b91c1c; }
+.light .bg-emerald-900\/30 { background-color: rgba(16, 185, 129, 0.12); }
+.light .bg-red-900\/30 { background-color: rgba(239, 68, 68, 0.10); }
+
+/* dropdown options were forced dark for the dark UI */
+.light select option { background-color: #ffffff; color: #0f172a; }
+
+.light .skeleton { background-color: rgba(15, 23, 42, 0.06); }
+.light .skeleton::after {
+  background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.05), transparent);
+}
+
+/* landing space scene: white stars vanish on a light sky by themselves;
+   soften the remaining neon so the hero reads as daylight */
+.light .hero-grid {
+  background-image:
+    linear-gradient(rgba(37, 99, 235, 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 99, 235, 0.14) 1px, transparent 1px);
+}
+.light .hero-title {
+  background: linear-gradient(90deg, #1d4ed8, #3b82f6, #3b82f6, #1d4ed8);
+  background-size: 300% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.light ::selection {
+  background-color: rgba(99, 102, 241, 0.25);
+  color: #0f172a;
+}
+.light * { scrollbar-color: #cbd5e1 transparent; }
+.light *::-webkit-scrollbar-thumb { background-color: #cbd5e1; }
+.light *::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }

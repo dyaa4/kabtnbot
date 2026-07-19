@@ -74,6 +74,8 @@
   "pricing.premium.noCheckin": "Runs 24/7 — no check-in, and ad-free",
   "nav.logout": "Logout",
   "lang.switch": "عربي",
+  "theme.light": "Light mode",
+  "theme.dark": "Dark mode",
   "guilds.title": "Your servers",
   "guilds.add": "Add server",
   "guilds.addLimit": "You reached your plan's server limit — upgrade to premium to add more.",

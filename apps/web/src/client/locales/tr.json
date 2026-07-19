@@ -74,6 +74,8 @@
   "pricing.premium.noCheckin": "7/24 çalışır — onay yok ve reklamsız",
   "nav.logout": "Çıkış yap",
   "lang.switch": "Dil",
+  "theme.light": "Açık mod",
+  "theme.dark": "Koyu mod",
   "guilds.title": "Sunucuların",
   "guilds.add": "Sunucu ekle",
   "guilds.addLimit": "Planının sunucu sınırına ulaştın — daha fazlası için premiuma yükselt.",

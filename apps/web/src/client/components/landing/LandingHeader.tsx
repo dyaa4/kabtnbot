@@ -1,5 +1,6 @@
 import { useI18n } from '../../i18n.js';
 import { LangSwitcher } from '../LangSwitcher.js';
+import { ThemeToggle } from '../ThemeToggle.js';
 import { DiscordIcon } from './icons.js';
 
 const NAV = [
@@ -31,6 +32,7 @@ export function LandingHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LangSwitcher />
           <a
             href="/auth/discord"
