@@ -34,12 +34,16 @@ interface CommandPatterns {
 // an unnormalized ة here can never match.
 const COMMANDS: Record<Language, CommandPatterns> = {
   ar: {
-    leave: /^(اطلع|خروج|اخرج|طش|غادر|غادر القناه)$/i,
-    stop: /^(اسكت|قف|توقف|اخرس)$/i,
+    // The bot's realtime voice is female, so speakers use the feminine
+    // imperative (غادري، اسكتي…) as often as the masculine — both must match.
+    // Patterns stay fully anchored; the optional "(من) القناه" object keeps
+    // "غادري القناه" from falling through to the free-form AI answer.
+    leave: /^(?:اطلع|اطلعي|خروج|اخرج|اخرجي|طش|طشي|غادر|غادري)(?: (?:من )?القناه)?$/i,
+    stop: /^(اسكت|اسكتي|قف|قفي|توقف|توقفي|اخرس|اخرسي)$/i,
     help: /^(ساعد|الاوامر|اوامر|وش تسوي|مساعده)$/i,
     ping: /^(السرعه|سرعه|بطء|بنق)$/i,
-    say: /^قل\s+(.+)$/i,
-    kick: /^(?:اطرد|كك)\s*(.*)$/i,
+    say: /^(?:قل|قولي)\s+(.+)$/i,
+    kick: /^(?:اطرد|اطردي|كك)\s*(.*)$/i,
   },
   en: {
     leave: /^(leave|leave the channel|leave the voice|disconnect|get out)$/i,

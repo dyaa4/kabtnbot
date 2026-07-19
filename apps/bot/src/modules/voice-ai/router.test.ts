@@ -14,7 +14,7 @@ const baseConfig = (premiumActive: boolean) => ({
 const realtimeMock = vi.hoisted(() => ({
   client: undefined as undefined | { requestResponse: () => boolean },
 }));
-vi.mock('./realtime.js', () => ({ getRealtime: () => realtimeMock.client }));
+vi.mock('./realtime.js', () => ({ getRealtime: () => realtimeMock.client, closeRealtime: () => {} }));
 
 // Hermetic intent classifier: no candidates by default (step 3 skipped).
 const intentMock = vi.hoisted(() => ({
@@ -96,6 +96,21 @@ describe('routeVoiceCommand', () => {
     const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), '', 'u-speaker');
     expect(reply).toBe(S.wakeAck);
     expect((reply as string).length).toBeGreaterThan(0);
+  });
+
+  it('feminine imperative reaches the leave built-in (speakers address the female-voiced bot with غادري)', async () => {
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'غادري القناة', 'u-speaker');
+    expect(reply).toBe(S.voiceLeft);
+  });
+
+  it('bare feminine غادري leaves too', async () => {
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'غادري', 'u-speaker');
+    expect(reply).toBe(S.voiceLeft);
+  });
+
+  it('feminine اسكتي stops listening', async () => {
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'اسكتي', 'u-speaker');
+    expect(reply).toBe(S.voiceStopped);
   });
 
   it('returns help text', async () => {
