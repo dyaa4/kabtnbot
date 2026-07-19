@@ -220,8 +220,30 @@ html.light body {
 
 /* dark page surfaces → light */
 .light .bg-slate-950 { background-color: #eef2f7; }
+.light .bg-slate-950\/90 { background-color: rgba(255, 255, 255, 0.92); }
+.light .bg-slate-950\/85 { background-color: rgba(255, 255, 255, 0.88); }
 .light .bg-slate-950\/70 { background-color: rgba(255, 255, 255, 0.78); }
+.light .bg-slate-950\/60 { background-color: rgba(255, 255, 255, 0.65); }
+.light .bg-slate-950\/40 { background-color: rgba(255, 255, 255, 0.5); }
 .light .bg-slate-900 { background-color: #e2e8f0; }
+.light .bg-slate-900\/95 { background-color: rgba(248, 250, 252, 0.95); }
+.light .bg-slate-900\/60 { background-color: rgba(226, 232, 240, 0.6); }
+
+/* dark tinted panels → pale tints */
+.light .bg-blue-950\/90 { background-color: rgba(219, 234, 254, 0.95); }
+.light .bg-blue-950\/40 { background-color: rgba(219, 234, 254, 0.55); }
+.light .bg-blue-950\/20 { background-color: rgba(59, 130, 246, 0.08); }
+.light .bg-blue-900\/30 { background-color: rgba(59, 130, 246, 0.10); }
+.light .bg-red-950\/90 { background-color: rgba(254, 226, 226, 0.95); }
+.light .bg-red-950\/40 { background-color: rgba(254, 226, 226, 0.6); }
+.light .text-red-200 { color: #b91c1c; }
+.light .text-blue-100 { color: #1e3a8a; }
+
+/* CtaBand's dark gradient banner → soft blue band (the from-* class is the
+   hook; overriding background-image beats the bg-gradient-to-br utility) */
+.light .from-blue-950\/80 {
+  background-image: linear-gradient(to bottom left, rgba(191, 219, 254, 0.7), #f1f5f9, rgba(191, 219, 254, 0.5));
+}
 
 /* white-alpha cards / borders → slate-alpha */
 .light .bg-white\/5 { background-color: rgba(15, 23, 42, 0.045); }

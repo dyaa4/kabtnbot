@@ -5,6 +5,7 @@
   "landing.title": "Kabtn — der Verwaltungsbot für jeden Discord-Server",
   "landing.tagline": "Ein KI-Sprachassistent mit den neuesten Modellen, KI-Schutz für Voice und Text, Live-Aktivitätsstatistiken und Willkommensbilder — alles unter Kabtns Kommando",
   "landing.social": "Gerade aktiv auf {count} Servern",
+  "landing.social.few": "Gerade aktiv auf {count} Servern",
   "landing.cta.invite": "Bot zu deinem Server hinzufügen",
   "landing.cta.login": "Mit Discord anmelden",
   "landing.feature.voice.title": "KI-Sprachassistent",

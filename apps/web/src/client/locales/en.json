@@ -5,6 +5,7 @@
   "landing.title": "Kabtn — the management bot for every Discord server",
   "landing.tagline": "An AI voice assistant powered by the latest models, AI voice and text protection, and live activity stats with welcome images — all under Kabtn's command",
   "landing.social": "Active on {count} servers right now",
+  "landing.social.few": "Active on {count} servers right now",
   "landing.cta.invite": "Add the bot to your server",
   "landing.cta.login": "Login with Discord",
   "landing.feature.voice.title": "AI voice assistant",

@@ -43,7 +43,8 @@ describe('Landing', () => {
 
   it('shows the guild-count social proof once meta loads', async () => {
     renderLanding();
-    expect(await screen.findByText(/نشط الآن على 5|Active on 5/)).toBeTruthy();
+    // Arabic counts 3–10 take the plural form (سيرفرات, not سيرفر).
+    expect(await screen.findByText(/نشط الآن على 5 سيرفرات|Active on 5/)).toBeTruthy();
   });
 
   it('has a sticky header with anchor navigation to every section', async () => {

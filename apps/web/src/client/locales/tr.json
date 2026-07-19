@@ -5,6 +5,7 @@
   "landing.title": "Kabtn — her Discord sunucusu için yönetim botu",
   "landing.tagline": "En yeni modellerle çalışan yapay zekâ sesli asistan, ses ve metin için yapay zekâ koruması, canlı aktivite istatistikleri ve karşılama görselleri — hepsi Kabtn'ın komutasında",
   "landing.social": "Şu anda {count} sunucuda aktif",
+  "landing.social.few": "Şu anda {count} sunucuda aktif",
   "landing.cta.invite": "Botu sunucuna ekle",
   "landing.cta.login": "Discord ile giriş yap",
   "landing.feature.voice.title": "Yapay zekâ sesli asistan",

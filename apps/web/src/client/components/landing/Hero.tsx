@@ -4,7 +4,13 @@ import { HomeImage } from '../HomeImage.js';
 import { DiscordIcon } from './icons.js';
 
 export function Hero({ inviteUrl, guilds }: { inviteUrl: string; guilds: number }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  // Arabic pluralizes counted nouns: 3–10 take the plural (سيرفرات), other
+  // counts the singular — Intl's "few" category is exactly that range.
+  const socialKey =
+    lang === 'ar' && new Intl.PluralRules('ar').select(guilds) === 'few'
+      ? 'landing.social.few'
+      : 'landing.social';
 
   return (
     <section className="relative overflow-hidden px-6 pb-20 pt-12 md:pt-16">
@@ -51,7 +57,7 @@ export function Hero({ inviteUrl, guilds }: { inviteUrl: string; guilds: number 
           </div>
           {guilds >= 3 && (
             <p className="text-sm font-semibold text-blue-300/90">
-              <Zap className="inline h-4 w-4 align-[-2px]" /> {t('landing.social').replace('{count}', String(guilds))}
+              <Zap className="inline h-4 w-4 align-[-2px]" /> {t(socialKey).replace('{count}', String(guilds))}
             </p>
           )}
         </div>
