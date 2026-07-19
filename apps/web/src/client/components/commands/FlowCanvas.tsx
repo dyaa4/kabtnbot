@@ -17,6 +17,7 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { BuiltinCommandKey, BuiltinOverride, CommandFlow, FlowAction, FlowActionType } from '@gamebot/shared';
 import { useI18n } from '../../i18n.js';
+import { useTheme } from '../../use-theme.js';
 import { TriggerNode } from './nodes/TriggerNode.js';
 import { ConditionNode } from './nodes/ConditionNode.js';
 import { ActionNode } from './nodes/ActionNode.js';
@@ -213,6 +214,8 @@ export function FlowCanvas({
   builtin?: CanvasCtx['builtin'];
 }) {
   const { t } = useI18n();
+  const theme = useTheme();
+  const light = theme === 'light';
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -362,7 +365,7 @@ export function FlowCanvas({
         <ReactFlowProvider>
           <ReactFlow
             key={canvasKey}
-            colorMode="dark"
+            colorMode={theme}
             defaultNodes={nodes}
             defaultEdges={edges}
             nodeTypes={nodeTypes}
@@ -375,14 +378,16 @@ export function FlowCanvas({
             minZoom={0.3}
             className="!bg-transparent"
           >
-            <Background gap={24} color="rgba(255,255,255,0.06)" />
+            <Background gap={24} color={light ? 'rgba(15,23,42,0.10)' : 'rgba(255,255,255,0.06)'} />
             <Controls showInteractive={false} />
             <MiniMap
               pannable
               zoomable
-              style={{ width: 140, height: 90 }}
-              className="!m-2 rounded-lg border border-white/10 !bg-slate-900"
-              maskColor="rgba(2,6,23,0.6)"
+              // Inline bg + mask (not Tailwind): the old `!bg-slate-900` used
+              // `!important`, which the light-mode CSS override couldn't beat.
+              style={{ width: 140, height: 90, backgroundColor: light ? '#e2e8f0' : '#0f172a' }}
+              className="!m-2 rounded-lg border border-white/10"
+              maskColor={light ? 'rgba(148,163,184,0.5)' : 'rgba(2,6,23,0.6)'}
               nodeColor={(n) => {
                 if (n.type !== 'action') return FLOW_HEX;
                 const action = flow?.actions.find((a) => a.id === n.id);
