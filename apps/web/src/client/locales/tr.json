@@ -8,6 +8,7 @@
   "landing.social.few": "Şu anda {count} sunucuda aktif",
   "landing.cta.invite": "Botu sunucuna ekle",
   "landing.cta.login": "Discord ile giriş yap",
+  "landing.cta.dashboard": "Panel",
   "landing.feature.voice.title": "Yapay zekâ sesli asistan",
   "landing.feature.voice.body": "Uyandırma kelimesini söyle, yapay zekâ en yeni modellerle sesli yanıt versin — bir üyeyi sesten atmak gibi yönetici komutlarını çalıştırır, isteğe bağlı komik kişilikle",
   "landing.feature.protection.title": "Koruma",

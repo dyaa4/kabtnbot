@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import { useI18n } from '../../i18n.js';
 import { LangSwitcher } from '../LangSwitcher.js';
 import { ThemeToggle } from '../ThemeToggle.js';
@@ -12,6 +13,16 @@ const NAV = [
 
 export function LandingHeader() {
   const { t } = useI18n();
+  // Plain fetch, NOT api(): api() hard-redirects to '/' on 401, which would
+  // loop on the landing page itself. 401 here just means "not logged in".
+  const me = useQuery({
+    queryKey: ['me-lite'],
+    queryFn: async () => {
+      const res = await fetch('/api/me');
+      return res.ok ? ((await res.json()) as { uid: string }) : null;
+    },
+    retry: false,
+  });
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-slate-950/70 backdrop-blur-xl">
@@ -34,13 +45,22 @@ export function LandingHeader() {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <LangSwitcher />
-          <a
-            href="/auth/discord"
-            className="hidden items-center gap-2 rounded-xl bg-[#5865F2] px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-[#4752C4] sm:flex"
-          >
-            <DiscordIcon className="h-4 w-4 shrink-0 fill-current" />
-            {t('landing.cta.login')}
-          </a>
+          {me.data ? (
+            <a
+              href="/app"
+              className="hidden items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-3.5 py-1.5 text-sm font-semibold text-slate-950 transition hover:opacity-90 sm:flex"
+            >
+              {t('landing.cta.dashboard')}
+            </a>
+          ) : (
+            <a
+              href="/auth/discord"
+              className="hidden items-center gap-2 rounded-xl bg-[#5865F2] px-3.5 py-1.5 text-sm font-semibold text-white transition hover:bg-[#4752C4] sm:flex"
+            >
+              <DiscordIcon className="h-4 w-4 shrink-0 fill-current" />
+              {t('landing.cta.login')}
+            </a>
+          )}
         </div>
       </div>
     </header>

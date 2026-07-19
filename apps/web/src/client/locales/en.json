@@ -8,6 +8,7 @@
   "landing.social.few": "Active on {count} servers right now",
   "landing.cta.invite": "Add the bot to your server",
   "landing.cta.login": "Login with Discord",
+  "landing.cta.dashboard": "Dashboard",
   "landing.feature.voice.title": "AI voice assistant",
   "landing.feature.voice.body": "Say the wake word and the AI answers by voice using the latest AI models — runs admin commands like voice-kicking a member, with an optional comedic personality",
   "landing.feature.protection.title": "Protection",

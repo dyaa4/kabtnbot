@@ -8,6 +8,7 @@
   "landing.social.few": "Gerade aktiv auf {count} Servern",
   "landing.cta.invite": "Bot zu deinem Server hinzufügen",
   "landing.cta.login": "Mit Discord anmelden",
+  "landing.cta.dashboard": "Dashboard",
   "landing.feature.voice.title": "KI-Sprachassistent",
   "landing.feature.voice.body": "Sag das Aktivierungswort und die KI antwortet per Stimme mit den neuesten Modellen — führt Admin-Befehle aus wie einen Member aus dem Voice zu kicken, optional mit komödiantischer Persönlichkeit",
   "landing.feature.protection.title": "Schutz",

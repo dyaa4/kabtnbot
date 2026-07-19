@@ -5,17 +5,24 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
 import { Landing } from './Landing.js';
 
+let loggedIn = false;
+
 beforeEach(() => {
+  loggedIn = false;
   vi.unstubAllGlobals();
   vi.stubGlobal(
     'fetch',
-    vi.fn(
-      async () =>
-        new Response(
-          JSON.stringify({ clientId: 'c1', inviteUrl: 'https://discord.com/oauth2/x', guilds: 5 }),
-          { status: 200 },
-        ),
-    ),
+    vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).endsWith('/api/me')) {
+        return loggedIn
+          ? new Response(JSON.stringify({ uid: 'u1', uname: 'x', avatar: null }), { status: 200 })
+          : new Response(JSON.stringify({ error: { code: 'UNAUTHENTICATED' } }), { status: 401 });
+      }
+      return new Response(
+        JSON.stringify({ clientId: 'c1', inviteUrl: 'https://discord.com/oauth2/x', guilds: 5 }),
+        { status: 200 },
+      );
+    }),
   );
 });
 
@@ -39,6 +46,17 @@ describe('Landing', () => {
     expect(screen.getAllByText(/قريباً|Coming soon/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/120 دقيقة|120 voice-listening/)).toBeTruthy(); // Pro daily limits spelled out
     expect(screen.getByText(/كل مزايا الخطة المجانية|Everything in the free plan/)).toBeTruthy();
+  });
+
+  it('shows the login CTA for visitors and a dashboard link for a live session', async () => {
+    const { unmount } = renderLanding();
+    expect((await screen.findAllByRole('link', { name: /تسجيل الدخول|Login with Discord/ })).length).toBeGreaterThanOrEqual(1);
+    unmount();
+
+    loggedIn = true;
+    renderLanding();
+    const dash = await screen.findByRole('link', { name: /لوحة التحكم|Dashboard/ });
+    expect(dash.getAttribute('href')).toBe('/app');
   });
 
   it('shows the guild-count social proof once meta loads', async () => {

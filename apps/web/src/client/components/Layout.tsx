@@ -61,7 +61,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
-          <a href="/#features" className="hidden text-sm font-semibold text-slate-300 transition hover:text-blue-300 sm:block">
+          {/* New tab: an in-tab navigation to the public landing page reads
+              as "I got logged out" — the dashboard must stay where it is. */}
+          <a
+            href="/#features"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden text-sm font-semibold text-slate-300 transition hover:text-blue-300 sm:block"
+          >
             {t('landing.nav.features')}
           </a>
           {admin.data?.isSuperAdmin && (

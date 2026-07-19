@@ -8,6 +8,7 @@
   "landing.social.few": "Прямо сейчас активен на {count} серверах",
   "landing.cta.invite": "Добавить бота на свой сервер",
   "landing.cta.login": "Войти через Discord",
+  "landing.cta.dashboard": "Панель управления",
   "landing.feature.voice.title": "ИИ голосовой помощник",
   "landing.feature.voice.body": "Скажи слово-активатор — и ИИ ответит голосом на новейших моделях, выполнит админ-команды, например кикнет участника из войса, с опциональным комедийным характером",
   "landing.feature.protection.title": "Защита",
