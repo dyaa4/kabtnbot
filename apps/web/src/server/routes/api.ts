@@ -12,7 +12,7 @@ import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
 import { requireSession } from '../session.js';
-import { listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
+import { invalidateGuildListCache, listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
 import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
@@ -141,9 +141,13 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
-  router.get('/guilds', async (_req, res, next) => {
+  router.get('/guilds', async (req, res, next) => {
     try {
-      res.json(await listEligibleGuilds(rest, res.locals.session as Session));
+      const s = res.locals.session as Session;
+      // fresh=1: the client just came back from a bot invite — the 60s list
+      // cache would hide the new guild, so drop it for this user first.
+      if (req.query.fresh === '1') invalidateGuildListCache(s.uid);
+      res.json(await listEligibleGuilds(rest, s));
     } catch (err) {
       next(err);
     }

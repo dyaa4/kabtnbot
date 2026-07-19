@@ -75,6 +75,21 @@ describe('api routes', () => {
     expect(res.body).toEqual([{ id: 'g1', name: 'ARAB', icon: null }]);
   });
 
+  it('?fresh=1 bypasses the per-user list cache (freshly invited guild shows up)', async () => {
+    const { app, cookie, rest } = setup();
+    await request(app).get('/api/guilds').set('Cookie', cookie); // warm the cache
+
+    // The bot joins a second guild AFTER the list was cached.
+    rest.userGuilds.get('at-1')!.push({ id: 'g2', name: 'NEU', icon: null, permissions: MANAGE });
+    rest.botGuilds.add('g2');
+
+    const stale = await request(app).get('/api/guilds').set('Cookie', cookie);
+    expect(stale.body.map((g: { id: string }) => g.id)).toEqual(['g1']); // still cached
+
+    const fresh = await request(app).get('/api/guilds?fresh=1').set('Cookie', cookie);
+    expect(fresh.body.map((g: { id: string }) => g.id)).toEqual(['g1', 'g2']);
+  });
+
   it('denies config access to non-managed guild', async () => {
     const { app, cookie } = setup();
     expect((await request(app).get('/api/guilds/gX/config').set('Cookie', cookie)).status).toBe(403);

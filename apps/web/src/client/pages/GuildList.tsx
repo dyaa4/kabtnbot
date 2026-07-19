@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Gem, Link2, Plus, Unlink } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,9 +29,27 @@ export function GuildList() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
-  const guilds = useQuery({ queryKey: ['guilds'], queryFn: () => api<Guild[]>('/api/guilds') });
+  // After an invite click the user completes the OAuth flow in another tab.
+  // The server caches the guild list for 60s per user, so on return we must
+  // ask for a cache-busted list or the new guild sits invisible for a minute.
+  const inviteClickedAt = useRef(0);
+  const inviteInFlight = () => Date.now() - inviteClickedAt.current < 5 * 60_000;
+
+  const guilds = useQuery({
+    queryKey: ['guilds'],
+    queryFn: () => api<Guild[]>(inviteInFlight() ? '/api/guilds?fresh=1' : '/api/guilds'),
+  });
   const plan = useQuery({ queryKey: ['plan'], queryFn: () => api<UserPlan>('/api/me/plan') });
   const meta = useQuery({ queryKey: ['meta'], queryFn: () => api<Meta>('/api/meta') });
+
+  useEffect(() => {
+    const onFocus = () => {
+      if (inviteInFlight()) void qc.invalidateQueries({ queryKey: ['guilds'] });
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qc]);
 
   const setLink = useMutation({
     mutationFn: ({ guildId, link }: { guildId: string; link: boolean }) =>
@@ -56,6 +75,7 @@ export function GuildList() {
             href={meta.data.inviteUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={() => { inviteClickedAt.current = Date.now(); }}
             className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
           >
             <Plus className="h-4 w-4" /> {t('guilds.add')}
@@ -123,6 +143,7 @@ export function GuildList() {
             href={meta.data.inviteUrl}
             target="_blank"
             rel="noreferrer"
+            onClick={() => { inviteClickedAt.current = Date.now(); }}
             className="flex min-h-[104px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-4 text-slate-400 transition hover:-translate-y-1 hover:border-blue-400/40 hover:text-blue-200"
           >
             <Plus className="h-6 w-6" />

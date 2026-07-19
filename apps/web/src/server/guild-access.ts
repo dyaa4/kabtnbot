@@ -20,6 +20,15 @@ export function clearAccessCache(): void {
   cache.clear();
 }
 
+/**
+ * Drop one user's cached guild LIST (the `one:` guard entries stay — a newly
+ * joined guild has none yet). Used by /api/guilds?fresh=1 so a freshly invited
+ * guild shows up without waiting out the TTL.
+ */
+export function invalidateGuildListCache(uid: string): void {
+  cache.delete(`list:${uid}`);
+}
+
 // Cache the in-flight PROMISE, not just its resolved value. A dashboard page load
 // fires many guarded endpoints at once; storing the value only after compute()
 // resolves lets every concurrent cold-cache request run compute() in lockstep,

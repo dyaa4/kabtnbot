@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { I18nProvider } from '../i18n.js';
@@ -61,5 +61,24 @@ describe('GuildList add-server entry points', () => {
     renderPage();
     const links = await screen.findAllByRole('link', { name: /أضف سيرفر|Add server/ });
     expect(links.length).toBe(2);
+  });
+
+  it('refetches the list cache-busted when returning from an invite', async () => {
+    renderPage();
+    const [headerLink] = await screen.findAllByRole('link', { name: /أضف سيرفر|Add server/ });
+    fireEvent.click(headerLink);
+    fireEvent(window, new Event('focus'));
+    await waitFor(() => {
+      const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]));
+      expect(calls).toContain('/api/guilds?fresh=1');
+    });
+  });
+
+  it('a plain window focus without an invite click does not cache-bust', async () => {
+    renderPage();
+    await screen.findAllByRole('link', { name: /أضف سيرفر|Add server/ });
+    fireEvent(window, new Event('focus'));
+    const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]));
+    expect(calls).not.toContain('/api/guilds?fresh=1');
   });
 });
