@@ -47,4 +47,21 @@ describe('quotas', () => {
     // Beyond the configured 1/month — the premium floor (600) applies instead.
     expect(await tryConsumeAiQuestion('q3')).toBe(true);
   });
+
+  it('all guilds linked by ONE premium account share ONE monthly pool (no 3x loophole)', async () => {
+    await setUserPremium('pool-owner', true);
+    await linkGuild('pool-owner', 'p-a');
+    await linkGuild('pool-owner', 'p-b');
+    clearPremiumCache();
+
+    // Premium pool = 600 min/month. Burn nearly all of it on guild A…
+    await addListenSeconds('p-a', 600 * 60 - 30);
+    expect(await isListenQuotaExceeded('p-a')).toBe(false);
+    expect(await isListenQuotaExceeded('p-b')).toBe(false);
+    // …then the remainder on guild B: BOTH guilds are now out of budget,
+    // because the pool belongs to the premium ACCOUNT, not the guild.
+    await addListenSeconds('p-b', 60);
+    expect(await isListenQuotaExceeded('p-a')).toBe(true);
+    expect(await isListenQuotaExceeded('p-b')).toBe(true);
+  });
 });

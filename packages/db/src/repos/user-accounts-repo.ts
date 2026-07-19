@@ -125,3 +125,17 @@ export async function isGuildLinked(guildId: string): Promise<boolean> {
 export async function isGuildPremium(guildId: string): Promise<boolean> {
   return (await UserAccountModel.exists({ linked_guild_ids: guildId, premium_active: true })) !== null;
 }
+
+/**
+ * The premium account whose monthly pool this guild draws from. Quotas are
+ * pooled PER ACCOUNT, not per guild — otherwise linking 3 guilds would
+ * triple one subscription's budget. When several premium accounts link the
+ * same guild the oldest account wins (stable pick, no double budget).
+ */
+export async function getPremiumLinker(guildId: string): Promise<string | null> {
+  const doc = await UserAccountModel.findOne({ linked_guild_ids: guildId, premium_active: true })
+    .sort({ _id: 1 })
+    .select('user_id')
+    .lean();
+  return doc?.user_id ?? null;
+}

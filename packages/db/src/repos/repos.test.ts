@@ -5,7 +5,7 @@ import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-c
 import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
-import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
+import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
 import { getKv, setKv } from './kv-repo.js';
 import {
   startVoiceSession, endVoiceSession, closeAllOpenVoiceSessions,
@@ -329,6 +329,17 @@ describe('user-accounts-repo', () => {
 
     await setUserPremium('u-paid', false);
     expect(await isGuildPremium('gPaid')).toBe(false); // downgrade drops the boost
+  });
+
+  it('getPremiumLinker resolves the pool-owning premium account', async () => {
+    expect(await getPremiumLinker('gPool')).toBeNull();
+
+    await linkGuild('pool-free', 'gPool');
+    expect(await getPremiumLinker('gPool')).toBeNull(); // free link ≠ pool owner
+
+    await setUserPremium('pool-paid', true);
+    await linkGuild('pool-paid', 'gPool');
+    expect(await getPremiumLinker('gPool')).toBe('pool-paid');
   });
 });
 

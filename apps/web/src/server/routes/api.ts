@@ -5,7 +5,7 @@ import {
   topActive, activityDaily, getBotStatus,
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
-  getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, isUserBlocked, isDbConnected,
+  getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
   countActiveInvitedGuilds,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey } from '@gamebot/shared';
@@ -610,16 +610,17 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
 
   router.get('/guilds/:guildId/usage', guard, async (req, res, next) => {
     try {
-      const [guildConfig, usage, linked, premium] = await Promise.all([
+      const [guildConfig, linked, owner] = await Promise.all([
         getGuildConfig(req.params.guildId),
-        // Quota accounting is MONTHLY (owner decision 2026-07-19).
-        getUsage(req.params.guildId, monthKey()),
         isGuildLinked(req.params.guildId),
-        isGuildPremium(req.params.guildId),
+        getPremiumLinker(req.params.guildId),
       ]);
+      // MONTHLY quotas pooled per premium ACCOUNT: the bars show the shared
+      // `user:<uid>` pool this guild draws from (its own row when unlinked).
+      const usage = await getUsage(owner ? `user:${owner}` : req.params.guildId, monthKey());
       // limits reflect PREMIUM linking (monthly quotas); premium_active
       // keeps its existing meaning of "linked by anyone" (feature gate).
-      res.json({ ...usage, limits: effectiveQuotas(guildConfig, premium), premium_active: linked });
+      res.json({ ...usage, limits: effectiveQuotas(guildConfig, owner !== null), premium_active: linked });
     } catch (err) {
       next(err);
     }
