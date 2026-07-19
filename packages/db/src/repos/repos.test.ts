@@ -295,11 +295,12 @@ describe('user-accounts-repo', () => {
     expect(await linkGuild('u1', 'gA')).not.toBeNull(); // re-link is idempotent
   });
 
-  it('premium raises the limit to three linked guilds', async () => {
+  it('premium links exactly one guild too — link COUNT is not a premium perk', async () => {
     await setUserPremium('u2', true);
-    for (const g of ['g1', 'g2', 'g3']) expect(await linkGuild('u2', g)).not.toBeNull();
-    expect(await linkGuild('u2', 'g4')).toBeNull();
-    expect((await getUserPlan('u2')).linked_guild_ids).toEqual(['g1', 'g2', 'g3']);
+    expect((await getUserPlan('u2')).max_links).toBe(1);
+    expect(await linkGuild('u2', 'g1')).not.toBeNull();
+    expect(await linkGuild('u2', 'g2')).toBeNull(); // second link rejected, same as free
+    expect((await getUserPlan('u2')).linked_guild_ids).toEqual(['g1']);
   });
 
   it('concurrent links cannot exceed the plan limit (TOCTOU race)', async () => {

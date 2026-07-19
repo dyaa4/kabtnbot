@@ -2,10 +2,11 @@ import { UserAccountModel } from '../models.js';
 import { retryOnDupKey } from '../retry.js';
 
 // Premium is per USER, not per guild: linking a guild to your account is what
-// unlocks the paid dashboard features there. Free plan links one guild,
-// premium links three.
+// unlocks the paid dashboard features there. Both plans link exactly ONE guild
+// (owner decision 2026-07-19) — premium's value is the FEATURES unlocked on
+// that server, not how many servers you may link.
 export const FREE_LINK_LIMIT = 1;
-export const PREMIUM_LINK_LIMIT = 3;
+export const PREMIUM_LINK_LIMIT = 1;
 // Bot-INVITE cap (distinct from linking): how many guilds one user may add
 // the bot to, enforced at join time via audit-log attribution.
 export const FREE_GUILD_LIMIT = 1;
