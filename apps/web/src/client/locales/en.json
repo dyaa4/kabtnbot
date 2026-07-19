@@ -245,6 +245,7 @@
   "admin.server": "Server",
   "admin.members": "Members",
   "admin.joined": "Added",
+  "admin.invitedBy": "Added by",
   "admin.status": "Status",
   "admin.actions": "Actions",
   "admin.blocked": "Blocked",

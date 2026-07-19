@@ -245,6 +245,7 @@
   "admin.server": "Сервер",
   "admin.members": "Участники",
   "admin.joined": "Добавлен",
+  "admin.invitedBy": "Добавил",
   "admin.status": "Статус",
   "admin.actions": "Действия",
   "admin.blocked": "Заблокирован",

@@ -245,6 +245,7 @@
   "admin.server": "السيرفر",
   "admin.members": "الأعضاء",
   "admin.joined": "أُضيف",
+  "admin.invitedBy": "أضافه",
   "admin.status": "الحالة",
   "admin.actions": "إجراءات",
   "admin.blocked": "محظور",

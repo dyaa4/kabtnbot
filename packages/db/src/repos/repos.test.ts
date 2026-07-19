@@ -15,7 +15,7 @@ import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
 import { getScheduleRuns, setScheduleRun, resetScheduleRuns } from './schedule-runs-repo.js';
 import { recordChatMessage, listChatMessages } from './chat-log-repo.js';
 import {
-  recordGuildPresence, recordGuildLeave, recordGuildInviter, countActiveInvitedGuilds,
+  recordGuildPresence, recordGuildLeave, recordGuildInviter, countActiveInvitedGuilds, listActiveGuilds,
 } from './guild-directory-repo.js';
 
 let mongod: MongoMemoryServer;
@@ -283,6 +283,15 @@ describe('guild-directory-repo inviter attribution', () => {
     await recordGuildLeave('inv-g1'); // left guilds stop counting
     expect(await countActiveInvitedGuilds('inviter-a')).toBe(1);
     expect(await countActiveInvitedGuilds('nobody')).toBe(0);
+  });
+
+  it('listActiveGuilds exposes the inviter id (null when unattributed)', async () => {
+    await recordGuildPresence('la-g1', 'Attributed', 5);
+    await recordGuildPresence('la-g2', 'Unknown', 5);
+    await recordGuildInviter('la-g1', 'inviter-x');
+    const list = await listActiveGuilds();
+    expect(list.find((g) => g.guild_id === 'la-g1')?.invited_by).toBe('inviter-x');
+    expect(list.find((g) => g.guild_id === 'la-g2')?.invited_by).toBeNull();
   });
 });
 

@@ -7,6 +7,8 @@ export interface DirectoryEntry {
   member_count: number;
   blocked: boolean;
   joined_at: Date;
+  /** Discord user who added the bot (audit-log attribution); null = unknown. */
+  invited_by: string | null;
 }
 
 /**
@@ -34,6 +36,7 @@ export async function listActiveGuilds(): Promise<DirectoryEntry[]> {
     member_count: d.member_count,
     blocked: d.blocked,
     joined_at: d.joined_at,
+    invited_by: d.invited_by ?? null,
   }));
 }
 

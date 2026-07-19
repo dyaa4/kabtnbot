@@ -245,6 +245,7 @@
   "admin.server": "Sunucu",
   "admin.members": "Üyeler",
   "admin.joined": "Eklendi",
+  "admin.invitedBy": "Ekleyen",
   "admin.status": "Durum",
   "admin.actions": "İşlemler",
   "admin.blocked": "Engellendi",

@@ -22,6 +22,7 @@ interface AdminGuild {
   member_count: number;
   blocked: boolean;
   joined_at: string;
+  invited_by: string | null;
 }
 
 const BTN = 'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold transition';
@@ -79,6 +80,9 @@ export function Admin() {
   // guilds the bot has since left fall back to the raw id.
   const guildName = new Map(guilds.data?.map((g) => [g.guild_id, g.name || g.guild_id]) ?? []);
   const linkedNames = (u: AdminUser) => u.linked_guild_ids.map((id) => guildName.get(id) ?? id);
+  // Resolve an inviter id to a username via the already-fetched accounts list;
+  // inviters who never logged into the dashboard fall back to their raw id.
+  const userName = new Map(users.data?.map((u) => [u.user_id, u.uname || u.user_id]) ?? []);
 
   const uq = userQuery.trim().toLowerCase();
   const filteredUsers = (users.data ?? []).filter((u) =>
@@ -145,7 +149,8 @@ export function Admin() {
                     </div>
                   )}
                 </td>
-                <td className="p-3 text-slate-400" dir="ltr">{u.linked_guild_ids.length}/{u.premium_active ? 3 : 1}</td>
+                {/* Link limit is 1 for both plans now (premium's value is features, not server count). */}
+                <td className="p-3 text-slate-400" dir="ltr">{u.linked_guild_ids.length}/1</td>
                 <td className="p-3 text-slate-400" dir="ltr">{u.last_login ? fmtDate(u.last_login) : '—'}</td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-2">
@@ -203,6 +208,14 @@ export function Admin() {
                     )}
                   </div>
                   <div className="text-xs text-slate-500" dir="ltr">{g.guild_id}</div>
+                  <div className="mt-0.5 text-xs text-slate-400">
+                    {t('admin.invitedBy')}:{' '}
+                    {g.invited_by ? (
+                      <span className="text-slate-300">{userName.get(g.invited_by) ?? g.invited_by}</span>
+                    ) : (
+                      <span className="text-slate-600">—</span>
+                    )}
+                  </div>
                 </td>
                 <td className="p-3 text-slate-400" dir="ltr">{g.member_count.toLocaleString(lang === 'ar' ? 'ar' : 'en-GB')}</td>
                 <td className="p-3 text-slate-400" dir="ltr">{fmtDate(g.joined_at)}</td>
