@@ -58,7 +58,7 @@ export function Pricing({ inviteUrl }: { inviteUrl: string }) {
             </div>
             <p className="mb-6 text-sm text-slate-400">{t('pricing.premium.tagline')}</p>
             <ul className="grid gap-3 text-sm text-slate-300">
-              {(['everything', 'servers', 'ai', 'chat', 'summarize', 'moderation', 'voicelog', 'voices', 'limits', 'noCheckin'] as const).map((key) => (
+              {(['everything', 'servers', 'ai', 'chat', 'summarize', 'automation', 'moderation', 'voicelog', 'voices', 'limits', 'noCheckin'] as const).map((key) => (
                 <PlanItem key={key} text={t(`pricing.premium.${key}`)} tone="amber" />
               ))}
             </ul>

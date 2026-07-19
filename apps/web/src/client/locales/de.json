@@ -415,5 +415,12 @@
   "overview.premium.linked": "Premium aktiv",
   "overview.premium.free": "Kostenloser Plan — verknüpfe den Server, um Premium-Features freizuschalten",
   "landing.tier.free": "Kostenlos",
-  "landing.tier.pro": "Pro"
+  "landing.tier.pro": "Pro",
+  "landing.feature.automation.title": "Automatisierung",
+  "landing.feature.automation.body": "Erstelle eigene Befehle mit verketteten Antworten und Aktionen sowie geplante Aufgaben, die von selbst laufen — alles in einem No-Code-Editor",
+  "landing.feature.logs.title": "Sprach- & Chat-Logs",
+  "landing.feature.logs.body": "Sieh, wer wann Sprachkanäle betrat, plus letzte Kanalnachrichten — zur Prüfung und Moderation, automatisch nach Tagen gelöscht",
+  "landing.feature.aichat.title": "KI-Chat",
+  "landing.feature.aichat.body": "/ask und /chat beantworten die Fragen deiner Mitglieder, und „Zusammenfassen“ fasst Verpasstes in einem Kanal zusammen",
+  "pricing.premium.automation": "Automatisierung: eigene Befehle & geplante Aufgaben im visuellen Editor"
 }

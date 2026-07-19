@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { MessageSquare, ScrollText, Workflow } from 'lucide-react';
 import { useI18n } from '../../i18n.js';
 import { SectionHeading } from './SectionHeading.js';
 import { ChartIcon, IdBadgeIcon, ImageIcon, MicIcon, ShieldIcon } from './icons.js';
@@ -97,6 +98,24 @@ export function Features() {
           icon={<IdBadgeIcon className="h-6 w-6" />}
           title={t('landing.feature.botProfile.title')}
           body={t('landing.feature.botProfile.body')}
+          tier="pro"
+        />
+        <Card
+          icon={<Workflow className="h-6 w-6" />}
+          title={t('landing.feature.automation.title')}
+          body={t('landing.feature.automation.body')}
+          tier="pro"
+        />
+        <Card
+          icon={<MessageSquare className="h-6 w-6" />}
+          title={t('landing.feature.aichat.title')}
+          body={t('landing.feature.aichat.body')}
+          tier="pro"
+        />
+        <Card
+          icon={<ScrollText className="h-6 w-6" />}
+          title={t('landing.feature.logs.title')}
+          body={t('landing.feature.logs.body')}
           tier="pro"
         />
       </div>

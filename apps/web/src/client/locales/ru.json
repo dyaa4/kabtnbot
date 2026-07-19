@@ -415,5 +415,12 @@
   "overview.premium.linked": "Премиум активен",
   "overview.premium.free": "Бесплатный план — привяжите сервер, чтобы открыть премиум-функции",
   "landing.tier.free": "Бесплатно",
-  "landing.tier.pro": "Pro"
+  "landing.tier.pro": "Pro",
+  "landing.feature.automation.title": "Автоматизация",
+  "landing.feature.automation.body": "Создавайте свои команды с цепочками ответов и действий, а также запланированные задачи, работающие сами — всё в визуальном редакторе без кода",
+  "landing.feature.logs.title": "Логи голоса и чата",
+  "landing.feature.logs.body": "Смотрите, кто и когда заходил в голосовые каналы, и последние сообщения — для проверки и модерации, с автоудалением через несколько дней",
+  "landing.feature.aichat.title": "ИИ-чат",
+  "landing.feature.aichat.body": "/ask и /chat отвечают на вопросы участников, а «резюме» кратко пересказывает пропущенное в канале",
+  "pricing.premium.automation": "Автоматизация: свои команды и запланированные задачи в визуальном редакторе"
 }

@@ -415,5 +415,12 @@
   "overview.premium.linked": "Premium etkin",
   "overview.premium.free": "Ücretsiz plan — premium özellikler için sunucuyu bağla",
   "landing.tier.free": "Ücretsiz",
-  "landing.tier.pro": "Pro"
+  "landing.tier.pro": "Pro",
+  "landing.feature.automation.title": "Otomasyon",
+  "landing.feature.automation.body": "Zincirleme yanıtlar ve eylemlerle özel komutlar, ayrıca kendi kendine çalışan zamanlanmış görevler oluştur — tümü kodsuz görsel editörde",
+  "landing.feature.logs.title": "Ses & sohbet kayıtları",
+  "landing.feature.logs.body": "Ses kanallarına kimin ne zaman katıldığını ve son kanal mesajlarını gör — inceleme ve moderasyon için, birkaç gün sonra otomatik silinir",
+  "landing.feature.aichat.title": "Yapay zekâ sohbeti",
+  "landing.feature.aichat.body": "/ask ve /chat üyelerinin sorularını yanıtlar, “özetle” bir kanalda kaçırdıklarını özetler",
+  "pricing.premium.automation": "Otomasyon: görsel editörde özel komutlar ve zamanlanmış görevler"
 }

@@ -415,5 +415,12 @@
   "overview.premium.linked": "بريميوم مفعّل",
   "overview.premium.free": "الخطة المجانية — اربط السيرفر لتفعيل ميزات البريميوم",
   "landing.tier.free": "مجاني",
-  "landing.tier.pro": "برو"
+  "landing.tier.pro": "برو",
+  "landing.feature.automation.title": "الأتمتة",
+  "landing.feature.automation.body": "أنشئ أوامر مخصصة بردود ونشاطات متسلسلة، وجدولة مهام دورية تعمل تلقائياً — كل ذلك بمحرر مرئي بلا برمجة",
+  "landing.feature.logs.title": "سجلا الصوت والدردشة",
+  "landing.feature.logs.body": "اطّلع على من دخل الرومات الصوتية ومتى، وآخر رسائل القنوات — للمراجعة والإشراف، مع حذف تلقائي بعد أيام",
+  "landing.feature.aichat.title": "محادثة الذكاء الاصطناعي",
+  "landing.feature.aichat.body": "أمرا /ask و/chat يجيبان أعضاءك عن أي سؤال، و«لخّص لي» يلخّص ما فاتك في القناة",
+  "pricing.premium.automation": "أتمتة: أوامر مخصصة ومهام مجدولة بمحرر مرئي"
 }

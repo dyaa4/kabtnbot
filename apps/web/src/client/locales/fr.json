@@ -415,5 +415,12 @@
   "overview.premium.linked": "Premium actif",
   "overview.premium.free": "Plan gratuit — lie ce serveur pour débloquer les fonctionnalités premium",
   "landing.tier.free": "Gratuit",
-  "landing.tier.pro": "Pro"
+  "landing.tier.pro": "Pro",
+  "landing.feature.automation.title": "Automatisation",
+  "landing.feature.automation.body": "Crée des commandes personnalisées avec réponses et actions enchaînées, plus des tâches planifiées qui s’exécutent seules — le tout dans un éditeur visuel sans code",
+  "landing.feature.logs.title": "Journaux vocaux & de chat",
+  "landing.feature.logs.body": "Vois qui a rejoint les salons vocaux et quand, plus les messages récents — pour la revue et la modération, supprimés automatiquement après quelques jours",
+  "landing.feature.aichat.title": "Chat IA",
+  "landing.feature.aichat.body": "/ask et /chat répondent aux questions de tes membres, et « résume » récapitule ce que tu as manqué dans un salon",
+  "pricing.premium.automation": "Automatisation : commandes personnalisées et tâches planifiées dans un éditeur visuel"
 }

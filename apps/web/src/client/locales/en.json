@@ -415,5 +415,12 @@
   "overview.premium.linked": "Premium active",
   "overview.premium.free": "Free plan — link this server to unlock premium features",
   "landing.tier.free": "Free",
-  "landing.tier.pro": "Pro"
+  "landing.tier.pro": "Pro",
+  "landing.feature.automation.title": "Automation",
+  "landing.feature.automation.body": "Build custom commands with chained replies and actions, plus scheduled tasks that run on their own — all in a no-code visual editor",
+  "landing.feature.logs.title": "Voice & chat logs",
+  "landing.feature.logs.body": "See who joined voice channels and when, plus recent channel messages — for review and moderation, auto-deleted after a few days",
+  "landing.feature.aichat.title": "AI chat",
+  "landing.feature.aichat.body": "/ask and /chat answer your members’ questions, and “summarize” recaps what you missed in a channel",
+  "pricing.premium.automation": "Automation: custom commands & scheduled tasks in a visual editor"
 }
