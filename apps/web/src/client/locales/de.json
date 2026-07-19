@@ -75,6 +75,7 @@
   "nav.logout": "Abmelden",
   "lang.switch": "Sprache",
   "guilds.title": "Deine Server",
+  "guilds.add": "Server hinzufügen",
   "guilds.empty": "Keine Server, auf denen du Admin bist und der Bot Mitglied ist",
   "guilds.links.count": "Verknüpfte Server: {used}/{max}",
   "guilds.links.hint": "Erweiterte Funktionen (Automatisierung, Chat- & Voice-Log) laufen nur auf verknüpften Servern. Kostenlos: 1 Server — Premium: 3 Server.",

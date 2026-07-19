@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Gem, Link2, Unlink } from 'lucide-react';
+import { Gem, Link2, Plus, Unlink } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -19,12 +19,18 @@ interface UserPlan {
   linked_guild_ids: string[];
 }
 
+interface Meta {
+  clientId: string;
+  inviteUrl: string;
+}
+
 export function GuildList() {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
   const guilds = useQuery({ queryKey: ['guilds'], queryFn: () => api<Guild[]>('/api/guilds') });
   const plan = useQuery({ queryKey: ['plan'], queryFn: () => api<UserPlan>('/api/me/plan') });
+  const meta = useQuery({ queryKey: ['meta'], queryFn: () => api<Meta>('/api/meta') });
 
   const setLink = useMutation({
     mutationFn: ({ guildId, link }: { guildId: string; link: boolean }) =>
@@ -43,7 +49,19 @@ export function GuildList() {
 
   return (
     <Layout>
-      <h1 className="mb-2 text-2xl font-bold">{t('guilds.title')}</h1>
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">{t('guilds.title')}</h1>
+        {meta.data && (
+          <a
+            href={meta.data.inviteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> {t('guilds.add')}
+          </a>
+        )}
+      </div>
       {plan.data && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 px-4 py-3">
           <Gem className="h-4 w-4 shrink-0 text-blue-300" />
@@ -100,6 +118,17 @@ export function GuildList() {
             </Link>
           );
         })}
+        {meta.data && (
+          <a
+            href={meta.data.inviteUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex min-h-[104px] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/20 bg-white/[0.02] p-4 text-slate-400 transition hover:-translate-y-1 hover:border-blue-400/40 hover:text-blue-200"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-sm font-semibold">{t('guilds.add')}</span>
+          </a>
+        )}
       </div>
     </Layout>
   );

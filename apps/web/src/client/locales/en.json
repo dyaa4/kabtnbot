@@ -75,6 +75,7 @@
   "nav.logout": "Logout",
   "lang.switch": "عربي",
   "guilds.title": "Your servers",
+  "guilds.add": "Add server",
   "guilds.empty": "No servers where you are an admin and the bot is a member",
   "guilds.links.count": "Linked servers: {used}/{max}",
   "guilds.links.hint": "Advanced features (automation, chat & voice logs) run on linked servers only. Free: 1 server — Premium: 3 servers.",
