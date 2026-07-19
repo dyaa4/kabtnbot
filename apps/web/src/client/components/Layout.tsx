@@ -53,20 +53,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-md">
+        {/* The brand goes to the public home page; the landing header is
+            session-aware (shows a Dashboard button when logged in), so this no
+            longer reads as a logout. */}
         <Link
-          to="/app"
+          to="/"
           className="text-xl font-black"
         >
           <span className="bg-gradient-to-r from-blue-400 via-blue-400 to-blue-400 bg-clip-text text-transparent">{t('brand.name')}</span>
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
-          {/* New tab: an in-tab navigation to the public landing page reads
-              as "I got logged out" — the dashboard must stay where it is. */}
+          {/* Same-tab nav to the landing #features — the session-aware landing
+              header keeps a way back to the dashboard, so no new tab needed. */}
           <a
             href="/#features"
-            target="_blank"
-            rel="noreferrer"
             className="hidden text-sm font-semibold text-slate-300 transition hover:text-blue-300 sm:block"
           >
             {t('landing.nav.features')}
