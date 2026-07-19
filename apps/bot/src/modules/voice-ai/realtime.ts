@@ -67,6 +67,11 @@ export class RealtimeClient {
   private queuedUtterances: Array<{ pcm: Buffer; userId: string }> = [];
 
   private activeResponse = false;
+  // One (and only one) response.create held back while a response is active.
+  // Requests during an answer collapse into a single follow-on response — the
+  // asking utterances are already in the conversation, so one answer covers
+  // them all without a second voice talking over the first.
+  private pendingResponse = false;
   private audioSink: NodeJS.WritableStream | null = null;
 
   callbacks: RealtimeCallbacks | null = null;
@@ -147,15 +152,16 @@ export class RealtimeClient {
     this.pendingSpeakers.push(userId);
   }
 
-  /** Ask the model to answer the conversation so far. False = busy/offline. */
+  /** Ask the model to answer the conversation so far. False = offline. */
   requestResponse(): boolean {
     if (this.ws?.readyState !== WebSocket.OPEN) return false;
+    this.touchIdle();
     if (this.activeResponse) {
-      console.log(`[Realtime ${this.guildId}] response already active — dropping request`);
-      return false;
+      console.log(`[Realtime ${this.guildId}] response active — queueing request`);
+      this.pendingResponse = true;
+      return true;
     }
     this.activeResponse = true;
-    this.touchIdle();
     this.send({ type: 'response.create' });
     return true;
   }
@@ -219,6 +225,11 @@ export class RealtimeClient {
         this.audioSink?.end();
         this.audioSink = null;
         this.activeResponse = false;
+        if (this.pendingResponse) {
+          this.pendingResponse = false;
+          this.activeResponse = true;
+          this.send({ type: 'response.create' });
+        }
         break;
       }
       case 'error': {
@@ -275,6 +286,7 @@ export class RealtimeClient {
     this.pendingSpeakers = [];
     this.itemSpeakers.clear();
     this.activeResponse = false;
+    this.pendingResponse = false;
     this.audioSink?.end();
     this.audioSink = null;
   }

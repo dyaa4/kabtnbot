@@ -191,7 +191,6 @@ describe('responses', () => {
     };
 
     expect(client.requestResponse()).toBe(true);
-    expect(client.requestResponse()).toBe(false); // busy
 
     ws.message({ type: 'response.output_audio.delta', delta: pcm(4).toString('base64') });
     expect(written.length).toBe(1);
@@ -202,6 +201,27 @@ describe('responses', () => {
     expect(ended).toBe(true);
     expect(answers).toEqual(['الجواب']);
     expect(client.requestResponse()).toBe(true); // free again
+  });
+
+  it('queues a request while a response is active and answers it after response.done', async () => {
+    const { client, ws } = await openClient();
+    client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };
+
+    expect(client.requestResponse()).toBe(true);
+    expect(client.isResponding()).toBe(true);
+    // A second question during the answer must neither be dropped (swallowed
+    // question) nor spoken OVER the running answer (two voices) — it waits.
+    expect(client.requestResponse()).toBe(true);
+    expect(ws.sent.filter((m) => m.type === 'response.create').length).toBe(1);
+
+    ws.message({ type: 'response.done' });
+    expect(ws.sent.filter((m) => m.type === 'response.create').length).toBe(2);
+    expect(client.isResponding()).toBe(true); // queued response now active
+
+    ws.message({ type: 'response.done' });
+    // queue drained — no third response, client idle again
+    expect(ws.sent.filter((m) => m.type === 'response.create').length).toBe(2);
+    expect(client.isResponding()).toBe(false);
   });
 });
 

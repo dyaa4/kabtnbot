@@ -231,8 +231,9 @@ export async function routeVoiceCommand(
   }
 
   // 4. Free-form question → the realtime session answers with audio directly
-  // (the utterance is already in its context). Falls back to the text
-  // Groq/Gemini path when the WS is down or a response is still playing.
+  // (the utterance is already in its context; while an answer is playing the
+  // request queues instead of speaking over it). Falls back to the text
+  // Groq/Gemini path only when the WS is down.
   if (getRealtime(guild.id)?.requestResponse()) return { streamed: true };
   try {
     const ai = getAIProvider();
