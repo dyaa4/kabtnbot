@@ -246,6 +246,7 @@
   "admin.members": "Members",
   "admin.joined": "Added",
   "admin.invitedBy": "Added by",
+  "admin.owner": "Owner",
   "admin.status": "Status",
   "admin.actions": "Actions",
   "admin.blocked": "Blocked",

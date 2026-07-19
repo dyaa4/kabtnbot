@@ -40,10 +40,14 @@ export class FakeDiscordRest implements DiscordRest {
     if (this.revokedTokens.has(accessToken)) throw new DiscordAuthError();
     return this.userGuilds.get(accessToken) ?? [];
   }
+  guildOwners = new Map<string, string>();
   async getGuild(guildId: string) {
     return this.botGuilds.has(guildId)
       ? { id: guildId, name: this.guildNames.get(guildId) ?? 'Guild', icon: null }
       : null;
+  }
+  async getGuildOwnerId(guildId: string) {
+    return this.guildOwners.get(guildId) ?? null;
   }
   async getMember(guildId: string, userId: string) {
     return this.members.get(`${guildId}:${userId}`) ?? null;

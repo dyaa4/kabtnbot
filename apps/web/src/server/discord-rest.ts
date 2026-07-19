@@ -18,6 +18,10 @@ export interface DiscordRest {
   getMe(accessToken: string): Promise<{ id: string; username: string; avatar: string | null }>;
   getMyGuilds(accessToken: string): Promise<{ id: string; name: string; icon: string | null; permissions: string }[]>;
   getGuild(guildId: string): Promise<{ id: string; name: string; icon: string | null } | null>;
+  /** The guild owner's user id (always readable, no special permission) — a
+   * reliable fallback for "who added the bot" when audit-log attribution is
+   * missing (old joins) or unrecoverable. Null when the guild can't be read. */
+  getGuildOwnerId(guildId: string): Promise<string | null>;
   getMember(guildId: string, userId: string): Promise<{ roles: string[] } | null>;
   listMembers(guildId: string, limit?: number): Promise<DiscordMember[]>;
   /** Name search via Discord's purpose-built /members/search (username + nick prefix match). */
@@ -144,6 +148,10 @@ export function createDiscordRest(): DiscordRest {
     },
     async getGuild(guildId) {
       return discordJson(`${API}/guilds/${guildId}`, { headers: bot }, true);
+    },
+    async getGuildOwnerId(guildId) {
+      const g = await discordJson<{ owner_id?: string }>(`${API}/guilds/${guildId}`, { headers: bot }, true);
+      return g?.owner_id ?? null;
     },
     async getMember(guildId, userId) {
       return discordJson(`${API}/guilds/${guildId}/members/${userId}`, { headers: bot }, true);

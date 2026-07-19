@@ -246,6 +246,7 @@
   "admin.members": "Участники",
   "admin.joined": "Добавлен",
   "admin.invitedBy": "Добавил",
+  "admin.owner": "Владелец",
   "admin.status": "Статус",
   "admin.actions": "Действия",
   "admin.blocked": "Заблокирован",

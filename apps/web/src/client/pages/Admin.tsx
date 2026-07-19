@@ -22,7 +22,9 @@ interface AdminGuild {
   member_count: number;
   blocked: boolean;
   joined_at: string;
-  invited_by: string | null;
+  // Who added the bot: the audit-log inviter when known, else the guild owner.
+  attributed_to: string | null;
+  attribution: 'inviter' | 'owner' | 'unknown';
 }
 
 const BTN = 'rounded-lg border border-white/15 px-3 py-1.5 text-xs font-semibold transition';
@@ -209,9 +211,9 @@ export function Admin() {
                   </div>
                   <div className="text-xs text-slate-500" dir="ltr">{g.guild_id}</div>
                   <div className="mt-0.5 text-xs text-slate-400">
-                    {t('admin.invitedBy')}:{' '}
-                    {g.invited_by ? (
-                      <span className="text-slate-300">{userName.get(g.invited_by) ?? g.invited_by}</span>
+                    {t(g.attribution === 'owner' ? 'admin.owner' : 'admin.invitedBy')}:{' '}
+                    {g.attributed_to ? (
+                      <span className="text-slate-300">{userName.get(g.attributed_to) ?? g.attributed_to}</span>
                     ) : (
                       <span className="text-slate-600">—</span>
                     )}

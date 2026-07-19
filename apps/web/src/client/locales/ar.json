@@ -246,6 +246,7 @@
   "admin.members": "الأعضاء",
   "admin.joined": "أُضيف",
   "admin.invitedBy": "أضافه",
+  "admin.owner": "المالك",
   "admin.status": "الحالة",
   "admin.actions": "إجراءات",
   "admin.blocked": "محظور",

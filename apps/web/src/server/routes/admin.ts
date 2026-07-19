@@ -31,9 +31,27 @@ export function adminRouter(rest: DiscordRest): Router {
   // Everything below is super-admin only.
   router.use(requireSuperAdmin);
 
+  // Cap the per-guild Discord fan-out so a bot in many guilds can't turn one
+  // admin page load into hundreds of API calls (owner lookup is best-effort).
+  const OWNER_LOOKUP_CAP = 100;
+
   router.get('/guilds', async (_req, res, next) => {
     try {
-      res.json(await listActiveGuilds());
+      const guilds = await listActiveGuilds();
+      // "Who added the bot": audit-log attribution (invited_by) when known;
+      // otherwise the guild OWNER, which is always readable and a reliable
+      // proxy for old joins whose audit entry aged out or was never captured.
+      let looked = 0;
+      const enriched = await Promise.all(guilds.map(async (g) => {
+        if (g.invited_by) return { ...g, attributed_to: g.invited_by, attribution: 'inviter' as const };
+        if (looked >= OWNER_LOOKUP_CAP) return { ...g, attributed_to: null, attribution: 'unknown' as const };
+        looked++;
+        const owner = await rest.getGuildOwnerId(g.guild_id).catch(() => null);
+        return owner
+          ? { ...g, attributed_to: owner, attribution: 'owner' as const }
+          : { ...g, attributed_to: null, attribution: 'unknown' as const };
+      }));
+      res.json(enriched);
     } catch (err) {
       next(err);
     }
