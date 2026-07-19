@@ -4,7 +4,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import {
   connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat,
   startVoiceSession, endVoiceSession, linkGuild, unlinkGuild, recordChatMessage,
-  recordGuildPresence, recordGuildInviter,
+  recordGuildPresence, recordGuildInviter, setUserPremium,
 } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
@@ -85,7 +85,7 @@ describe('api routes', () => {
     await unlinkGuild('u1', 'g1');
   });
 
-  it('voice config PATCH is premium-gated', async () => {
+  it('voice config PATCH requires a PREMIUM-account link (a free link is not enough)', async () => {
     const { app, cookie } = setup();
     const denied = await request(app)
       .patch('/api/guilds/g1/config')
@@ -101,12 +101,21 @@ describe('api routes', () => {
       .send({ language: 'en' });
     expect(general.status).toBe(200);
 
+    // A FREE account's link unlocks other web features but NOT voice.
     await linkGuild('u1', 'g1');
+    const stillDenied = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ voice: { tts_voice: 'cedar' } });
+    expect(stillDenied.status).toBe(403);
+
+    await setUserPremium('u1', true);
     const allowed = await request(app)
       .patch('/api/guilds/g1/config')
       .set('Cookie', cookie)
       .send({ voice: { tts_voice: 'cedar' } });
     expect(allowed.status).toBe(200);
+    await setUserPremium('u1', false);
     await unlinkGuild('u1', 'g1');
   });
 
@@ -183,7 +192,8 @@ describe('api routes', () => {
 
   it('reads and patches config; invalid patch → 400; premium not patchable', async () => {
     const { app, cookie } = setup();
-    await linkGuild('u1', 'g1'); // voice patches are premium-gated
+    await setUserPremium('u1', true); // voice patches need a premium-account link
+    await linkGuild('u1', 'g1');
     const before = await request(app).get('/api/guilds/g1/config').set('Cookie', cookie);
     expect(before.body.voice.wake_word).toBe('يا كابتن');
 
@@ -206,6 +216,7 @@ describe('api routes', () => {
       .set('Cookie', cookie)
       .send({ premium: { active: true } });
     expect(premium.status).toBe(400);
+    await setUserPremium('u1', false);
     await unlinkGuild('u1', 'g1');
   });
 
@@ -280,7 +291,8 @@ describe('api routes', () => {
 
   it('patches voice.personality_enabled and persists it', async () => {
     const { app, cookie } = setup();
-    await linkGuild('u1', 'g1'); // voice patches are premium-gated
+    await setUserPremium('u1', true); // voice patches need a premium-account link
+    await linkGuild('u1', 'g1');
     const patch = await request(app)
       .patch('/api/guilds/g1/config')
       .set('Cookie', cookie)
@@ -288,6 +300,7 @@ describe('api routes', () => {
     expect(patch.status).toBe(200);
     expect(patch.body.voice.personality_enabled).toBe(true);
     expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
+    await setUserPremium('u1', false);
     await unlinkGuild('u1', 'g1');
   });
 

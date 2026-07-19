@@ -6,6 +6,8 @@ const db = vi.hoisted(() => ({
     voice: { enabled: true, wake_word: 'يا كابتن', allowed_channel_ids: [] },
   })),
   isGuildLinked: vi.fn(async () => false),
+  // Voice is STRICTLY premium: the gate checks the premium-account link.
+  isGuildPremium: vi.fn(async () => false),
 }));
 vi.mock('@gamebot/db', () => db);
 
@@ -38,11 +40,12 @@ function fakeInteraction() {
 beforeEach(() => {
   clearPremiumCache();
   db.isGuildLinked.mockClear().mockResolvedValue(false);
+  db.isGuildPremium.mockClear().mockResolvedValue(false);
   sessions.joinGuildVoice.mockClear();
 });
 
 describe('/join premium gate', () => {
-  it('refuses with an upsell on a guild nobody linked', async () => {
+  it('refuses with an upsell on a guild without a premium link', async () => {
     const i = fakeInteraction();
     await joinCommand.execute(i as never);
     expect(i.reply).toHaveBeenCalledWith(
@@ -51,8 +54,15 @@ describe('/join premium gate', () => {
     expect(sessions.joinGuildVoice).not.toHaveBeenCalled();
   });
 
-  it('joins normally on a linked guild', async () => {
+  it('a FREE account link is NOT enough — voice is strictly premium', async () => {
     db.isGuildLinked.mockResolvedValue(true);
+    const i = fakeInteraction();
+    await joinCommand.execute(i as never);
+    expect(sessions.joinGuildVoice).not.toHaveBeenCalled();
+  });
+
+  it('joins normally on a premium-linked guild', async () => {
+    db.isGuildPremium.mockResolvedValue(true);
     const i = fakeInteraction();
     await joinCommand.execute(i as never);
     expect(sessions.joinGuildVoice).toHaveBeenCalled();

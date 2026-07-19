@@ -51,9 +51,10 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
-  // Voice moderation rides on the (premium) voice assistant — the toggles are
-  // locked on free guilds; text protection stays free.
-  const { premium } = usePremiumStatus(guildId);
+  // Voice moderation rides on the (strictly premium) voice assistant — the
+  // toggles are locked unless a premium account linked this guild; text
+  // protection stays free.
+  const { voicePremium: premium } = usePremiumStatus(guildId);
   // No focus-refetch: the form resets from cfg.data, so a refetch while the
   // admin is mid-edit would silently wipe their edits.
   const cfg = useQuery({

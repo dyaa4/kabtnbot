@@ -60,7 +60,7 @@ export function VoiceTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
-  const { loading: premiumLoading, premium } = usePremiumStatus(guildId);
+  const { loading: premiumLoading, voicePremium } = usePremiumStatus(guildId);
   // No focus-refetch: the form resets from cfg.data, so a refetch while the
   // admin is mid-edit would silently wipe their edits.
   const cfg = useQuery({
@@ -102,7 +102,7 @@ export function VoiceTab({ guildId }: { guildId: string }) {
   };
 
   if (premiumLoading || cfg.isLoading) return <FormSkeleton sections={2} />;
-  if (!premium) {
+  if (!voicePremium) {
     return <PremiumUpsell title={t('voicetab.premium.title')} body={t('voicetab.premium.body')} />;
   }
 

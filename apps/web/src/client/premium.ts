@@ -3,14 +3,16 @@ import { api } from './api.js';
 
 interface GuildInfoResp {
   premiumLinked?: boolean;
+  premiumActive?: boolean;
 }
 
 /**
- * Whether this guild's premium tabs are unlocked: linked by any account, or
- * the viewer is the super-admin. Mirrors the server-side hasPremiumAccess —
- * the API gates remain the actual enforcement.
+ * Two unlock tiers, mirroring the server gates (which remain the actual
+ * enforcement): `premium` = linked by ANY account (logs, flows, customize);
+ * `voicePremium` = linked by a PREMIUM account (the voice assistant is
+ * strictly premium). The super-admin passes both.
  */
-export function usePremiumStatus(guildId: string): { loading: boolean; premium: boolean } {
+export function usePremiumStatus(guildId: string): { loading: boolean; premium: boolean; voicePremium: boolean } {
   const info = useQuery({
     queryKey: ['guild-info', guildId],
     queryFn: () => api<GuildInfoResp>(`/api/guilds/${guildId}/info`),
@@ -20,8 +22,10 @@ export function usePremiumStatus(guildId: string): { loading: boolean; premium: 
     queryFn: () => api<{ isSuperAdmin: boolean }>('/api/admin/me'),
     retry: false,
   });
+  const isSuperAdmin = admin.data?.isSuperAdmin ?? false;
   return {
     loading: info.isLoading,
-    premium: (info.data?.premiumLinked ?? false) || (admin.data?.isSuperAdmin ?? false),
+    premium: (info.data?.premiumLinked ?? false) || isSuperAdmin,
+    voicePremium: (info.data?.premiumActive ?? false) || isSuperAdmin,
   };
 }

@@ -77,8 +77,8 @@ export const settingsCommand: Command = {
           {
             name: strings.settingsFieldQuotas,
             value: fmt(strings.settingsQuotasLine, {
-              listen: config.quotas.listen_minutes_per_day,
-              ai: config.quotas.ai_questions_per_day,
+              listen: config.quotas.listen_minutes_per_month,
+              ai: config.quotas.ai_questions_per_month,
             }),
           },
         )

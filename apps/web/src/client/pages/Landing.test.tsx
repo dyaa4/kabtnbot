@@ -38,13 +38,13 @@ function renderLanding() {
 }
 
 describe('Landing', () => {
-  it('shows the free vs premium plan comparison with the daily limits', async () => {
+  it('shows the free vs premium plan comparison with the monthly limits', async () => {
     renderLanding();
     expect(await screen.findByRole('heading', { name: /الخطط والمزايا|Plans & features/ })).toBeTruthy();
     expect(screen.getByRole('heading', { name: /مجاني|Free/ })).toBeTruthy();
     expect(screen.getByRole('heading', { name: /^(برو|Pro)$/ })).toBeTruthy();
     expect(screen.getAllByText(/قريباً|Coming soon/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/120 دقيقة|120 voice-listening/)).toBeTruthy(); // Pro daily limits spelled out
+    expect(screen.getByText(/600 دقيقة|600 voice-listening/)).toBeTruthy(); // Pro monthly limits spelled out
     expect(screen.getByText(/كل مزايا الخطة المجانية|Everything in the free plan/)).toBeTruthy();
   });
 

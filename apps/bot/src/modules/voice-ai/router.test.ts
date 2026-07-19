@@ -6,7 +6,7 @@ const baseConfig = (premiumActive: boolean) => ({
   voice: {
     enabled: true, wake_word: 'يا بوت', allowed_channel_ids: [], personality_enabled: false,
   },
-  quotas: { listen_minutes_per_day: 60, ai_questions_per_day: 50 },
+  quotas: { listen_minutes_per_month: 600, ai_questions_per_month: 600 },
   premium: { active: premiumActive, listen_minutes_override: null, ai_questions_override: null },
 });
 

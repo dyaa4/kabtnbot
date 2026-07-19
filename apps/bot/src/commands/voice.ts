@@ -2,7 +2,7 @@ import { SlashCommandBuilder, MessageFlags, type GuildMember } from 'discord.js'
 import { getGuildConfig } from '@gamebot/db';
 import type { Command } from './index.js';
 import { S, t, fmt } from '../lib/strings.js';
-import { isGuildLinkedCached } from '../lib/premium-cache.js';
+import { isGuildPremiumCached } from '../lib/premium-cache.js';
 import { joinGuildVoice, leaveGuildVoice, playSpeech, getSession } from '../modules/voice-ai/sessions.js';
 
 async function requireVoiceContext(interaction: Parameters<Command['execute']>[0]) {
@@ -15,10 +15,11 @@ async function requireVoiceContext(interaction: Parameters<Command['execute']>[0
     await interaction.reply({ content: t(config.language).voiceDisabled, flags: MessageFlags.Ephemeral });
     return null;
   }
-  // The voice assistant is premium (owner decision 2026-07-19): only guilds
-  // linked to a dashboard account may use join/listen/speak. /leave stays
+  // The voice assistant is STRICTLY premium (owner decision 2026-07-19):
+  // only guilds linked by a PREMIUM account may use join/listen/speak — a
+  // free account's link unlocks web features but not voice. /leave stays
   // ungated so the bot can always be sent away.
-  if (!(await isGuildLinkedCached(interaction.guildId))) {
+  if (!(await isGuildPremiumCached(interaction.guildId))) {
     await interaction.reply({ content: t(config.language).voicePremiumRequired, flags: MessageFlags.Ephemeral });
     return null;
   }

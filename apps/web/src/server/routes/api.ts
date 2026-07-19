@@ -8,7 +8,7 @@ import {
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, isUserBlocked, isDbConnected,
   countActiveInvitedGuilds,
 } from '@gamebot/db';
-import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
+import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -202,7 +202,13 @@ export function apiRouter(rest: DiscordRest): Router {
       }
       // Fresh isGuildLinked read (NOT statsCached): a guild the user just
       // linked must unlock the premium tabs immediately, not after a TTL.
-      res.json({ ...info, createdAt: snowflakeToDate(guildId), premiumLinked: await isGuildLinked(guildId) });
+      const [premiumLinked, premiumActive] = await Promise.all([
+        isGuildLinked(guildId),
+        isGuildPremium(guildId),
+      ]);
+      // premiumLinked gates the linked-tier features (logs/flows/customize);
+      // premiumActive gates the strictly-premium voice assistant.
+      res.json({ ...info, createdAt: snowflakeToDate(guildId), premiumLinked, premiumActive });
     } catch (err) {
       next(err);
     }
@@ -247,12 +253,17 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid patch');
         return;
       }
-      // The voice assistant is a paid feature (owner decision 2026-07-19):
-      // its settings can only be changed on premium-linked guilds. All other
+      // The voice assistant is STRICTLY premium (owner decision 2026-07-19):
+      // its settings require a guild linked by a PREMIUM account — a free
+      // account's link is not enough (unlike logs/flows/customize). All other
       // config sections (general settings, protection, welcome…) stay free.
-      if (parsed.data.voice !== undefined && !(await hasPremiumAccess(req.params.guildId, res))) {
-        apiError(res, 403, 'PREMIUM_REQUIRED', 'Voice assistant settings require premium');
-        return;
+      if (parsed.data.voice !== undefined) {
+        const session = res.locals.session as Session;
+        const allowed = isSuperAdmin(session.uid) || (await isGuildPremium(req.params.guildId));
+        if (!allowed) {
+          apiError(res, 403, 'PREMIUM_REQUIRED', 'Voice assistant settings require a premium account');
+          return;
+        }
       }
       // Role ids grant rights (admin role) or get assigned to members
       // (auto role) — only accept roles that actually exist in this guild.
@@ -601,11 +612,12 @@ function registerStatsRoutes(router: Router, rest: DiscordRest): void {
     try {
       const [guildConfig, usage, linked, premium] = await Promise.all([
         getGuildConfig(req.params.guildId),
-        getUsage(req.params.guildId, todayKey()),
+        // Quota accounting is MONTHLY (owner decision 2026-07-19).
+        getUsage(req.params.guildId, monthKey()),
         isGuildLinked(req.params.guildId),
         isGuildPremium(req.params.guildId),
       ]);
-      // limits reflect PREMIUM linking (higher daily quotas); premium_active
+      // limits reflect PREMIUM linking (monthly quotas); premium_active
       // keeps its existing meaning of "linked by anyone" (feature gate).
       res.json({ ...usage, limits: effectiveQuotas(guildConfig, premium), premium_active: linked });
     } catch (err) {

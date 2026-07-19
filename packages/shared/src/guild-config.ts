@@ -79,8 +79,12 @@ export const GuildConfigSchema = z.object({
     .default({}),
   quotas: z
     .object({
-      listen_minutes_per_day: z.number().int().positive().default(60),
-      ai_questions_per_day: z.number().int().positive().default(50),
+      // MONTHLY budgets (owner decision 2026-07-19; formerly per-day). The
+      // free default is 0: the voice assistant is premium-only — premium-
+      // linked guilds get PREMIUM_QUOTAS via effectiveQuotas. A positive
+      // value here is a manual per-guild grant that is never reduced.
+      listen_minutes_per_month: z.number().int().min(0).default(0),
+      ai_questions_per_month: z.number().int().min(0).default(0),
     })
     .default({}),
 });

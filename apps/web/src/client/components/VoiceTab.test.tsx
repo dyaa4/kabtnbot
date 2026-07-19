@@ -11,10 +11,10 @@ const config = {
   voice: { enabled: true, wake_word: 'يا بوت', tts_voice: 'marin', allowed_channel_ids: [], personality_enabled: false, follow_up_seconds: 0 },
 };
 
-let premiumLinked = true;
+let premiumActive = true;
 
 beforeEach(() => {
-  premiumLinked = true;
+  premiumActive = true;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init?: RequestInit) => {
@@ -26,7 +26,9 @@ beforeEach(() => {
         );
       }
       if (url.endsWith('/info')) {
-        return new Response(JSON.stringify({ name: 'g', icon: null, premiumLinked }), { status: 200 });
+        // Voice gates on premiumActive (premium-account link); a plain link
+        // (premiumLinked) is deliberately NOT enough.
+        return new Response(JSON.stringify({ name: 'g', icon: null, premiumLinked: true, premiumActive }), { status: 200 });
       }
       if (url.endsWith('/api/admin/me')) {
         return new Response(JSON.stringify({ isSuperAdmin: false }), { status: 200 });
@@ -53,8 +55,8 @@ function renderTab() {
 }
 
 describe('VoiceTab', () => {
-  it('shows the premium upsell instead of the form on a free guild', async () => {
-    premiumLinked = false;
+  it('shows the premium upsell instead of the form on a guild without a premium link', async () => {
+    premiumActive = false;
     renderTab();
     expect(await screen.findByText(/ميزة بريميوم|premium feature/)).toBeTruthy();
     expect(screen.queryByDisplayValue('يا بوت')).toBeNull();

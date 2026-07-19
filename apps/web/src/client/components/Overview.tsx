@@ -8,7 +8,7 @@ import { ServerInfoSkeleton, UsageSkeleton } from './Skeleton.js';
 interface Usage {
   listen_seconds: number;
   ai_questions: number;
-  limits: { listen_minutes_per_day: number; ai_questions_per_day: number };
+  limits: { listen_minutes_per_month: number; ai_questions_per_month: number };
   premium_active: boolean;
 }
 
@@ -21,6 +21,7 @@ interface ServerInfo {
   boostCount: number;
   createdAt: string | null;
   premiumLinked?: boolean;
+  premiumActive?: boolean;
 }
 
 function Bar({ label, used, max }: { label: string; used: number; max: number }) {
@@ -80,7 +81,7 @@ function ServerInfoCard({ guildId }: { guildId: string }) {
           </div>
         )}
         <h2 className="text-xl font-bold">{s.name}</h2>
-        {s.premiumLinked ? (
+        {s.premiumActive ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/40 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-200">
             <Gem className="h-3.5 w-3.5" /> {t('overview.premium.linked')}
           </span>
@@ -116,8 +117,8 @@ export function Overview({ guildId }: { guildId: string }) {
       ) : (
         usage.data && (
           <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-            <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_day} />
-            <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_day} />
+            <Bar label={t('overview.listen')} used={Math.round(usage.data.listen_seconds / 60)} max={usage.data.limits.listen_minutes_per_month} />
+            <Bar label={t('overview.ai')} used={usage.data.ai_questions} max={usage.data.limits.ai_questions_per_month} />
           </div>
         )
       )}

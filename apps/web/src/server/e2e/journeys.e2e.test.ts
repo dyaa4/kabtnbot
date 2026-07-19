@@ -4,7 +4,7 @@ import {
   getGuildConfig, updateGuildConfig, getGuildAsset, linkGuild, unlinkGuild,
   startVoiceSession, incrementListenSeconds, incrementAiQuestions, recordBotHeartbeat, clearBotHeartbeat,
 } from '@gamebot/db';
-import { todayKey } from '@gamebot/shared';
+import { monthKey, todayKey } from '@gamebot/shared';
 import { startDb, stopDb, scenario, login } from '../testing/e2e.js';
 import { clearAccessCache } from '../guild-access.js';
 import { pngHeader } from '../testing/image-fixtures.js';
@@ -201,17 +201,19 @@ describe('journey: bot profile', () => {
 });
 
 describe('journey: read-only dashboards (stats, usage, voice-log, status)', () => {
-  it('surfaces seeded usage and quota limits', async () => {
+  it('surfaces seeded usage and MONTHLY quota limits', async () => {
     const { app } = scenario();
     const agent = await login(app);
-    await incrementListenSeconds('g1', 120, todayKey());
-    await incrementAiQuestions('g1', todayKey());
+    // Quota accounting is per calendar month.
+    await incrementListenSeconds('g1', 120, monthKey());
+    await incrementAiQuestions('g1', monthKey());
 
     const usage = await agent.get('/api/guilds/g1/usage');
     expect(usage.status).toBe(200);
     expect(usage.body.listen_seconds).toBe(120);
     expect(usage.body.ai_questions).toBe(1);
-    expect(usage.body.limits).toBeDefined();
+    expect(usage.body.limits.listen_minutes_per_month).toBeDefined();
+    expect(usage.body.limits.ai_questions_per_month).toBeDefined();
   });
 
   it('shows an active voice session with the member name resolved (premium)', async () => {
