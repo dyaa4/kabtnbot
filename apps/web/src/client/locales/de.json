@@ -93,6 +93,7 @@
   "tabs.protection": "Schutz",
   "tabs.welcome": "Willkommen",
   "tabs.stats": "Statistiken",
+  "tabs.logs": "Protokolle",
   "tabs.voiceLog": "Voice-Log",
   "voicelog.activeNow": "Gerade in Sprachkanälen",
   "voicelog.hint": "Nur Anwesenheits-Metadaten (Betreten/Verlassen) — es wird kein Audio aufgezeichnet und der Bot muss nicht im Kanal sein.",

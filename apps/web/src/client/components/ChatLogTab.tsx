@@ -48,9 +48,7 @@ export function ChatLogTab({ guildId }: { guildId: string }) {
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-      <h3 className="mb-1 text-lg font-semibold">
-        {t('chatlog.title')} <span className="ms-1 rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300"><Gem className="inline h-3 w-3 align-[-1px]" /> Pro</span>
-      </h3>
+      <h3 className="mb-1 text-lg font-semibold">{t('chatlog.title')}</h3>
       <p className="mb-4 text-xs text-slate-500">{t('chatlog.hint')}</p>
       {log.data.recording === false ? (
         <div className="flex items-start gap-3 rounded-xl border border-blue-400/30 bg-blue-400/5 p-4">

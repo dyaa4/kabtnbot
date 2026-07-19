@@ -93,6 +93,7 @@
   "tabs.protection": "Protection",
   "tabs.welcome": "Welcome",
   "tabs.stats": "Statistics",
+  "tabs.logs": "Logs",
   "tabs.voiceLog": "Voice log",
   "voicelog.activeNow": "In voice channels right now",
   "voicelog.hint": "Presence metadata only (join/leave times) — no audio is recorded and the bot does not need to be in the channel.",

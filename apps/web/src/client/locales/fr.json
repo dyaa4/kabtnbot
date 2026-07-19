@@ -93,6 +93,7 @@
   "tabs.protection": "Protection",
   "tabs.welcome": "Bienvenue",
   "tabs.stats": "Statistiques",
+  "tabs.logs": "Journaux",
   "tabs.voiceLog": "Journal vocal",
   "voicelog.activeNow": "En vocal en ce moment",
   "voicelog.hint": "Métadonnées de présence uniquement (heures d'entrée/sortie) — aucun audio n'est enregistré et le bot n'a pas besoin d'être dans le salon.",

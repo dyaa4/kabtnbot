@@ -57,9 +57,7 @@ export function VoiceLogTab({ guildId }: { guildId: string }) {
   return (
     <div className="grid gap-8">
       <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-        <h3 className="mb-1 text-lg font-semibold">
-          {t('voicelog.activeNow')} <span className="ms-1 rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300"><Gem className="inline h-3 w-3 align-[-1px]" /> Pro</span>
-        </h3>
+        <h3 className="mb-1 text-lg font-semibold">{t('voicelog.activeNow')}</h3>
         <p className="mb-4 text-xs text-slate-500">{t('voicelog.hint')}</p>
         {log.data.active.length === 0 ? (
           <p className="text-sm text-slate-500">{t('voicelog.nobodyActive')}</p>

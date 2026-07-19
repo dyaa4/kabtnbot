@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes, useParams } from 'react-router-dom';
+import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
@@ -7,8 +7,7 @@ import { CommandsTab } from '../components/commands/CommandsTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 import { VoiceTab } from '../components/VoiceTab.js';
-import { VoiceLogTab } from '../components/VoiceLogTab.js';
-import { ChatLogTab } from '../components/ChatLogTab.js';
+import { LogsTab } from '../components/LogsTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
 import { CustomizeTab } from '../components/CustomizeTab.js';
 
@@ -24,8 +23,7 @@ export function GuildView() {
     { to: 'protection', key: 'tabs.protection' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
-    { to: 'voice-log', key: 'tabs.voiceLog' },
-    { to: 'chat-log', key: 'tabs.chatLog' },
+    { to: 'logs', key: 'tabs.logs' },
     { to: 'customize', key: 'tabs.customize' },
     { to: 'settings', key: 'tabs.settings' },
   ];
@@ -59,8 +57,10 @@ export function GuildView() {
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
-        <Route path="voice-log" element={<VoiceLogTab guildId={guildId} />} />
-        <Route path="chat-log" element={<ChatLogTab guildId={guildId} />} />
+        <Route path="logs" element={<LogsTab guildId={guildId} />} />
+        {/* Redirect the old split-log paths so any saved links still land. */}
+        <Route path="voice-log" element={<Navigate to="../logs" replace />} />
+        <Route path="chat-log" element={<Navigate to="../logs" replace />} />
       </Routes>
     </Layout>
   );

@@ -93,6 +93,7 @@
   "tabs.protection": "Koruma",
   "tabs.welcome": "Karşılama",
   "tabs.stats": "İstatistikler",
+  "tabs.logs": "Kayıtlar",
   "tabs.voiceLog": "Ses kaydı",
   "voicelog.activeNow": "Şu anda ses kanallarında",
   "voicelog.hint": "Yalnızca varlık meta verileri (giriş/çıkış zamanları) — ses kaydedilmez ve botun kanalda olması gerekmez.",
