@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
-import { TriangleAlert } from 'lucide-react';
+import { Gem, TriangleAlert } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { usePremiumStatus } from '../premium.js';
 import { ChannelSelect } from './ChannelSelect.js';
 import { SaveBar } from './SaveBar.js';
 import { FormSkeleton } from './Skeleton.js';
@@ -50,6 +51,9 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
+  // Voice moderation rides on the (premium) voice assistant — the toggles are
+  // locked on free guilds; text protection stays free.
+  const { premium } = usePremiumStatus(guildId);
   // No focus-refetch: the form resets from cfg.data, so a refetch while the
   // admin is mid-edit would silently wipe their edits.
   const cfg = useQuery({
@@ -140,13 +144,16 @@ export function ProtectionTab({ guildId }: { guildId: string }) {
         </label>
         <p className="mb-3 ms-6 text-xs text-slate-500">{t('protection.enabled.hint')}</p>
         <label className="mb-1 flex items-center gap-2">
-          <input type="checkbox" {...form.register('voice_moderation')} />
-          <span>{t('protection.voiceModeration')}</span>
+          <input type="checkbox" disabled={!premium} {...form.register('voice_moderation')} />
+          <span className={premium ? '' : 'text-slate-500'}>{t('protection.voiceModeration')}</span>
+          <span className="rounded-full bg-blue-400/15 px-2 py-0.5 text-xs font-semibold text-blue-300">
+            <Gem className="inline h-3 w-3 align-[-1px]" /> Pro
+          </span>
         </label>
         <p className="mb-3 ms-6 text-xs text-slate-500">{t('protection.voiceModeration.hint')}</p>
         <label className="mb-1 ms-6 flex items-center gap-2">
-          <input type="checkbox" {...form.register('voice_kick_immediately')} />
-          <span>{t('protection.voiceKickImmediate')}</span>
+          <input type="checkbox" disabled={!premium} {...form.register('voice_kick_immediately')} />
+          <span className={premium ? '' : 'text-slate-500'}>{t('protection.voiceKickImmediate')}</span>
         </label>
         <p className="mb-3 ms-12 text-xs text-slate-500">{t('protection.voiceKickImmediate.hint')}</p>
         <label className="mb-1 flex items-center gap-2">

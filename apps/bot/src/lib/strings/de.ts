@@ -5,6 +5,7 @@ export const de = {
   notAdmin: '❌ Dieser Befehl erfordert die Berechtigung „Server verwalten" oder die Admin-Rolle.',
   guildOnly: '❌ Dieser Befehl funktioniert nur innerhalb eines Servers.',
   voiceDisabled: '⚠️ Die Sprachfunktionen sind auf diesem Server deaktiviert (/settings).',
+  voicePremiumRequired: '💎 Der Sprachassistent ist ein Premium-Feature — verknüpfe diesen Server im Dashboard mit deinem Konto, um ihn freizuschalten.',
   notInVoiceChannel: '❌ Tritt zuerst einem Sprachkanal bei.',
   channelNotAllowed: '❌ Dieser Kanal ist für den Bot nicht freigegeben (siehe /settings).',
   joinedVoice: '✅ Sprachkanal betreten, ich höre zu 🎙️ (sag „{wake}" und dann deinen Befehl)',

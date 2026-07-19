@@ -6,10 +6,24 @@ import { ChartIcon, IdBadgeIcon, ImageIcon, MicIcon, ShieldIcon } from './icons.
 // Native names of the six supported bot languages, shown as pills.
 const LANGS = ['العربية', 'English', 'Deutsch', 'Türkçe', 'Français', 'Русский'] as const;
 
-function Card({ icon, title, body, children, className = '' }: {
+function TierBadge({ tier }: { tier: 'free' | 'pro' }) {
+  const { t } = useI18n();
+  return tier === 'pro' ? (
+    <span className="rounded-full bg-blue-400/15 px-2.5 py-0.5 text-xs font-semibold text-blue-300 ring-1 ring-blue-400/40">
+      💎 {t('landing.tier.pro')}
+    </span>
+  ) : (
+    <span className="rounded-full bg-emerald-400/10 px-2.5 py-0.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-400/30">
+      {t('landing.tier.free')}
+    </span>
+  );
+}
+
+function Card({ icon, title, body, tier, children, className = '' }: {
   icon: ReactNode;
   title: string;
   body: string;
+  tier: 'free' | 'pro';
   children?: ReactNode;
   className?: string;
 }) {
@@ -17,8 +31,11 @@ function Card({ icon, title, body, children, className = '' }: {
     <div
       className={`group rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md transition hover:-translate-y-1 hover:border-blue-400/40 hover:shadow-[0_0_30px_-8px_rgba(59,130,246,0.5)] ${className}`}
     >
-      <div className="mb-4 inline-flex rounded-xl border border-blue-400/20 bg-blue-400/10 p-2.5 text-blue-300 transition group-hover:border-blue-400/40">
-        {icon}
+      <div className="mb-4 flex items-start justify-between">
+        <div className="inline-flex rounded-xl border border-blue-400/20 bg-blue-400/10 p-2.5 text-blue-300 transition group-hover:border-blue-400/40">
+          {icon}
+        </div>
+        <TierBadge tier={tier} />
       </div>
       <h3 className="mb-2 text-lg font-semibold text-slate-100">{title}</h3>
       <p className="text-sm leading-6 text-slate-400">{body}</p>
@@ -40,6 +57,7 @@ export function Features() {
           icon={<MicIcon className="h-6 w-6" />}
           title={t('landing.feature.voice.title')}
           body={t('landing.feature.voice.body')}
+          tier="pro"
           className="md:col-span-2"
         >
           <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -61,21 +79,25 @@ export function Features() {
           icon={<ShieldIcon className="h-6 w-6" />}
           title={t('landing.feature.protection.title')}
           body={t('landing.feature.protection.body')}
+          tier="free"
         />
         <Card
           icon={<ChartIcon className="h-6 w-6" />}
           title={t('landing.feature.activity.title')}
           body={t('landing.feature.activity.body')}
+          tier="free"
         />
         <Card
           icon={<ImageIcon className="h-6 w-6" />}
           title={t('landing.feature.welcome.title')}
           body={t('landing.feature.welcome.body')}
+          tier="free"
         />
         <Card
           icon={<IdBadgeIcon className="h-6 w-6" />}
           title={t('landing.feature.botProfile.title')}
           body={t('landing.feature.botProfile.body')}
+          tier="pro"
         />
       </div>
     </section>

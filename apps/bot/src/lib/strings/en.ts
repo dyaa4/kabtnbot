@@ -5,6 +5,7 @@ export const en = {
   notAdmin: '❌ This command requires Manage Server permission or the admin role.',
   guildOnly: '❌ This command only works inside a server.',
   voiceDisabled: '⚠️ Voice features are disabled in this server (/settings).',
+  voicePremiumRequired: '💎 The voice assistant is a premium feature — link this server to your account on the dashboard to unlock it.',
   notInVoiceChannel: '❌ Join a voice channel first.',
   channelNotAllowed: '❌ This channel is not allowed for the bot (see /settings).',
   joinedVoice: '✅ Joined voice and started listening 🎙️ (say "{wake}" followed by your command)',

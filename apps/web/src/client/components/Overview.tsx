@@ -1,3 +1,4 @@
+import { Gem } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { useI18n } from '../i18n.js';
@@ -19,6 +20,7 @@ interface ServerInfo {
   boostTier: number;
   boostCount: number;
   createdAt: string | null;
+  premiumLinked?: boolean;
 }
 
 function Bar({ label, used, max }: { label: string; used: number; max: number }) {
@@ -78,6 +80,15 @@ function ServerInfoCard({ guildId }: { guildId: string }) {
           </div>
         )}
         <h2 className="text-xl font-bold">{s.name}</h2>
+        {s.premiumLinked ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/40 bg-blue-400/10 px-3 py-1 text-xs font-semibold text-blue-200">
+            <Gem className="h-3.5 w-3.5" /> {t('overview.premium.linked')}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-400">
+            {t('overview.premium.free')}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <InfoStat label={t('stats.members')} value={num(s.memberCount)} />

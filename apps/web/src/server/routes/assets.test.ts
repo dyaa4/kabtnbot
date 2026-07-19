@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { connectDb, disconnectDb, getGuildAsset } from '@gamebot/db';
+import { connectDb, disconnectDb, getGuildAsset, linkGuild, unlinkGuild } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
 import { signSession, SESSION_COOKIE } from '../session.js';
@@ -98,6 +98,7 @@ describe('welcome-banner asset routes', () => {
     expect(res.status).toBe(400);
     expect(res.body.error.code).toBe('IMAGE_TOO_LARGE');
 
+    await linkGuild('u1', 'g1'); // the avatar route is premium-gated
     const avatarRes = await request(app)
       .put('/api/guilds/g1/bot-profile/avatar')
       .set('Cookie', cookie)
@@ -105,6 +106,7 @@ describe('welcome-banner asset routes', () => {
       .send(bomb);
     expect(avatarRes.status).toBe(400);
     expect(avatarRes.body.error.code).toBe('IMAGE_TOO_LARGE');
+    await unlinkGuild('u1', 'g1');
   });
 
   it('rejects empty body and denies non-managed guilds', async () => {
@@ -121,7 +123,25 @@ describe('welcome-banner asset routes', () => {
 });
 
 describe('bot-profile routes', () => {
-  beforeEach(() => clearAccessCache());
+  // Writes are premium-gated: link g1 for the happy paths, unlink after.
+  beforeEach(async () => {
+    clearAccessCache();
+    await linkGuild('u1', 'g1');
+  });
+  afterEach(async () => {
+    await unlinkGuild('u1', 'g1');
+  });
+
+  it('denies writes on a guild nobody linked', async () => {
+    await unlinkGuild('u1', 'g1');
+    const { app, cookie } = setup();
+    const res = await request(app)
+      .patch('/api/guilds/g1/bot-profile')
+      .set('Cookie', cookie)
+      .send({ nickname: 'x' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('PREMIUM_REQUIRED');
+  });
 
   it('reads the bot profile with defaults', async () => {
     const { app, cookie } = setup();

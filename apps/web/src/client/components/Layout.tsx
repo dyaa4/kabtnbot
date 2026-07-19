@@ -61,6 +61,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
         <div className="flex items-center gap-4">
+          <a href="/#features" className="hidden text-sm font-semibold text-slate-300 transition hover:text-blue-300 sm:block">
+            {t('landing.nav.features')}
+          </a>
           {admin.data?.isSuperAdmin && (
             <Link to="/admin" className="text-sm font-semibold text-blue-300 transition hover:text-blue-200">
               {t('admin.nav')}

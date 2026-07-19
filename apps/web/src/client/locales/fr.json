@@ -88,7 +88,7 @@
   "guilds.linked": "Lié",
   "guilds.linkLimit": "Limite de liaison de votre offre atteinte — déliez un autre serveur ou passez à Premium (3 serveurs).",
   "tabs.overview": "Aperçu",
-  "tabs.settings": "Paramètres",
+  "tabs.settings": "Paramètres généraux",
   "tabs.protection": "Protection",
   "tabs.welcome": "Bienvenue",
   "tabs.stats": "Statistiques",
@@ -404,5 +404,15 @@
   "voicelog.premium.title": "Le journal vocal est une fonctionnalité Premium",
   "voicelog.premium.body": "Passe ce serveur en Premium pour voir qui est en vocal en ce moment et les dernières sessions vocales.",
   "commands.premium.title": "L'éditeur d'automatisations est une fonctionnalité Premium",
-  "commands.premium.body": "Passez ce serveur en Premium pour créer des automatisations vocales, textuelles et planifiées avec vos propres phrases, permissions et actions."
+  "commands.premium.body": "Passez ce serveur en Premium pour créer des automatisations vocales, textuelles et planifiées avec vos propres phrases, permissions et actions.",
+  "tabs.voice": "Assistant vocal",
+  "tabs.customize": "Personnalisation",
+  "voicetab.premium.title": "L'assistant vocal est une fonctionnalité premium",
+  "voicetab.premium.body": "Lie ce serveur à ton compte depuis la page de tes serveurs pour débloquer l'assistant vocal.",
+  "customize.premium.title": "La personnalisation du bot est une fonctionnalité premium",
+  "customize.premium.body": "Lie ce serveur à ton compte pour changer le nom et l'avatar du bot.",
+  "overview.premium.linked": "Premium actif",
+  "overview.premium.free": "Plan gratuit — lie ce serveur pour débloquer les fonctionnalités premium",
+  "landing.tier.free": "Gratuit",
+  "landing.tier.pro": "Pro"
 }

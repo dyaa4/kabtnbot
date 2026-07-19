@@ -88,7 +88,7 @@
   "guilds.linked": "Linked",
   "guilds.linkLimit": "You reached your plan’s link limit — unlink another server or upgrade to Premium (3 servers).",
   "tabs.overview": "Overview",
-  "tabs.settings": "Settings",
+  "tabs.settings": "General settings",
   "tabs.protection": "Protection",
   "tabs.welcome": "Welcome",
   "tabs.stats": "Statistics",
@@ -404,5 +404,15 @@
   "voicelog.premium.title": "Voice log is a Premium feature",
   "voicelog.premium.body": "Upgrade this server to Premium to see who is in voice right now and the recent voice sessions.",
   "commands.premium.title": "The automation editor is a Premium feature",
-  "commands.premium.body": "Upgrade this server to Premium to build voice, text and scheduled automations with your own phrases, permissions and actions."
+  "commands.premium.body": "Upgrade this server to Premium to build voice, text and scheduled automations with your own phrases, permissions and actions.",
+  "tabs.voice": "Voice assistant",
+  "tabs.customize": "Customization",
+  "voicetab.premium.title": "The voice assistant is a premium feature",
+  "voicetab.premium.body": "Link this server to your account on the servers page to unlock the voice assistant and its settings.",
+  "customize.premium.title": "Bot customization is a premium feature",
+  "customize.premium.body": "Link this server to your account on the servers page to change the bot's name and avatar.",
+  "overview.premium.linked": "Premium active",
+  "overview.premium.free": "Free plan — link this server to unlock premium features",
+  "landing.tier.free": "Free",
+  "landing.tier.pro": "Pro"
 }

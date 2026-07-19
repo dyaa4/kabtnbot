@@ -6,6 +6,7 @@ export const ar = {
   guildOnly: '❌ هذا الأمر يشتغل داخل سيرفر فقط.',
   // voice
   voiceDisabled: '⚠️ الميزات الصوتية معطلة في هذا السيرفر (/settings).',
+  voicePremiumRequired: '💎 المساعد الصوتي ميزة بريميوم — اربط هذا السيرفر بحسابك من لوحة التحكم لتفعيلها.',
   notInVoiceChannel: '❌ ادخل روم صوتي أول.',
   channelNotAllowed: '❌ هذا الروم مو مسموح للبوت (راجع /settings).',
   joinedVoice: '✅ دخلت الفويس وبدأت الاستماع 🎙️ (قل "{wake}" وبعدها أمرك)',

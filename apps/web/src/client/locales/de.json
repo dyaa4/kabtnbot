@@ -88,7 +88,7 @@
   "guilds.linked": "Verknüpft",
   "guilds.linkLimit": "Verknüpfungslimit deines Plans erreicht — trenne einen anderen Server oder upgrade auf Premium (3 Server).",
   "tabs.overview": "Übersicht",
-  "tabs.settings": "Einstellungen",
+  "tabs.settings": "Allgemeine Einstellungen",
   "tabs.protection": "Schutz",
   "tabs.welcome": "Willkommen",
   "tabs.stats": "Statistiken",
@@ -404,5 +404,15 @@
   "voicelog.premium.title": "Der Voice-Log ist ein Premium-Feature",
   "voicelog.premium.body": "Hol dir Premium für diesen Server, um zu sehen, wer gerade im Voice ist und die letzten Voice-Sitzungen.",
   "commands.premium.title": "Der Automatisierungs-Editor ist ein Premium-Feature",
-  "commands.premium.body": "Upgrade diesen Server auf Premium, um Sprach-, Text- und geplante Automatisierungen mit eigenen Phrasen, Rechten und Aktionen zu bauen."
+  "commands.premium.body": "Upgrade diesen Server auf Premium, um Sprach-, Text- und geplante Automatisierungen mit eigenen Phrasen, Rechten und Aktionen zu bauen.",
+  "tabs.voice": "Sprachassistent",
+  "tabs.customize": "Anpassung",
+  "voicetab.premium.title": "Der Sprachassistent ist ein Premium-Feature",
+  "voicetab.premium.body": "Verknüpfe diesen Server auf der Serverseite mit deinem Konto, um den Sprachassistenten freizuschalten.",
+  "customize.premium.title": "Bot-Anpassung ist ein Premium-Feature",
+  "customize.premium.body": "Verknüpfe diesen Server auf der Serverseite mit deinem Konto, um Name und Avatar des Bots zu ändern.",
+  "overview.premium.linked": "Premium aktiv",
+  "overview.premium.free": "Kostenloser Plan — verknüpfe den Server, um Premium-Features freizuschalten",
+  "landing.tier.free": "Kostenlos",
+  "landing.tier.pro": "Pro"
 }

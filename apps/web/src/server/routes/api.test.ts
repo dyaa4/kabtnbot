@@ -71,6 +71,45 @@ describe('api routes', () => {
     expect(after.body).toMatchObject({ online: true, guild_count: 3 });
   });
 
+  it('guild info reports the premium-linked flag', async () => {
+    const { app, cookie, rest } = setup();
+    rest.guildInfo.set('g1', {
+      name: 'ARAB', icon: null, memberCount: 10, onlineCount: 3, boostTier: 0, boostCount: 0,
+    });
+    const before = await request(app).get('/api/guilds/g1/info').set('Cookie', cookie);
+    expect(before.body.premiumLinked).toBe(false);
+
+    await linkGuild('u1', 'g1');
+    const after = await request(app).get('/api/guilds/g1/info').set('Cookie', cookie);
+    expect(after.body.premiumLinked).toBe(true);
+    await unlinkGuild('u1', 'g1');
+  });
+
+  it('voice config PATCH is premium-gated', async () => {
+    const { app, cookie } = setup();
+    const denied = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ voice: { tts_voice: 'cedar' } });
+    expect(denied.status).toBe(403);
+    expect(denied.body.error.code).toBe('PREMIUM_REQUIRED');
+
+    // Non-voice fields stay free (general settings tab).
+    const general = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ language: 'en' });
+    expect(general.status).toBe(200);
+
+    await linkGuild('u1', 'g1');
+    const allowed = await request(app)
+      .patch('/api/guilds/g1/config')
+      .set('Cookie', cookie)
+      .send({ voice: { tts_voice: 'cedar' } });
+    expect(allowed.status).toBe(200);
+    await unlinkGuild('u1', 'g1');
+  });
+
   it('me/plan reports the invite cap and how many guilds the user already added', async () => {
     const { app, cookie } = setup();
     await recordGuildPresence('gp-cap-1', 'Attributed', 5);
@@ -144,6 +183,7 @@ describe('api routes', () => {
 
   it('reads and patches config; invalid patch → 400; premium not patchable', async () => {
     const { app, cookie } = setup();
+    await linkGuild('u1', 'g1'); // voice patches are premium-gated
     const before = await request(app).get('/api/guilds/g1/config').set('Cookie', cookie);
     expect(before.body.voice.wake_word).toBe('يا كابتن');
 
@@ -166,6 +206,7 @@ describe('api routes', () => {
       .set('Cookie', cookie)
       .send({ premium: { active: true } });
     expect(premium.status).toBe(400);
+    await unlinkGuild('u1', 'g1');
   });
 
   it('patches protection.enabled and persists it', async () => {
@@ -239,6 +280,7 @@ describe('api routes', () => {
 
   it('patches voice.personality_enabled and persists it', async () => {
     const { app, cookie } = setup();
+    await linkGuild('u1', 'g1'); // voice patches are premium-gated
     const patch = await request(app)
       .patch('/api/guilds/g1/config')
       .set('Cookie', cookie)
@@ -246,6 +288,7 @@ describe('api routes', () => {
     expect(patch.status).toBe(200);
     expect(patch.body.voice.personality_enabled).toBe(true);
     expect((await getGuildConfig('g1')).voice.personality_enabled).toBe(true);
+    await unlinkGuild('u1', 'g1');
   });
 
   it('lists voice channels; denies non-managed guild', async () => {

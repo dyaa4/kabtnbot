@@ -13,7 +13,7 @@ import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
 import { requireSession } from '../session.js';
-import { invalidateGuildListCache, listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
+import { hasPremiumAccess, invalidateGuildListCache, listEligibleGuilds, requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
 import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
@@ -200,7 +200,9 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 404, 'NOT_FOUND', 'guild not found');
         return;
       }
-      res.json({ ...info, createdAt: snowflakeToDate(guildId) });
+      // Fresh isGuildLinked read (NOT statsCached): a guild the user just
+      // linked must unlock the premium tabs immediately, not after a TTL.
+      res.json({ ...info, createdAt: snowflakeToDate(guildId), premiumLinked: await isGuildLinked(guildId) });
     } catch (err) {
       next(err);
     }
@@ -243,6 +245,13 @@ export function apiRouter(rest: DiscordRest): Router {
       const parsed = ConfigPatch.safeParse(req.body);
       if (!parsed.success) {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid patch');
+        return;
+      }
+      // The voice assistant is a paid feature (owner decision 2026-07-19):
+      // its settings can only be changed on premium-linked guilds. All other
+      // config sections (general settings, protection, welcome…) stay free.
+      if (parsed.data.voice !== undefined && !(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Voice assistant settings require premium');
         return;
       }
       // Role ids grant rights (admin role) or get assigned to members
@@ -357,14 +366,6 @@ export function apiRouter(rest: DiscordRest): Router {
 
 const DaysParam = z.enum(['7', '30', '90']).default('30');
 
-// Premium gate for paid dashboard features: premium belongs to USERS — a
-// guild qualifies exactly when someone linked it to their plan (or for the
-// super-admin outright). There is no per-guild premium anymore.
-async function hasPremiumAccess(guildId: string, res: { locals: { session?: unknown } }): Promise<boolean> {
-  const session = res.locals.session as Session | undefined;
-  if (session && isSuperAdmin(session.uid)) return true;
-  return isGuildLinked(guildId);
-}
 
 // Discord REST results (member list + guild counts) are cached in-memory per guild,
 // mirroring the PROMISE-cache pattern in guild-access.ts: caching the in-flight

@@ -88,7 +88,7 @@
   "guilds.linked": "مرتبط",
   "guilds.linkLimit": "وصلت حدّ الربط لخطتك — ألغِ ربط سيرفر آخر أو رقِّ إلى بريميوم (3 سيرفرات).",
   "tabs.overview": "نظرة عامة",
-  "tabs.settings": "الإعدادات",
+  "tabs.settings": "الإعدادات العامة",
   "tabs.protection": "الحماية",
   "tabs.welcome": "الترحيب",
   "tabs.stats": "الإحصائيات",
@@ -404,5 +404,15 @@
   "voicelog.premium.title": "سجل الصوت ميزة Premium",
   "voicelog.premium.body": "رقِّ هذا السيرفر إلى Premium لمعرفة من في الصوت الآن وعرض آخر الجلسات الصوتية.",
   "commands.premium.title": "محرر الأتمتة ميزة Premium",
-  "commands.premium.body": "رقِّ هذا السيرفر إلى Premium لبناء أتمتة صوتية ونصية ومجدولة بعباراتك وصلاحياتك وإجراءاتك الخاصة."
+  "commands.premium.body": "رقِّ هذا السيرفر إلى Premium لبناء أتمتة صوتية ونصية ومجدولة بعباراتك وصلاحياتك وإجراءاتك الخاصة.",
+  "tabs.voice": "المساعد الصوتي",
+  "tabs.customize": "التخصيص",
+  "voicetab.premium.title": "المساعد الصوتي ميزة بريميوم",
+  "voicetab.premium.body": "اربط هذا السيرفر بحسابك من صفحة سيرفراتك لتفعيل المساعد الصوتي وإعداداته.",
+  "customize.premium.title": "تخصيص البوت ميزة بريميوم",
+  "customize.premium.body": "اربط هذا السيرفر بحسابك من صفحة سيرفراتك لتغيير اسم البوت وصورته.",
+  "overview.premium.linked": "بريميوم مفعّل",
+  "overview.premium.free": "الخطة المجانية — اربط السيرفر لتفعيل ميزات البريميوم",
+  "landing.tier.free": "مجاني",
+  "landing.tier.pro": "برو"
 }

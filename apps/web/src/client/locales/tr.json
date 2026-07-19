@@ -88,7 +88,7 @@
   "guilds.linked": "Bağlı",
   "guilds.linkLimit": "Planının bağlantı sınırına ulaştın — başka bir sunucunun bağlantısını kaldır veya Premium’a yükselt (3 sunucu).",
   "tabs.overview": "Genel bakış",
-  "tabs.settings": "Ayarlar",
+  "tabs.settings": "Genel ayarlar",
   "tabs.protection": "Koruma",
   "tabs.welcome": "Karşılama",
   "tabs.stats": "İstatistikler",
@@ -404,5 +404,15 @@
   "voicelog.premium.title": "Ses kaydı bir Premium özelliğidir",
   "voicelog.premium.body": "Şu anda seste kimlerin olduğunu ve son ses oturumlarını görmek için bu sunucuyu Premium'a yükselt.",
   "commands.premium.title": "Otomasyon düzenleyici bir Premium özelliğidir",
-  "commands.premium.body": "Kendi ifadelerin, izinlerin ve eylemlerinle sesli, metinli ve zamanlanmış otomasyonlar kurmak için bu sunucuyu Premium'a yükselt."
+  "commands.premium.body": "Kendi ifadelerin, izinlerin ve eylemlerinle sesli, metinli ve zamanlanmış otomasyonlar kurmak için bu sunucuyu Premium'a yükselt.",
+  "tabs.voice": "Sesli asistan",
+  "tabs.customize": "Özelleştirme",
+  "voicetab.premium.title": "Sesli asistan bir premium özelliktir",
+  "voicetab.premium.body": "Sesli asistanı açmak için bu sunucuyu sunucular sayfasından hesabına bağla.",
+  "customize.premium.title": "Bot özelleştirme bir premium özelliktir",
+  "customize.premium.body": "Botun adını ve avatarını değiştirmek için bu sunucuyu hesabına bağla.",
+  "overview.premium.linked": "Premium etkin",
+  "overview.premium.free": "Ücretsiz plan — premium özellikler için sunucuyu bağla",
+  "landing.tier.free": "Ücretsiz",
+  "landing.tier.pro": "Pro"
 }

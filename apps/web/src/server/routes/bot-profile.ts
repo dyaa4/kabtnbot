@@ -3,7 +3,7 @@ import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import type { BotMember, DiscordRest } from '../discord-rest.js';
 import { DiscordApiError } from '../discord-rest.js';
-import { requireGuildAccess } from '../guild-access.js';
+import { hasPremiumAccess, requireGuildAccess } from '../guild-access.js';
 import { isSuperAdmin } from '../config.js';
 import type { Session } from '../session.js';
 import { apiError } from '../app.js';
@@ -58,6 +58,12 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
 
   router.patch('/guilds/:guildId/bot-profile', profileLimiter, guard, async (req, res, next) => {
     try {
+      // Customize tab is premium (owner decision 2026-07-19); GET stays open
+      // so the read-only card can still display the current profile.
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Bot customization requires premium');
+        return;
+      }
       const parsed = NicknamePatch.safeParse(req.body);
       if (!parsed.success) {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid nickname');
@@ -76,6 +82,10 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
 
   router.put('/guilds/:guildId/bot-profile/avatar', profileLimiter, guard, rawImage, async (req, res, next) => {
     try {
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Bot customization requires premium');
+        return;
+      }
       const body = req.body as unknown;
       if (!Buffer.isBuffer(body) || body.length === 0) {
         apiError(res, 400, 'VALIDATION', 'Missing image body');

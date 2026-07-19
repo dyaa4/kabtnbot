@@ -1,4 +1,4 @@
-import { isGuildPremium } from '@gamebot/db';
+import { isGuildLinked, isGuildPremium } from '@gamebot/db';
 
 // Premium status changes rarely (super-admin grant / guild link), but the
 // quota layer asks on every utterance — 60s TTL keeps the DB out of the hot
@@ -19,6 +19,23 @@ export async function isGuildPremiumCached(guildId: string): Promise<boolean> {
   return value;
 }
 
+const linkedCache = new Map<string, { at: number; value: boolean }>();
+
+/**
+ * "Is this guild linked by ANY account" — the feature gate (voice assistant),
+ * as opposed to isGuildPremiumCached which is the QUOTA gate (premium linker).
+ */
+export async function isGuildLinkedCached(guildId: string): Promise<boolean> {
+  const hit = linkedCache.get(guildId);
+  if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
+  const value = await Promise.resolve()
+    .then(() => isGuildLinked(guildId))
+    .catch(() => hit?.value ?? false);
+  linkedCache.set(guildId, { at: Date.now(), value });
+  return value;
+}
+
 export function clearPremiumCache(): void {
   cache.clear();
+  linkedCache.clear();
 }

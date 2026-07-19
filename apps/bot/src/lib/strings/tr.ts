@@ -5,6 +5,7 @@ export const tr = {
   notAdmin: '❌ Bu komut Sunucuyu Yönet izni veya yönetici rolü gerektirir.',
   guildOnly: '❌ Bu komut yalnızca bir sunucu içinde çalışır.',
   voiceDisabled: '⚠️ Bu sunucuda ses özellikleri devre dışı (/settings).',
+  voicePremiumRequired: '💎 Sesli asistan bir premium özelliktir — açmak için bu sunucuyu panelden hesabına bağla.',
   notInVoiceChannel: '❌ Önce bir ses kanalına gir.',
   channelNotAllowed: '❌ Bu kanal bot için izinli değil (bkz. /settings).',
   joinedVoice: '✅ Ses kanalına girdim ve dinlemeye başladım 🎙️ ("{wake}" de, ardından komutunu söyle)',

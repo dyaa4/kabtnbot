@@ -168,6 +168,7 @@ describe('journey: bot profile', () => {
   it('sets and clears the bot nickname and reflects it on read', async () => {
     const { app } = scenario();
     const agent = await login(app);
+    await linkGuild('u1', 'g1'); // customization is premium-gated
 
     const set = await agent.patch('/api/guilds/g1/bot-profile').send({ nickname: 'كابتن' });
     expect(set.status).toBe(200);
@@ -176,15 +177,26 @@ describe('journey: bot profile', () => {
     const clear = await agent.patch('/api/guilds/g1/bot-profile').send({ nickname: '' });
     expect(clear.status).toBe(200);
     expect((await agent.get('/api/guilds/g1/bot-profile')).body.nickname).toBeNull();
+    await unlinkGuild('u1', 'g1');
   });
 
   it('maps a missing Change-Nickname permission to a clean error', async () => {
     const { app, rest } = scenario();
     rest.forbidNickname = true;
     const agent = await login(app);
+    await linkGuild('u1', 'g1');
     const res = await agent.patch('/api/guilds/g1/bot-profile').send({ nickname: 'x' });
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe('MISSING_PERMISSIONS');
+    await unlinkGuild('u1', 'g1');
+  });
+
+  it('denies customization on a guild nobody linked (premium gate)', async () => {
+    const { app } = scenario();
+    const agent = await login(app);
+    const res = await agent.patch('/api/guilds/g1/bot-profile').send({ nickname: 'كابتن' });
+    expect(res.status).toBe(403);
+    expect(res.body.error.code).toBe('PREMIUM_REQUIRED');
   });
 });
 

@@ -6,9 +6,11 @@ import { ProtectionTab } from '../components/ProtectionTab.js';
 import { CommandsTab } from '../components/commands/CommandsTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
+import { VoiceTab } from '../components/VoiceTab.js';
 import { VoiceLogTab } from '../components/VoiceLogTab.js';
 import { ChatLogTab } from '../components/ChatLogTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
+import { CustomizeTab } from '../components/CustomizeTab.js';
 
 export function GuildView() {
   const { t } = useI18n();
@@ -17,13 +19,15 @@ export function GuildView() {
 
   const tabs = [
     { to: '', key: 'tabs.overview' },
-    { to: 'settings', key: 'tabs.settings' },
+    { to: 'voice', key: 'tabs.voice' },
     { to: 'commands', key: 'tabs.commands' },
     { to: 'protection', key: 'tabs.protection' },
     { to: 'welcome', key: 'tabs.welcome' },
     { to: 'stats', key: 'tabs.stats' },
     { to: 'voice-log', key: 'tabs.voiceLog' },
     { to: 'chat-log', key: 'tabs.chatLog' },
+    { to: 'customize', key: 'tabs.customize' },
+    { to: 'settings', key: 'tabs.settings' },
   ];
 
   return (
@@ -48,7 +52,9 @@ export function GuildView() {
       </nav>
       <Routes>
         <Route index element={<Overview guildId={guildId} />} />
+        <Route path="voice" element={<VoiceTab guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
+        <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
         <Route path="commands" element={<CommandsTab guildId={guildId} />} />
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />

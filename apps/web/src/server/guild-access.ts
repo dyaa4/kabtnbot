@@ -1,8 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
-import { getGuildConfig } from '@gamebot/db';
+import { getGuildConfig, isGuildLinked } from '@gamebot/db';
 import type { DiscordRest } from './discord-rest.js';
 import type { Session } from './session.js';
 import { decryptToken } from './crypto.js';
+import { isSuperAdmin } from './config.js';
 import { apiError } from './app.js';
 
 export const MANAGE_GUILD = 1n << 5n;
@@ -81,6 +82,15 @@ export function canManageGuild(rest: DiscordRest, session: Session, guildId: str
     if (!guild) return false;
     return isEligible(rest, session, guild);
   });
+}
+
+// Premium gate for paid dashboard features: premium belongs to USERS — a
+// guild qualifies exactly when someone linked it to their plan (or for the
+// super-admin outright). There is no per-guild premium anymore.
+export async function hasPremiumAccess(guildId: string, res: { locals: { session?: unknown } }): Promise<boolean> {
+  const session = res.locals.session as Session | undefined;
+  if (session && isSuperAdmin(session.uid)) return true;
+  return isGuildLinked(guildId);
 }
 
 export function requireGuildAccess(rest: DiscordRest) {

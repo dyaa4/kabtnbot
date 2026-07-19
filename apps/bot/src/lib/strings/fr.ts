@@ -5,6 +5,7 @@ export const fr = {
   notAdmin: '❌ Cette commande nécessite la permission Gérer le serveur ou le rôle admin.',
   guildOnly: '❌ Cette commande ne fonctionne que dans un serveur.',
   voiceDisabled: '⚠️ Les fonctions vocales sont désactivées sur ce serveur (/settings).',
+  voicePremiumRequired: "💎 L'assistant vocal est une fonctionnalité premium — lie ce serveur à ton compte sur le tableau de bord pour la débloquer.",
   notInVoiceChannel: "❌ Rejoins d'abord un salon vocal.",
   channelNotAllowed: "❌ Ce salon n'est pas autorisé pour le bot (voir /settings).",
   joinedVoice: '✅ Salon vocal rejoint, j\'écoute 🎙️ (dis « {wake} » puis ta commande)',
