@@ -27,8 +27,9 @@ export const GuildConfigSchema = z.object({
       personality_enabled: z.boolean().default(false),
       // Conversation window: after a wake-word question, the SAME speaker can
       // keep talking to the bot without repeating the wake word for this many
-      // seconds (each follow-up extends the window). 0 = off (wake word
-      // required every time).
+      // seconds. Only wake-word utterances open/extend the window — follow-ups
+      // deliberately don't, so a noise-hallucinated wake word can't start a
+      // self-sustaining answer loop. 0 = off (wake word required every time).
       follow_up_seconds: z.number().int().min(0).max(120).default(0),
     })
     .default({}),

@@ -160,6 +160,11 @@ export class RealtimeClient {
     return true;
   }
 
+  /** True while answer audio is being generated/streamed. */
+  isResponding(): boolean {
+    return this.activeResponse;
+  }
+
   /** Drop an unaddressed/moderated utterance from the model's context. */
   deleteItem(itemId: string): void {
     if (this.ws?.readyState !== WebSocket.OPEN) return;

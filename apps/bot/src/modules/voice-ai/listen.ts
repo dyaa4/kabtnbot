@@ -141,6 +141,14 @@ export async function handleTranscript(
   if (query === null && windowMs > 0 && text.trim()) {
     const fu = session.followUp;
     if (fu && fu.userId === userId && Date.now() < fu.until) {
+      // Talk that overlaps the bot's own answer is a reaction, not a question —
+      // answering it queues reply after reply and the voices trample each
+      // other. Only an explicit wake word may interrupt an active response.
+      if (client?.isResponding()) {
+        console.log(`[Voice ${guild.id}] follow-up dropped (bot is speaking)`);
+        client.deleteItem(itemId);
+        return;
+      }
       query = text;
       isFollowUp = true;
       console.log(`[Voice ${guild.id}] follow-up (${Math.round((fu.until - Date.now()) / 1000)}s left)`);
@@ -151,9 +159,12 @@ export async function handleTranscript(
     client?.deleteItem(itemId);
     return;
   }
-  // Every addressed utterance opens/extends the window (bare wake word too —
-  // "يا كابتن" … pause … question is the natural flow).
-  if (windowMs > 0) session.followUp = { userId, until: Date.now() + windowMs };
+  // Only a wake-word utterance opens/extends the window (bare wake word too —
+  // "يا كابتن" … pause … question is the natural flow). Follow-ups must NOT
+  // extend it: one hallucinated wake word out of a noisy mic would otherwise
+  // start a self-sustaining loop where every answered noise transcript keeps
+  // the window open — the window has to decay on its own.
+  if (windowMs > 0 && !isFollowUp) session.followUp = { userId, until: Date.now() + windowMs };
 
   const { routeVoiceCommand } = await import('./router.js');
   const answer = await routeVoiceCommand(guild, session, query, userId, { followUp: isFollowUp });
