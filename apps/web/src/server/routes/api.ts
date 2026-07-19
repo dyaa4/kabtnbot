@@ -6,6 +6,7 @@ import {
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, isUserBlocked, isDbConnected,
+  countActiveInvitedGuilds,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, todayKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -86,7 +87,9 @@ export function apiRouter(rest: DiscordRest): Router {
       // 1099799997456 = base set (19926032) + Manage Messages (8192, text-protection
       // deletions) + Manage Roles (268435456, auto role) + Moderate Members
       // (1099511627776, text-protection timeouts).
-      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=1099799997456`,
+      // Permissions include VIEW_AUDIT_LOG (128): guildCreate reads the audit
+      // log to attribute who invited the bot (per-user invite cap).
+      inviteUrl: `https://discord.com/oauth2/authorize?client_id=${config.DISCORD_CLIENT_ID}&scope=bot%20applications.commands&permissions=1099799997584`,
       guilds: status?.guild_count ?? 0,
     });
   });
@@ -127,7 +130,10 @@ export function apiRouter(rest: DiscordRest): Router {
   // Per-user plan: premium flag, link allowance and the linked guild ids.
   router.get('/me/plan', async (_req, res, next) => {
     try {
-      res.json(await getUserPlan((res.locals.session as Session).uid));
+      const uid = (res.locals.session as Session).uid;
+      const plan = await getUserPlan(uid);
+      // Only audit-log-attributed guilds count — unknown inviters stay free.
+      res.json({ ...plan, invited_guild_count: await countActiveInvitedGuilds(uid) });
     } catch (err) {
       next(err);
     }

@@ -10,9 +10,11 @@ import { GuildList } from './GuildList.js';
 const INVITE = 'https://discord.com/oauth2/x';
 
 let guilds: Array<{ id: string; name: string; icon: string | null }> = [];
+let plan = { premium: false, max_links: 1, max_guilds: 1, linked_guild_ids: [] as string[], invited_guild_count: 0 };
 
 beforeEach(() => {
   guilds = [{ id: 'g1', name: 'Alpha', icon: null }];
+  plan = { premium: false, max_links: 1, max_guilds: 1, linked_guild_ids: [], invited_guild_count: 0 };
   vi.unstubAllGlobals();
   vi.stubGlobal(
     'fetch',
@@ -20,7 +22,7 @@ beforeEach(() => {
       const url = String(input);
       const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
       if (url.includes('/api/guilds')) return json(guilds);
-      if (url.includes('/api/me/plan')) return json({ premium: false, max_links: 1, linked_guild_ids: [] });
+      if (url.includes('/api/me/plan')) return json(plan);
       if (url.includes('/api/meta')) return json({ clientId: 'c1', inviteUrl: INVITE });
       if (url.includes('/api/me')) return json({ uid: 'u1', uname: 'dyaa', avatar: null });
       if (url.includes('/api/admin/me')) return json({ isSuperAdmin: false });
@@ -72,6 +74,16 @@ describe('GuildList add-server entry points', () => {
       const calls = (fetch as ReturnType<typeof vi.fn>).mock.calls.map((c) => String(c[0]));
       expect(calls).toContain('/api/guilds?fresh=1');
     });
+  });
+
+  it('disables both add-server entry points when the invite cap is reached', async () => {
+    plan = { premium: false, max_links: 1, max_guilds: 1, linked_guild_ids: [], invited_guild_count: 1 };
+    renderPage();
+    // The add label is still visible (with the limit explained)…
+    const labels = await screen.findAllByText(/أضف سيرفر|Add server/);
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    // …but no clickable invite link remains.
+    expect(screen.queryAllByRole('link', { name: /أضف سيرفر|Add server/ }).length).toBe(0);
   });
 
   it('a plain window focus without an invite click does not cache-bust', async () => {

@@ -17,7 +17,9 @@ interface Guild {
 interface UserPlan {
   premium: boolean;
   max_links: number;
+  max_guilds: number;
   linked_guild_ids: string[];
+  invited_guild_count: number;
 }
 
 interface Meta {
@@ -65,12 +67,22 @@ export function GuildList() {
   });
 
   const linked = new Set(plan.data?.linked_guild_ids ?? []);
+  // Advisory mirror of the bot-side invite cap (audit-log attributed guilds
+  // only — the bot enforces the real limit at join time).
+  const addDisabled = plan.data != null && plan.data.invited_guild_count >= plan.data.max_guilds;
 
   return (
     <Layout>
       <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t('guilds.title')}</h1>
-        {meta.data && (
+        {meta.data && (addDisabled ? (
+          <span
+            title={t('guilds.addLimit')}
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-slate-500"
+          >
+            <Plus className="h-4 w-4" /> {t('guilds.add')}
+          </span>
+        ) : (
           <a
             href={meta.data.inviteUrl}
             target="_blank"
@@ -80,7 +92,7 @@ export function GuildList() {
           >
             <Plus className="h-4 w-4" /> {t('guilds.add')}
           </a>
-        )}
+        ))}
       </div>
       {plan.data && (
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 px-4 py-3">
@@ -138,7 +150,16 @@ export function GuildList() {
             </Link>
           );
         })}
-        {meta.data && (
+        {meta.data && (addDisabled ? (
+          <span
+            title={t('guilds.addLimit')}
+            className="flex min-h-[104px] cursor-not-allowed flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-4 text-slate-600"
+          >
+            <Plus className="h-6 w-6" />
+            <span className="text-sm font-semibold">{t('guilds.add')}</span>
+            <span className="text-xs">{t('guilds.addLimit')}</span>
+          </span>
+        ) : (
           <a
             href={meta.data.inviteUrl}
             target="_blank"
@@ -149,7 +170,7 @@ export function GuildList() {
             <Plus className="h-6 w-6" />
             <span className="text-sm font-semibold">{t('guilds.add')}</span>
           </a>
-        )}
+        ))}
       </div>
     </Layout>
   );

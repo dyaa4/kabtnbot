@@ -76,6 +76,7 @@
   "lang.switch": "Langue",
   "guilds.title": "Tes serveurs",
   "guilds.add": "Ajouter un serveur",
+  "guilds.addLimit": "Tu as atteint la limite de serveurs de ton plan — passe à premium pour en ajouter plus.",
   "guilds.empty": "Aucun serveur où tu es admin et où le bot est membre",
   "guilds.links.count": "Serveurs liés : {used}/{max}",
   "guilds.links.hint": "Les fonctions avancées (automatisation, journaux de chat et vocal) ne fonctionnent que sur les serveurs liés. Gratuit : 1 serveur — Premium : 3 serveurs.",

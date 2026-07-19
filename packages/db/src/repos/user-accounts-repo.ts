@@ -6,10 +6,15 @@ import { retryOnDupKey } from '../retry.js';
 // premium links three.
 export const FREE_LINK_LIMIT = 1;
 export const PREMIUM_LINK_LIMIT = 3;
+// Bot-INVITE cap (distinct from linking): how many guilds one user may add
+// the bot to, enforced at join time via audit-log attribution.
+export const FREE_GUILD_LIMIT = 1;
+export const PREMIUM_GUILD_LIMIT = 9;
 
 export interface UserPlan {
   premium: boolean;
   max_links: number;
+  max_guilds: number;
   linked_guild_ids: string[];
 }
 
@@ -19,6 +24,7 @@ export async function getUserPlan(userId: string): Promise<UserPlan> {
   return {
     premium,
     max_links: premium ? PREMIUM_LINK_LIMIT : FREE_LINK_LIMIT,
+    max_guilds: premium ? PREMIUM_GUILD_LIMIT : FREE_GUILD_LIMIT,
     linked_guild_ids: doc?.linked_guild_ids ?? [],
   };
 }

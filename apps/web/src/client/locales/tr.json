@@ -76,6 +76,7 @@
   "lang.switch": "Dil",
   "guilds.title": "Sunucuların",
   "guilds.add": "Sunucu ekle",
+  "guilds.addLimit": "Planının sunucu sınırına ulaştın — daha fazlası için premiuma yükselt.",
   "guilds.empty": "Yönetici olduğun ve botun üye olduğu sunucu yok",
   "guilds.links.count": "Bağlı sunucular: {used}/{max}",
   "guilds.links.hint": "Gelişmiş özellikler (otomasyon, sohbet ve ses kayıtları) yalnızca bağlı sunucularda çalışır. Ücretsiz: 1 sunucu — Premium: 3 sunucu.",

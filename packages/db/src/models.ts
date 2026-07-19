@@ -280,6 +280,8 @@ export interface GuildDirectoryDoc {
   blocked: boolean;
   joined_at: Date;
   left_at: Date | null;
+  /** Discord user who added the bot (audit-log attribution); null = unknown. */
+  invited_by: string | null;
 }
 
 const guildDirectorySchema = new Schema<GuildDirectoryDoc>({
@@ -289,6 +291,7 @@ const guildDirectorySchema = new Schema<GuildDirectoryDoc>({
   blocked: { type: Boolean, default: false },
   joined_at: { type: Date, default: Date.now },
   left_at: { type: Date, default: null },
+  invited_by: { type: String, default: null },
 });
 
 export const GuildDirectoryModel =

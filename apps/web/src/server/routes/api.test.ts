@@ -4,6 +4,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import {
   connectDb, disconnectDb, getGuildConfig, recordBotHeartbeat, clearBotHeartbeat,
   startVoiceSession, endVoiceSession, linkGuild, unlinkGuild, recordChatMessage,
+  recordGuildPresence, recordGuildInviter,
 } from '@gamebot/db';
 import { buildApp } from '../app.js';
 import { FakeDiscordRest } from '../testing/fake-rest.js';
@@ -40,7 +41,8 @@ describe('api routes', () => {
     const { app } = setup();
     const res = await request(app).get('/api/meta');
     expect(res.status).toBe(200);
-    expect(res.body.inviteUrl).toContain('permissions=1099799997456');
+    // Includes VIEW_AUDIT_LOG (128) so the bot can attribute who invited it.
+    expect(res.body.inviteUrl).toContain('permissions=1099799997584');
     expect(typeof res.body.guilds).toBe('number');
 
     await recordBotHeartbeat(6);
@@ -67,6 +69,16 @@ describe('api routes', () => {
     await recordBotHeartbeat(3);
     const after = await request(app).get('/api/status').set('Cookie', cookie);
     expect(after.body).toMatchObject({ online: true, guild_count: 3 });
+  });
+
+  it('me/plan reports the invite cap and how many guilds the user already added', async () => {
+    const { app, cookie } = setup();
+    await recordGuildPresence('gp-cap-1', 'Attributed', 5);
+    await recordGuildInviter('gp-cap-1', 'u1');
+    const res = await request(app).get('/api/me/plan').set('Cookie', cookie);
+    expect(res.status).toBe(200);
+    expect(res.body.max_guilds).toBe(1); // free plan
+    expect(res.body.invited_guild_count).toBe(1);
   });
 
   it('lists eligible guilds', async () => {

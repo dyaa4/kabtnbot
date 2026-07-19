@@ -14,6 +14,9 @@ import {
 import { getCommandFlows, putCommandFlows } from './command-flows-repo.js';
 import { getScheduleRuns, setScheduleRun, resetScheduleRuns } from './schedule-runs-repo.js';
 import { recordChatMessage, listChatMessages } from './chat-log-repo.js';
+import {
+  recordGuildPresence, recordGuildLeave, recordGuildInviter, countActiveInvitedGuilds,
+} from './guild-directory-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -261,6 +264,25 @@ describe('usage-repo', () => {
     expect(u.ai_questions).toBe(2);
     expect(u.listen_seconds).toBe(30);
     expect((await getUsage('gU', '2026-07-05')).ai_questions).toBe(0);
+  });
+});
+
+describe('guild-directory-repo inviter attribution', () => {
+  it('records the inviter and counts only their ACTIVE guilds', async () => {
+    await recordGuildPresence('inv-g1', 'One', 10);
+    await recordGuildPresence('inv-g2', 'Two', 10);
+    await recordGuildPresence('inv-g3', 'Three', 10);
+    await recordGuildInviter('inv-g1', 'inviter-a');
+    await recordGuildInviter('inv-g2', 'inviter-a');
+    await recordGuildInviter('inv-g3', 'inviter-b');
+
+    expect(await countActiveInvitedGuilds('inviter-a')).toBe(2);
+    // The guild being decided on must be excludable so the check counts OTHERS.
+    expect(await countActiveInvitedGuilds('inviter-a', 'inv-g2')).toBe(1);
+
+    await recordGuildLeave('inv-g1'); // left guilds stop counting
+    expect(await countActiveInvitedGuilds('inviter-a')).toBe(1);
+    expect(await countActiveInvitedGuilds('nobody')).toBe(0);
   });
 });
 

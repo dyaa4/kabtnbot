@@ -76,6 +76,7 @@
   "lang.switch": "Sprache",
   "guilds.title": "Deine Server",
   "guilds.add": "Server hinzufügen",
+  "guilds.addLimit": "Du hast das Server-Limit deines Plans erreicht — upgrade auf Premium für mehr.",
   "guilds.empty": "Keine Server, auf denen du Admin bist und der Bot Mitglied ist",
   "guilds.links.count": "Verknüpfte Server: {used}/{max}",
   "guilds.links.hint": "Erweiterte Funktionen (Automatisierung, Chat- & Voice-Log) laufen nur auf verknüpften Servern. Kostenlos: 1 Server — Premium: 3 Server.",
