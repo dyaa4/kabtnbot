@@ -7,7 +7,7 @@ import { hasPremiumAccess, requireGuildAccess } from '../guild-access.js';
 import { isSuperAdmin } from '../config.js';
 import type { Session } from '../session.js';
 import { apiError } from '../app.js';
-import { sniffImageType, imageDimensions, imageTooLarge } from '../image-sniff.js';
+import { sniffImageType, imageDimensions, imageTooLarge } from '@gamebot/shared';
 
 const NicknamePatch = z
   .object({

@@ -45,11 +45,26 @@ export async function linkGuild(userId: string, guildId: string): Promise<UserPl
   const plan = await getUserPlan(userId);
   if (plan.linked_guild_ids.includes(guildId)) return plan;
   if (plan.linked_guild_ids.length >= plan.max_links) return null;
+  // Ensure the account row exists first (idempotent) so the guarded write
+  // below can be a pure match-or-reject — a guarded upsert would instead try
+  // to INSERT when the array is full and collide on the unique user_id.
   await retryOnDupKey(() => UserAccountModel.updateOne(
     { user_id: userId },
-    { $addToSet: { linked_guild_ids: guildId }, $set: { updated_at: new Date() } },
+    { $setOnInsert: { linked_guild_ids: [] }, $set: { updated_at: new Date() } },
     { upsert: true },
   ));
+  // The limit is enforced in the WRITE filter, not just the read above: the
+  // positional guard `linked_guild_ids.<max-1>: {$exists:false}` matches only
+  // while the array still has room, so N concurrent link requests that all
+  // passed the optimistic pre-check can't all commit — Mongo serializes the
+  // updates and every write past the limit matches 0 docs. (TOCTOU fix.)
+  const res = await UserAccountModel.updateOne(
+    { user_id: userId, [`linked_guild_ids.${plan.max_links - 1}`]: { $exists: false } },
+    { $addToSet: { linked_guild_ids: guildId }, $set: { updated_at: new Date() } },
+  );
+  // Nothing matched ⇒ the last slot filled between the pre-check and the write
+  // (lost the race). Report the limit rather than silently overfilling.
+  if (res.matchedCount === 0) return null;
   return getUserPlan(userId);
 }
 

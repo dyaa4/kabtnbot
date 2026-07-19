@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sniffImageType, imageDimensions, imageTooLarge } from './image-sniff.js';
+import { sniffImageType, imageDimensions, imageTooLarge } from '@gamebot/shared';
 import { pngHeader, gifHeader, jpegHeader, webpVp8xHeader } from './testing/image-fixtures.js';
 
 describe('imageDimensions', () => {

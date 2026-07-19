@@ -302,6 +302,19 @@ describe('user-accounts-repo', () => {
     expect((await getUserPlan('u2')).linked_guild_ids).toEqual(['g1', 'g2', 'g3']);
   });
 
+  it('concurrent links cannot exceed the plan limit (TOCTOU race)', async () => {
+    // A free user (limit 1) fires 5 link requests at once — read-check-write
+    // without an atomic guard would let them all pass and link 5 guilds.
+    const results = await Promise.all(
+      ['r1', 'r2', 'r3', 'r4', 'r5'].map((g) => linkGuild('u-race', g)),
+    );
+    const linked = (await getUserPlan('u-race')).linked_guild_ids;
+    expect(linked.length).toBe(1); // exactly one slot filled, no overshoot
+    expect(results.filter((r) => r !== null).length).toBeGreaterThanOrEqual(1);
+    // The rejected calls must return null, not a silently-overfilled plan.
+    expect(results.filter((r) => r === null).length).toBe(4);
+  });
+
   it('block flag round-trips', async () => {
     expect(await isUserBlocked('u9')).toBe(false);
     await setUserBlocked('u9', true);

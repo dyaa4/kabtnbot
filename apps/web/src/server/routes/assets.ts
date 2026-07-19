@@ -4,7 +4,7 @@ import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from 
 import type { DiscordRest } from '../discord-rest.js';
 import { requireGuildAccess } from '../guild-access.js';
 import { apiError } from '../app.js';
-import { sniffImageType, imageDimensions, imageTooLarge } from '../image-sniff.js';
+import { sniffImageType, imageDimensions, imageTooLarge } from '@gamebot/shared';
 
 // Buffer any content type: browsers send the file's own MIME type and we trust
 // magic bytes, not the header. Size limit enforced here (413 mapped in app.ts).

@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createCanvas, loadImage, GlobalFonts } from '@napi-rs/canvas';
+import { fetchRemoteImage } from './remote-image.js';
 
 // @napi-rs/canvas ships no fonts and slim server images have none installed —
 // without a bundled font, Arabic member names render as empty boxes. Cairo
@@ -28,16 +29,17 @@ export async function renderWelcomeImage(opts: {
   y: number;
   size: number;
 }): Promise<Buffer> {
-  // Guild-admin-gated but cheap to harden: reject non-https URLs so an admin can't point
-  // banner_url at internal/metadata endpoints (e.g. http://169.254.169.254). The caller
-  // catches and falls back to a text-only welcome.
-  if (typeof opts.banner === 'string' && !opts.banner.startsWith('https://')) {
-    throw new Error('banner URL must be https');
-  }
+  // A remote banner URL (legacy — uploaded assets are the pre-validated path)
+  // is fetched defensively and its dimensions verified from the header BEFORE
+  // decode: handing a URL straight to loadImage is a decompression-bomb OOM
+  // (kills the shared process for every guild) and a blind-SSRF vector. The
+  // avatar URL is always a Discord CDN URL built server-side, so it keeps the
+  // cheap https guard. The caller catches and falls back to a text-only welcome.
+  const bannerSrc = typeof opts.banner === 'string' ? await fetchRemoteImage(opts.banner) : opts.banner;
   if (typeof opts.avatar === 'string' && !opts.avatar.startsWith('https://')) {
     throw new Error('avatar URL must be https');
   }
-  const banner = await loadImage(opts.banner);
+  const banner = await loadImage(bannerSrc);
   const W = banner.width;
   const H = banner.height;
   // Uploaded assets are dimension-checked at upload time; this also covers
