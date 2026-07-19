@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../api.js';
 import { LandingHeader } from '../components/landing/LandingHeader.js';
-import { Hero3D } from '../components/landing/Hero3D.js';
+import { Hero } from '../components/landing/Hero.js';
 import { Features } from '../components/landing/Features.js';
 import { HowItWorks } from '../components/landing/HowItWorks.js';
 import { Pricing } from '../components/landing/Pricing.js';
@@ -22,7 +22,7 @@ export function Landing() {
   return (
     <div className="min-h-screen">
       <LandingHeader />
-      <Hero3D inviteUrl={inviteUrl} guilds={meta.data?.guilds ?? 0} />
+      <Hero inviteUrl={inviteUrl} guilds={meta.data?.guilds ?? 0} />
       <Features />
       <HowItWorks inviteUrl={inviteUrl} />
       <Pricing inviteUrl={inviteUrl} />
