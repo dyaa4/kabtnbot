@@ -293,6 +293,24 @@ html.light body {
   background-clip: text;
   color: transparent;
 }
+/* recharts (stats tab): axis/tick text and grid lines are painted with
+   hardcoded dark-theme SVG attributes (e.g. member names in #cbd5e1 —
+   gray-on-gray in light mode). CSS presentation properties outrank SVG
+   attributes, so plain rules fix text + grid; the tooltip uses inline
+   styles, hence the !important. */
+.light .recharts-cartesian-axis-tick text { fill: #334155; }
+.light .recharts-cartesian-grid line { stroke: rgba(15, 23, 42, 0.15); }
+.light .recharts-default-tooltip {
+  background-color: rgba(255, 255, 255, 0.97) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.light .recharts-default-tooltip .recharts-tooltip-label,
+.light .recharts-default-tooltip .recharts-tooltip-item,
+.light .recharts-default-tooltip .recharts-tooltip-item-name,
+.light .recharts-default-tooltip .recharts-tooltip-item-value {
+  color: #0f172a !important;
+}
+
 .light ::selection {
   background-color: rgba(99, 102, 241, 0.25);
   color: #0f172a;
