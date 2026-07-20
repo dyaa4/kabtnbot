@@ -8,7 +8,10 @@ export function resolveKickTarget(spokenName: string, members: { id: string; dis
   if (exact) return exact.id;
   const contains = members.filter((m) => {
     const n = normalizeText(m.displayName);
-    return n.includes(q) || q.includes(n);
+    // Skip names that normalize to empty (emoji-/punctuation-only display names):
+    // `q.includes('')` is always true, which would otherwise match ANY spoken
+    // name and kick the wrong member.
+    return n !== '' && (n.includes(q) || q.includes(n));
   });
   return contains.length === 1 ? contains[0].id : null;
 }
