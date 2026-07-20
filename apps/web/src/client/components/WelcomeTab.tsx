@@ -179,6 +179,11 @@ export function WelcomeTab({ guildId }: { guildId: string }) {
     if (prev && prev !== banner.data) URL.revokeObjectURL(prev);
     prevBannerUrlRef.current = banner.data ?? null;
   }, [banner.data]);
+  // Revoke the still-held blob URL when the tab unmounts — the effect above only
+  // fires on change, so without this each mount/unmount leaks one image blob.
+  useEffect(() => () => {
+    if (prevBannerUrlRef.current) URL.revokeObjectURL(prevBannerUrlRef.current);
+  }, []);
 
   // React attaches onWheel passively, so preventDefault (needed to stop the page
   // from scrolling while resizing) requires a native non-passive listener.
