@@ -24,7 +24,10 @@ export function usePremiumStatus(guildId: string): { loading: boolean; premium: 
   });
   const isSuperAdmin = admin.data?.isSuperAdmin ?? false;
   return {
-    loading: info.isLoading,
+    // Wait for BOTH queries: if only `info` is awaited, a super-admin on a
+    // non-premium guild sees `info` resolve (premium:false) while `admin` is
+    // still loading — flashing the PremiumUpsell before it snaps to the form.
+    loading: info.isLoading || admin.isLoading,
     premium: (info.data?.premiumLinked ?? false) || isSuperAdmin,
     voicePremium: (info.data?.premiumActive ?? false) || isSuperAdmin,
   };
