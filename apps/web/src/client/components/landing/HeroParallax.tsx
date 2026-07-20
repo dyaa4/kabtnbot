@@ -35,6 +35,8 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       const scale = 1.08 + smoothstep(0, 1, p) * 0.34;
       if (bgRef.current) {
         bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -20}px, ${my * -20}px, 0)`;
+        // The scene comes INTO FOCUS as you scroll (a soft blur clears).
+        bgRef.current.style.filter = `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
       }
       // The scene lights up as you scroll (dark veil clears).
       if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.55);
@@ -87,7 +89,9 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       <div ref={stageRef} className="sticky top-0 flex h-screen items-center overflow-hidden">
         {/* Rendered scene (bot on the LEFT) */}
         <div ref={bgRef} className="absolute inset-0 will-change-transform" style={{ transform: 'scale(1.08)' }}>
-          <img src={heroBg} alt="" fetchpriority="high" className="h-full w-full object-cover" />
+          {/* object-left on mobile keeps the bot (left of the art) in frame; */}
+          {/* centered on desktop where the full 16:9 fits. */}
+          <img src={heroBg} alt="" fetchpriority="high" className="h-full w-full object-cover object-left md:object-center" />
         </div>
 
         {/* Dark veil that clears on scroll (the "reveal") */}

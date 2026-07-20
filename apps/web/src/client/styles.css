@@ -201,6 +201,49 @@ body {
   background-clip: content-box;
 }
 
+/* ——— RevealFlash: twin light-sweep when a section scrolls into view ——— */
+.flash-wrap {
+  overflow: hidden; /* keep the off-screen beams from causing horizontal scroll */
+}
+.flash-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 45%;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0;
+}
+.flash-left {
+  left: 0;
+  background: linear-gradient(to right, transparent, rgba(147, 197, 253, 0.35) 60%, rgba(34, 211, 238, 0.25));
+  transform: translateX(-120%);
+}
+.flash-right {
+  right: 0;
+  background: linear-gradient(to left, transparent, rgba(147, 197, 253, 0.35) 60%, rgba(34, 211, 238, 0.25));
+  transform: translateX(120%);
+}
+.flash-in .flash-left {
+  animation: flash-sweep-left 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.flash-in .flash-right {
+  animation: flash-sweep-right 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes flash-sweep-left {
+  0% { opacity: 0; transform: translateX(-120%); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(170%); }
+}
+@keyframes flash-sweep-right {
+  0% { opacity: 0; transform: translateX(120%); }
+  35% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-170%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flash-in .flash-beam { animation: none; opacity: 0; }
+}
+
 /* ——— Light mode ———————————————————————————————————————————————————————
    The app is authored dark-first with a small set of shared utility
    patterns. `html.light` re-skins exactly those utilities here — THE single
