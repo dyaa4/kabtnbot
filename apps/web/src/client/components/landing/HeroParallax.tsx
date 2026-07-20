@@ -5,11 +5,35 @@ import { scrollProgress, smoothstep } from '../../hooks/use-scroll-progress.js';
 import { DiscordIcon } from './icons.js';
 import heroBg from '../../assets/hero-bg.webp';
 
-// Art-driven scroll-telling hero: the rendered scene carries the detail; as the
-// user scrolls through the pinned section the scene pushes IN cinematically and
-// lights up, the content rises with parallax, and a mouse-tilt adds depth.
+// The hero background is a scroll-scrubbed "film": a sequence of frames
+// (hero-1.webp … hero-N.webp) that crossfade as the user scrolls through the
+// pinned section, while the whole scene pushes IN cinematically and lights up.
+// Drop numbered frames into assets/ and they're picked up automatically; with
+// none present it gracefully falls back to the single hero-bg.webp.
+const frameMods = import.meta.glob('../../assets/hero-*.webp', {
+  eager: true,
+  import: 'default',
+});
+const FRAMES: string[] = (() => {
+  const seq = Object.entries(frameMods)
+    .filter(([path]) => /\/hero-\d+\.webp$/.test(path))
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    .map(([, url]) => url as string);
+  return seq.length ? seq : [heroBg];
+})();
+
 function reducedMotion(): boolean {
   return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
+// Opacity of frame `i` at scroll progress `p`, for an N-frame stack painted
+// bottom-to-top. Frame 0 is the always-opaque base (so the dark backdrop never
+// bleeds through mid-crossfade); each higher frame fades IN over its own scroll
+// segment and then stays, covering the ones below — the film "advances".
+function frameOpacity(i: number, n: number, p: number): number {
+  if (i === 0 || n <= 1) return 1;
+  const step = 1 / (n - 1);
+  return smoothstep((i - 1) * step, i * step, p);
 }
 
 export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds: number }) {
@@ -17,6 +41,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const trackRef = useRef<HTMLElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
+  const layersRef = useRef<HTMLImageElement[]>([]);
   const revealRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const pillsRef = useRef<HTMLDivElement>(null);
@@ -37,6 +62,12 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
         bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -20}px, ${my * -20}px, 0)`;
         // The scene comes INTO FOCUS as you scroll (a soft blur clears).
         bgRef.current.style.filter = `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
+      }
+      // Crossfade the film frames as the scroll advances.
+      const n = layersRef.current.length;
+      for (let i = 0; i < n; i++) {
+        const layer = layersRef.current[i];
+        if (layer) layer.style.opacity = String(frameOpacity(i, n, p));
       }
       // The scene lights up as you scroll (dark veil clears).
       if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.55);
@@ -84,20 +115,35 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
 
   return (
     // Tall track: the stage is pinned for one extra viewport of scroll, during
-    // which the cinematic push-in / light-up plays, then it releases.
+    // which the cinematic push-in / light-up / frame crossfade plays, then it
+    // releases.
     <section ref={trackRef} className="relative h-[200vh]">
       <div ref={stageRef} className="sticky top-0 flex h-screen items-center overflow-hidden">
-        {/* Rendered scene (bot on the LEFT). origin-left on mobile so the
-            push-in scale zooms FROM the left and never pushes the bot out of
-            frame; centered on desktop where the whole 16:9 fits. */}
+        {/* The film stack. origin-left on mobile so the push-in scale zooms FROM
+            the left and never pushes the bot out of frame; centered on desktop
+            where the whole 16:9 fits. */}
         <div
           ref={bgRef}
           className="absolute inset-0 origin-left will-change-transform md:origin-center"
           style={{ transform: 'scale(1.08)' }}
         >
-          {/* object-left on mobile keeps the bot (left of the art) in frame; */}
-          {/* centered on desktop where the full 16:9 fits. */}
-          <img src={heroBg} alt="" fetchPriority="high" className="h-full w-full object-cover object-left md:object-center" />
+          {FRAMES.map((src, i) => (
+            <img
+              key={src}
+              ref={(el) => {
+                if (el) layersRef.current[i] = el;
+              }}
+              src={src}
+              alt=""
+              // Only the first frame matters for LCP; it is the always-visible base.
+              fetchPriority={i === 0 ? 'high' : 'low'}
+              className="absolute inset-0 h-full w-full object-cover object-left will-change-[opacity] md:object-center"
+              // Base frame opaque; higher frames start hidden and crossfade in on
+              // scroll. Without JS (reduced motion) every frame shows, so the last
+              // (resolved) frame wins.
+              style={{ opacity: interactive ? (i === 0 ? 1 : 0) : 1 }}
+            />
+          ))}
         </div>
 
         {/* Dark veil that clears on scroll (the "reveal") */}
