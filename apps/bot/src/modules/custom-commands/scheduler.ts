@@ -104,10 +104,12 @@ export function partitionScheduled(
   return { due, init };
 }
 
-async function runUnit(guild: Guild, unit: ScheduledUnit, now: Date): Promise<void> {
+async function runUnit(guild: Guild, unit: ScheduledUnit): Promise<void> {
   // Stamp BEFORE executing — a slow action must not double-fire on the next
-  // tick. countRun=true: this stamp consumes one of the unit's max_runs.
-  await setScheduleRun(guild.id, unit.key, now, true);
+  // tick. countRun=true: this stamp consumes one of the unit's max_runs. Stamp
+  // with the ACTUAL execution time (not the sweep-start): on a slow sweep,
+  // stamping sweep-start makes interval cadences creep progressively earlier.
+  await setScheduleRun(guild.id, unit.key, new Date(), true);
 
   const config = await getCachedGuildConfig(guild.id);
   const session = getSession(guild.id);
@@ -145,7 +147,7 @@ export async function runScheduleSweep(client: Client, now: Date = new Date()): 
       const { due, init } = partitionScheduled(flows, lastRuns, now);
       for (const unit of init) await setScheduleRun(guild.id, unit.key, now);
       for (const unit of due) {
-        await runUnit(guild, unit, now).catch((err) =>
+        await runUnit(guild, unit).catch((err) =>
           console.error(`[Scheduler ${guild.id}] ${unit.key}:`, err),
         );
       }
@@ -157,9 +159,18 @@ export async function runScheduleSweep(client: Client, now: Date = new Date()): 
 
 export function registerFlowScheduler(client: Client): void {
   client.once('clientReady', () => {
-    setInterval(
-      () => void runScheduleSweep(client).catch((err) => console.error('[Scheduler]', err)),
-      SCHEDULER_TICK_MS,
-    );
+    let sweeping = false;
+    setInterval(() => {
+      // Skip this tick if the previous sweep is still running. A sweep over many
+      // guilds (each doing Mongo + possibly LLM/Discord calls) can exceed the
+      // tick interval, and overlapping sweeps can race to double-fire a due unit.
+      if (sweeping) return;
+      sweeping = true;
+      void runScheduleSweep(client)
+        .catch((err) => console.error('[Scheduler]', err))
+        .finally(() => {
+          sweeping = false;
+        });
+    }, SCHEDULER_TICK_MS);
   });
 }
