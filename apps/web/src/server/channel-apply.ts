@@ -5,6 +5,7 @@ import {
 } from '@gamebot/shared';
 import { saveOrganizeSnapshot, getOrganizeSnapshot, clearOrganizeSnapshot } from '@gamebot/db';
 import type { DiscordRest } from './discord-rest.js';
+import { DiscordApiError } from './discord-rest.js';
 
 export class InvalidPlanError extends Error {
   constructor() {
@@ -14,9 +15,8 @@ export class InvalidPlanError extends Error {
 
 export interface ApplyResult {
   categoriesCreated: number;
-  channelsMoved: number;
-  renamed: number;
-  renameFailures: number;
+  channelsUpdated: number;
+  failures: number;
 }
 
 // Run `fn` over items with bounded concurrency; count (don't throw on) failures.
@@ -31,7 +31,10 @@ async function mapLimit<T>(items: T[], limit: number, fn: (t: T) => Promise<void
       const item = items[cursor++];
       try {
         await fn(item);
-      } catch {
+      } catch (err) {
+        // A missing-permission error is fatal and must surface (→ friendly 403),
+        // not be silently counted like a one-off rate-limit hiccup.
+        if (err instanceof DiscordApiError && err.status === 403) throw err;
         failures++;
       }
     }
@@ -60,7 +63,7 @@ export async function applyOrganizePlan(
   const plan = reconcileOrganizePlan(parsed.data, channels, otherLabel);
   if (plan.categories.length === 0) throw new InvalidPlanError();
 
-  const nameById = new Map(channels.map((c) => [c.id, c.name]));
+  const byId = new Map(channels.map((c) => [c.id, c]));
   const existingCats = channels.filter((c) => c.type === CATEGORY_TYPE).sort((a, b) => a.position - b.position);
 
   // Map each plan category to a real category id: reuse existing slots (renaming
@@ -87,29 +90,34 @@ export async function applyOrganizePlan(
     created_category_ids: createdCategoryIds,
   });
 
-  // One bulk call: categories to the top in plan order, each channel under its
-  // category in plan order.
-  const positions: { id: string; position: number; parent_id?: string | null }[] = [];
+  // Per-channel edits: reparent + rename. Discord's BULK positions endpoint
+  // rejects changing more than one parent_id at once (code 40009), so reparents
+  // MUST be individual PATCH /channels/:id calls. Reused categories are renamed
+  // here too; created ones already carry their name.
+  const edits: { id: string; patch: { name?: string; parent_id?: string | null } }[] = [
+    ...catRenames.map((cr) => ({ id: cr.id, patch: { name: cr.name } })),
+  ];
+  // Positions are set in one bulk call AFTER reparenting — positions only, no
+  // parent_id, so 40009 can't fire. Categories first (top-level), then channels.
+  const positions: { id: string; position: number }[] = [];
   plan.categories.forEach((pc, ci) => {
     positions.push({ id: catIds[ci], position: ci });
-    pc.channels.forEach((ch, idx) => positions.push({ id: ch.id, position: idx, parent_id: catIds[ci] }));
+    pc.channels.forEach((ch, idx) => {
+      const cur = byId.get(ch.id)!;
+      const patch: { name?: string; parent_id?: string | null } = {};
+      if (cur.parent_id !== catIds[ci]) patch.parent_id = catIds[ci];
+      if (cur.name !== ch.name) patch.name = ch.name;
+      if (Object.keys(patch).length > 0) edits.push({ id: ch.id, patch });
+      positions.push({ id: ch.id, position: idx });
+    });
   });
+  const failures = await mapLimit(edits, 4, (e) => rest.editChannel(e.id, e.patch));
   await rest.modifyChannelPositions(guildId, positions);
-
-  // Renames: reused categories + channels whose proposed name differs.
-  const renames = [
-    ...catRenames,
-    ...plan.categories.flatMap((pc) =>
-      pc.channels.filter((ch) => nameById.get(ch.id) !== ch.name).map((ch) => ({ id: ch.id, name: ch.name })),
-    ),
-  ];
-  const renameFailures = await mapLimit(renames, 4, (r) => rest.editChannel(r.id, { name: r.name }));
 
   return {
     categoriesCreated: createdCategoryIds.length,
-    channelsMoved: plan.categories.reduce((n, c) => n + c.channels.length, 0),
-    renamed: renames.length - renameFailures,
-    renameFailures,
+    channelsUpdated: edits.length - failures,
+    failures,
   };
 }
 
@@ -123,16 +131,23 @@ export async function undoOrganize(rest: DiscordRest, guildId: string): Promise<
   const current = await rest.listAllChannels(guildId);
   const curById = new Map(current.map((c) => [c.id, c]));
 
-  const positions = snap.channels
-    .filter((c) => curById.has(c.id))
-    .map((c) => ({ id: c.id, position: c.position, parent_id: c.parent_id }));
+  // Reparent + rename back individually (bulk can't change many parents at once),
+  // then restore order in one positions-only bulk call.
+  const edits: { id: string; patch: { name?: string; parent_id?: string | null } }[] = [];
+  const positions: { id: string; position: number }[] = [];
+  for (const c of snap.channels) {
+    const cur = curById.get(c.id);
+    if (!cur) continue;
+    const patch: { name?: string; parent_id?: string | null } = {};
+    if (cur.parent_id !== c.parent_id) patch.parent_id = c.parent_id;
+    if (cur.name !== c.name) patch.name = c.name;
+    if (Object.keys(patch).length > 0) edits.push({ id: c.id, patch });
+    positions.push({ id: c.id, position: c.position });
+  }
+  await mapLimit(edits, 4, (e) => rest.editChannel(e.id, e.patch));
   await rest.modifyChannelPositions(guildId, positions);
 
-  const renames = snap.channels
-    .filter((c) => curById.has(c.id) && curById.get(c.id)!.name !== c.name)
-    .map((c) => ({ id: c.id, name: c.name }));
-  await mapLimit(renames, 4, (r) => rest.editChannel(r.id, { name: r.name }));
-
+  // Delete the categories the apply created (now emptied of channels).
   await mapLimit(
     snap.created_category_ids.filter((id) => curById.has(id)),
     4,

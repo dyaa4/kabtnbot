@@ -44,7 +44,7 @@ describe('applyOrganizePlan / undoOrganize', () => {
     const result = await applyOrganizePlan(rest, 'g1', PLAN, 'Other');
 
     expect(result.categoriesCreated).toBe(1);
-    expect(result.renameFailures).toBe(0);
+    expect(result.failures).toBe(0);
 
     const now = new Map(rest.allChannels.get('g1')!.map((c) => [c.id, c]));
     // catA reused + renamed to the first plan category.
