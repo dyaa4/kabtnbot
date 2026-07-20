@@ -60,10 +60,16 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
     if (!interactive) return;
     const track = trackRef.current;
     if (!track) return;
-    let mx = 0, my = 0, p = 0, raf = 0;
+    // `pTarget` tracks the real scroll instantly; `pVideo` eases toward it so the
+    // playhead glides instead of snapping — smaller per-frame seeks read far
+    // smoother than one big jump per scroll event. The parallax/veil optics stay
+    // on the real target so they never feel laggy.
+    let mx = 0, my = 0, pTarget = 0, pVideo = 0, raf = 0, running = false;
+    // Per-frame approach to the target (~0.18 ≈ settles in a few frames). Lower =
+    // silkier but more lag; higher = tighter but closer to a raw snap.
+    const EASE = 0.18;
 
-    const apply = () => {
-      raf = 0;
+    const applyVisuals = (p: number) => {
       // Cinematic push-in (scale grows with scroll) + subtle mouse tilt.
       const scale = 1.08 + smoothstep(0, 1, p) * 0.34;
       if (bgRef.current) {
@@ -72,14 +78,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
         // path — a CSS blur filter during seeking is far too heavy to stay smooth.
         bgRef.current.style.filter = HERO_VIDEO ? 'none' : `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
       }
-      if (HERO_VIDEO) {
-        // Scroll drives the playhead — linear so scroll distance maps 1:1 to the
-        // footage. Stop a hair short of the end so it never wraps/pauses.
-        const d = durationRef.current;
-        if (videoRef.current && d > 0) {
-          videoRef.current.currentTime = Math.min(p * d, d - 0.05);
-        }
-      } else {
+      if (!HERO_VIDEO) {
         // Crossfade the image frames as the scroll advances.
         const n = layersRef.current.length;
         for (let i = 0; i < n; i++) {
@@ -102,18 +101,39 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       }
       if (hintRef.current) hintRef.current.style.opacity = String(1 - smoothstep(0, 0.12, p));
     };
-    const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
+
+    const frame = () => {
+      // Ease the video playhead toward the live scroll target.
+      pVideo += (pTarget - pVideo) * EASE;
+      const settled = Math.abs(pTarget - pVideo) < 0.0004;
+      if (settled) pVideo = pTarget;
+
+      applyVisuals(pTarget);
+      if (HERO_VIDEO) {
+        const d = durationRef.current;
+        if (videoRef.current && d > 0) {
+          videoRef.current.currentTime = Math.min(pVideo * d, d - 0.05);
+        }
+      }
+
+      // Keep looping while the playhead is still catching up; park otherwise.
+      if (settled) { running = false; raf = 0; }
+      else raf = requestAnimationFrame(frame);
+    };
+    const ensureRunning = () => { if (!running) { running = true; raf = requestAnimationFrame(frame); } };
+
     const onMove = (e: PointerEvent) => {
       const r = (stageRef.current ?? track).getBoundingClientRect();
       mx = (e.clientX - r.left) / r.width - 0.5;
       my = (e.clientY - r.top) / r.height - 0.5;
-      schedule();
+      ensureRunning();
     };
     const onScroll = () => {
       const r = track.getBoundingClientRect();
-      p = scrollProgress(r.top, r.height, window.innerHeight);
-      schedule();
+      pTarget = scrollProgress(r.top, r.height, window.innerHeight);
+      ensureRunning();
     };
+    // Prime the first paint synchronously (pVideo already equals pTarget at 0).
     onScroll();
     window.addEventListener('pointermove', onMove);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -194,7 +214,9 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
             <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-sm font-semibold text-blue-200 backdrop-blur">
               {t('landing.badge')}
             </span>
-            <h1 className="hero-title mb-5 text-4xl font-extrabold leading-tight md:text-5xl lg:text-6xl">
+            {/* leading + vertical padding give Arabic ascenders/descenders room
+                so the gradient-text clip (background-clip:text) never crops them. */}
+            <h1 className="hero-title mb-5 py-1 text-4xl font-extrabold leading-[1.28] md:text-5xl lg:text-6xl">
               {t('landing.title')}
             </h1>
             <p className="mb-7 text-lg text-slate-200">{t('landing.tagline')}</p>
