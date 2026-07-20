@@ -1,4 +1,4 @@
-import { UsageModel, MemberSnapshotModel } from '../models.js';
+import { MemberSnapshotModel } from '../models.js';
 import { retryOnDupKey } from '../retry.js';
 
 function dateKeyOf(d: Date): string {
@@ -37,14 +37,4 @@ export async function memberSnapshots(
     .sort({ date: 1 })
     .lean();
   return docs.map((d) => ({ date: d.date, member_count: d.member_count }));
-}
-
-export async function aiUsageDaily(
-  guildId: string,
-  days: number,
-): Promise<{ date: string; ai_questions: number; listen_seconds: number }[]> {
-  const docs = await UsageModel.find({ guild_id: guildId, date: { $gte: cutoffKey(days) } })
-    .sort({ date: 1 })
-    .lean();
-  return docs.map((d) => ({ date: d.date, ai_questions: d.ai_questions, listen_seconds: d.listen_seconds }));
 }

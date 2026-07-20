@@ -2,8 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
 import { MemberSnapshotModel } from '../models.js';
-import { incrementAiQuestions, incrementListenSeconds } from './usage-repo.js';
-import { recordMemberSnapshot, memberSnapshots, aiUsageDaily } from './analytics-repo.js';
+import { recordMemberSnapshot, memberSnapshots } from './analytics-repo.js';
 
 let mongod: MongoMemoryServer;
 beforeAll(async () => {
@@ -47,33 +46,5 @@ describe('analytics-repo: recordMemberSnapshot / memberSnapshots', () => {
     const a = await memberSnapshots('gIsoA', 7);
     expect(a).toHaveLength(1);
     expect(a[0].member_count).toBe(5);
-  });
-});
-
-describe('analytics-repo: aiUsageDaily', () => {
-  it('returns per-day usage within the window, ascending, guild-scoped', async () => {
-    await incrementAiQuestions('gUse', daysAgoKey(2));
-    await incrementAiQuestions('gUse', daysAgoKey(2));
-    await incrementListenSeconds('gUse', 45, daysAgoKey(1));
-    await incrementAiQuestions('gUse', daysAgoKey(60)); // outside 30-day window
-    await incrementAiQuestions('gOtherUse', daysAgoKey(1)); // other guild
-
-    const usage = await aiUsageDaily('gUse', 30);
-    expect(usage).toHaveLength(2);
-    expect(usage[0].date).toBe(daysAgoKey(2));
-    expect(usage[0].ai_questions).toBe(2);
-    expect(usage[1].date).toBe(daysAgoKey(1));
-    expect(usage[1].listen_seconds).toBe(45);
-  });
-
-  it('includes the boundary day today-days+1 and excludes today-days (the rendered window is inclusive)', async () => {
-    const days = 7;
-    await incrementAiQuestions('gUseBoundary', daysAgoKey(days - 1)); // earliest rendered day -> included
-    await incrementAiQuestions('gUseBoundary', daysAgoKey(days)); // one day before the window -> excluded
-
-    const usage = await aiUsageDaily('gUseBoundary', days);
-    const dates = usage.map((u) => u.date);
-    expect(dates).toContain(daysAgoKey(days - 1));
-    expect(dates).not.toContain(daysAgoKey(days));
   });
 });
