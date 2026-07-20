@@ -48,20 +48,18 @@ describe('quotas', () => {
     expect(await tryConsumeAiQuestion('q3')).toBe(true);
   });
 
-  it('all guilds linked by ONE premium account share ONE monthly pool (no 3x loophole)', async () => {
+  it('a premium account\'s linked guild draws from the monthly owner pool and is capped', async () => {
+    // The link limit is 1 per account, so an account maps to a single guild;
+    // usage is still keyed to the OWNER pool (user:<uid>), not the guild, and
+    // is hard-capped at the premium monthly minutes.
     await setUserPremium('pool-owner', true);
     await linkGuild('pool-owner', 'p-a');
-    await linkGuild('pool-owner', 'p-b');
     clearPremiumCache();
 
-    // Premium pool = 600 min/month. Burn nearly all of it on guild A…
+    // Pool = 600 min/month. Burn almost all of it, then tip it over.
     await addListenSeconds('p-a', 600 * 60 - 30);
     expect(await isListenQuotaExceeded('p-a')).toBe(false);
-    expect(await isListenQuotaExceeded('p-b')).toBe(false);
-    // …then the remainder on guild B: BOTH guilds are now out of budget,
-    // because the pool belongs to the premium ACCOUNT, not the guild.
-    await addListenSeconds('p-b', 60);
+    await addListenSeconds('p-a', 60);
     expect(await isListenQuotaExceeded('p-a')).toBe(true);
-    expect(await isListenQuotaExceeded('p-b')).toBe(true);
   });
 });

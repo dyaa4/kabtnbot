@@ -97,7 +97,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
         >
           {/* object-left on mobile keeps the bot (left of the art) in frame; */}
           {/* centered on desktop where the full 16:9 fits. */}
-          <img src={heroBg} alt="" fetchpriority="high" className="h-full w-full object-cover object-left md:object-center" />
+          <img src={heroBg} alt="" fetchPriority="high" className="h-full w-full object-cover object-left md:object-center" />
         </div>
 
         {/* Dark veil that clears on scroll (the "reveal") */}
