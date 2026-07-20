@@ -188,6 +188,20 @@ async function mirrorAnswer(guild: Guild, text: string): Promise<void> {
     .catch(() => {});
 }
 
+/**
+ * Whether a closed subscription should be renewed: only for a non-bot member
+ * still in THIS voice channel. A speaker who left must NOT be renewed — the
+ * fresh AfterSilence subscription would never receive a packet to end on,
+ * leaking a decoder + stream per departure. Safe to gate here because a rejoin
+ * re-subscribes via voiceStateUpdate and talking via the speaking-start signal.
+ * Pure + exported for tests.
+ */
+export function shouldRenewSubscription(session: VoiceSession, guild: Guild, userId: string): boolean {
+  if (!session.listening) return false;
+  const member = guild.members.cache.get(userId);
+  return Boolean(member && !member.user.bot && member.voice.channelId === session.channelId);
+}
+
 function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): void {
   if (!session.listening || session.subscriptions.has(userId)) return;
 
@@ -229,7 +243,7 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     freeDecoder();
     // Only OUR map entry — never a successor's.
     if (session.subscriptions.get(userId)?.stream === stream) session.subscriptions.delete(userId);
-    if (session.listening) subscribeToUser(session, guild, userId);
+    if (shouldRenewSubscription(session, guild, userId)) subscribeToUser(session, guild, userId);
   });
 
   stream.on('data', (chunk: Buffer) => {

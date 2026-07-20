@@ -50,9 +50,33 @@ const routerMock = vi.hoisted(() => ({
 }));
 vi.mock('./router.js', () => ({ routeVoiceCommand: routerMock.routeVoiceCommand }));
 
-import { handleTranscript } from './listen.js';
+import { handleTranscript, shouldRenewSubscription } from './listen.js';
 
 const guild = { id: 'g1' } as never;
+
+describe('shouldRenewSubscription (leak guard)', () => {
+  const guildWith = (userId: string, member: unknown) =>
+    ({ members: { cache: new Map(member ? [[userId, member]] : []) } }) as never;
+  const session = (listening: boolean) => ({ channelId: 'vc1', listening }) as never;
+
+  it('renews for a non-bot member still in the channel', () => {
+    const g = guildWith('u1', { user: { bot: false }, voice: { channelId: 'vc1' } });
+    expect(shouldRenewSubscription(session(true), g, 'u1')).toBe(true);
+  });
+  it('does NOT renew for a member who left the channel (the leak case)', () => {
+    const g = guildWith('u1', { user: { bot: false }, voice: { channelId: null } });
+    expect(shouldRenewSubscription(session(true), g, 'u1')).toBe(false);
+  });
+  it('does NOT renew for a member no longer cached / gone', () => {
+    expect(shouldRenewSubscription(session(true), guildWith('u1', null), 'u1')).toBe(false);
+  });
+  it('does NOT renew a bot or when listening stopped', () => {
+    const bot = guildWith('u1', { user: { bot: true }, voice: { channelId: 'vc1' } });
+    expect(shouldRenewSubscription(session(true), bot, 'u1')).toBe(false);
+    const present = guildWith('u1', { user: { bot: false }, voice: { channelId: 'vc1' } });
+    expect(shouldRenewSubscription(session(false), present, 'u1')).toBe(false);
+  });
+});
 
 function freshSession(followUp?: { userId: string; until: number }) {
   sessionMock.current = {
