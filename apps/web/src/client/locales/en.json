@@ -97,6 +97,7 @@
   "guilds.linkLimit": "You reached your link limit — unlink your current server to link a different one.",
   "tabs.overview": "Overview",
   "tabs.settings": "General settings",
+  "tabs.channels": "Channels",
   "tabs.protection": "Protection",
   "tabs.welcome": "Welcome",
   "tabs.stats": "Statistics",
@@ -432,5 +433,16 @@
   "landing.feature.logs.body": "See who joined voice channels and when, plus recent channel messages — for review and moderation, auto-deleted after a few days",
   "landing.feature.aichat.title": "AI chat",
   "landing.feature.aichat.body": "/ask and /chat answer your members’ questions, and “summarize” recaps what you missed in a channel",
-  "pricing.premium.automation": "Automation: custom commands & scheduled tasks in a visual editor"
+  "pricing.premium.automation": "Automation: custom commands & scheduled tasks in a visual editor",
+  "channels.title": "Organize channels with AI",
+  "channels.intro": "Let AI propose a clean layout for your channels: logical categories and fitting icons.",
+  "channels.organize": "Organize with AI",
+  "channels.generating": "Analyzing…",
+  "channels.previewOnly": "Preview only — nothing is changed on your server yet. Applying is coming soon.",
+  "channels.before": "Now",
+  "channels.after": "Proposed",
+  "channels.uncategorized": "Uncategorized",
+  "channels.premium.title": "Premium feature",
+  "channels.premium.body": "Organizing channels with AI is available to premium accounts. Link your server to a premium account to unlock it.",
+  "channels.error.ai": "The AI didn't manage it this time, please try again."
 }

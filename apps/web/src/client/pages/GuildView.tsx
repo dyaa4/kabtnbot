@@ -7,6 +7,7 @@ import { CommandsTab } from '../components/commands/CommandsTab.js';
 import { SettingsTab } from '../components/SettingsTab.js';
 import { StatsTab } from '../components/StatsTab.js';
 import { VoiceTab } from '../components/VoiceTab.js';
+import { ChannelsTab } from '../components/ChannelsTab.js';
 import { LogsTab } from '../components/LogsTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
 import { CustomizeTab } from '../components/CustomizeTab.js';
@@ -19,6 +20,7 @@ export function GuildView() {
   const tabs = [
     { to: '', key: 'tabs.overview' },
     { to: 'voice', key: 'tabs.voice' },
+    { to: 'channels', key: 'tabs.channels' },
     { to: 'commands', key: 'tabs.commands' },
     { to: 'protection', key: 'tabs.protection' },
     { to: 'welcome', key: 'tabs.welcome' },
@@ -51,6 +53,7 @@ export function GuildView() {
       <Routes>
         <Route index element={<Overview guildId={guildId} />} />
         <Route path="voice" element={<VoiceTab guildId={guildId} />} />
+        <Route path="channels" element={<ChannelsTab guildId={guildId} />} />
         <Route path="settings" element={<SettingsTab guildId={guildId} />} />
         <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
         <Route path="commands" element={<CommandsTab guildId={guildId} />} />

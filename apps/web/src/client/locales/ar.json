@@ -97,6 +97,7 @@
   "guilds.linkLimit": "وصلت حدّ الربط — ألغِ ربط سيرفرك الحالي لتربط سيرفراً آخر.",
   "tabs.overview": "نظرة عامة",
   "tabs.settings": "الإعدادات العامة",
+  "tabs.channels": "القنوات",
   "tabs.protection": "الحماية",
   "tabs.welcome": "الترحيب",
   "tabs.stats": "الإحصائيات",
@@ -432,5 +433,16 @@
   "landing.feature.logs.body": "اطّلع على من دخل الرومات الصوتية ومتى، وآخر رسائل القنوات — للمراجعة والإشراف، مع حذف تلقائي بعد أيام",
   "landing.feature.aichat.title": "محادثة الذكاء الاصطناعي",
   "landing.feature.aichat.body": "أمرا /ask و/chat يجيبان أعضاءك عن أي سؤال، و«لخّص لي» يلخّص ما فاتك في القناة",
-  "pricing.premium.automation": "أتمتة: أوامر مخصصة ومهام مجدولة بمحرر مرئي"
+  "pricing.premium.automation": "أتمتة: أوامر مخصصة ومهام مجدولة بمحرر مرئي",
+  "channels.title": "ترتيب القنوات بالذكاء الاصطناعي",
+  "channels.intro": "دع الذكاء الاصطناعي يقترح ترتيبًا نظيفًا لقنواتك: تصنيفات منطقية وأيقونات مناسبة.",
+  "channels.organize": "رتّب بالذكاء الاصطناعي",
+  "channels.generating": "جاري التحليل…",
+  "channels.previewOnly": "معاينة فقط — لا يُطبَّق أي تغيير على سيرفرك حاليًا. التطبيق قريبًا.",
+  "channels.before": "الآن",
+  "channels.after": "المقترح",
+  "channels.uncategorized": "غير مصنّف",
+  "channels.premium.title": "ميزة بريميوم",
+  "channels.premium.body": "ترتيب القنوات بالذكاء الاصطناعي متاح لحسابات البريميوم. اربط سيرفرك بحساب بريميوم لتفعيله.",
+  "channels.error.ai": "لم ينجح الذكاء الاصطناعي هذه المرة، حاول مرة أخرى."
 }

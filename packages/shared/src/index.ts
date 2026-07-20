@@ -5,3 +5,4 @@ export * from './quotas.js';
 export * from './moderation.js';
 export * from './activity.js';
 export * from './image-sniff.js';
+export * from './channel-organize.js';

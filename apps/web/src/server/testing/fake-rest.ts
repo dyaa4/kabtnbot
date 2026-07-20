@@ -65,6 +65,10 @@ export class FakeDiscordRest implements DiscordRest {
   async listTextChannels(guildId: string) {
     return this.textChannels.get(guildId) ?? [];
   }
+  allChannels = new Map<string, { id: string; name: string; type: number; position: number; parent_id: string | null }[]>();
+  async listAllChannels(guildId: string) {
+    return this.allChannels.get(guildId) ?? [];
+  }
   async listRoles(guildId: string) {
     return this.roles.get(guildId) ?? [];
   }

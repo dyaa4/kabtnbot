@@ -97,6 +97,7 @@
   "guilds.linkLimit": "Verknüpfungslimit erreicht — trenne deinen aktuellen Server, um einen anderen zu verknüpfen.",
   "tabs.overview": "Übersicht",
   "tabs.settings": "Allgemeine Einstellungen",
+  "tabs.channels": "Kanäle",
   "tabs.protection": "Schutz",
   "tabs.welcome": "Willkommen",
   "tabs.stats": "Statistiken",
@@ -432,5 +433,16 @@
   "landing.feature.logs.body": "Sieh, wer wann Sprachkanäle betrat, plus letzte Kanalnachrichten — zur Prüfung und Moderation, automatisch nach Tagen gelöscht",
   "landing.feature.aichat.title": "KI-Chat",
   "landing.feature.aichat.body": "/ask und /chat beantworten die Fragen deiner Mitglieder, und „Zusammenfassen“ fasst Verpasstes in einem Kanal zusammen",
-  "pricing.premium.automation": "Automatisierung: eigene Befehle & geplante Aufgaben im visuellen Editor"
+  "pricing.premium.automation": "Automatisierung: eigene Befehle & geplante Aufgaben im visuellen Editor",
+  "channels.title": "Kanäle mit KI ordnen",
+  "channels.intro": "Lass die KI ein sauberes Layout vorschlagen: logische Kategorien und passende Icons.",
+  "channels.organize": "Mit KI ordnen",
+  "channels.generating": "Analysiere …",
+  "channels.previewOnly": "Nur Vorschau — an deinem Server wird noch nichts geändert. Anwenden kommt bald.",
+  "channels.before": "Jetzt",
+  "channels.after": "Vorschlag",
+  "channels.uncategorized": "Ohne Kategorie",
+  "channels.premium.title": "Premium-Funktion",
+  "channels.premium.body": "Kanäle mit KI zu ordnen ist Premium-Konten vorbehalten. Verknüpfe deinen Server mit einem Premium-Konto, um es freizuschalten.",
+  "channels.error.ai": "Die KI hat es diesmal nicht geschafft, bitte erneut versuchen."
 }

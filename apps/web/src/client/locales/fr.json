@@ -97,6 +97,7 @@
   "guilds.linkLimit": "Limite de liaison atteinte — délie ton serveur actuel pour en lier un autre.",
   "tabs.overview": "Aperçu",
   "tabs.settings": "Paramètres généraux",
+  "tabs.channels": "Salons",
   "tabs.protection": "Protection",
   "tabs.welcome": "Bienvenue",
   "tabs.stats": "Statistiques",
@@ -432,5 +433,16 @@
   "landing.feature.logs.body": "Vois qui a rejoint les salons vocaux et quand, plus les messages récents — pour la revue et la modération, supprimés automatiquement après quelques jours",
   "landing.feature.aichat.title": "Chat IA",
   "landing.feature.aichat.body": "/ask et /chat répondent aux questions de tes membres, et « résume » récapitule ce que tu as manqué dans un salon",
-  "pricing.premium.automation": "Automatisation : commandes personnalisées et tâches planifiées dans un éditeur visuel"
+  "pricing.premium.automation": "Automatisation : commandes personnalisées et tâches planifiées dans un éditeur visuel",
+  "channels.title": "Organiser les salons avec l'IA",
+  "channels.intro": "Laisse l'IA proposer une organisation nette : catégories logiques et icônes adaptées.",
+  "channels.organize": "Organiser avec l'IA",
+  "channels.generating": "Analyse…",
+  "channels.previewOnly": "Aperçu uniquement — rien n'est modifié sur ton serveur pour l'instant. L'application arrive bientôt.",
+  "channels.before": "Actuel",
+  "channels.after": "Proposé",
+  "channels.uncategorized": "Sans catégorie",
+  "channels.premium.title": "Fonction premium",
+  "channels.premium.body": "L'organisation des salons par IA est réservée aux comptes premium. Lie ton serveur à un compte premium pour l'activer.",
+  "channels.error.ai": "L'IA n'y est pas parvenue cette fois, réessaie."
 }

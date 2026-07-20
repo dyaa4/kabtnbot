@@ -31,6 +31,12 @@ export interface DiscordRest {
     limit?: number,
   ): Promise<{ id: string; username: string; display_name: string; avatar: string | null }[]>;
   listTextChannels(guildId: string): Promise<{ id: string; name: string }[]>;
+  /** Every channel with the fields the organizer needs: type, sort position and
+   * parent category. Categories (type 4) are included so the current layout can
+   * be rendered. Empty when the bot can't see the guild. */
+  listAllChannels(
+    guildId: string,
+  ): Promise<{ id: string; name: string; type: number; position: number; parent_id: string | null }[]>;
   listRoles(guildId: string): Promise<{ id: string; name: string }[]>;
   listVoiceChannels(guildId: string): Promise<{ id: string; name: string }[]>;
   listEmojis(guildId: string): Promise<{ id: string; name: string; animated: boolean }[]>;
@@ -206,6 +212,19 @@ export function createDiscordRest(): DiscordRest {
       if (!channels) return [];
       // Discord channel types: 0 = text, 5 = announcement — both accept messages.
       return channels.filter((c) => c.type === 0 || c.type === 5).map((c) => ({ id: c.id, name: c.name }));
+    },
+    async listAllChannels(guildId) {
+      const channels = await discordJson<
+        { id: string; name: string; type: number; position: number; parent_id: string | null }[]
+      >(`${API}/guilds/${guildId}/channels`, { headers: bot }, true);
+      if (!channels) return [];
+      return channels.map((c) => ({
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        position: c.position,
+        parent_id: c.parent_id ?? null,
+      }));
     },
     async listVoiceChannels(guildId) {
       const channels = await discordJson<{ id: string; name: string; type: number }[]>(

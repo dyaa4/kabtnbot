@@ -97,6 +97,7 @@
   "guilds.linkLimit": "Bağlantı sınırına ulaştın — başka bir sunucu bağlamak için mevcut sunucunun bağlantısını kaldır.",
   "tabs.overview": "Genel bakış",
   "tabs.settings": "Genel ayarlar",
+  "tabs.channels": "Kanallar",
   "tabs.protection": "Koruma",
   "tabs.welcome": "Karşılama",
   "tabs.stats": "İstatistikler",
@@ -432,5 +433,16 @@
   "landing.feature.logs.body": "Ses kanallarına kimin ne zaman katıldığını ve son kanal mesajlarını gör — inceleme ve moderasyon için, birkaç gün sonra otomatik silinir",
   "landing.feature.aichat.title": "Yapay zekâ sohbeti",
   "landing.feature.aichat.body": "/ask ve /chat üyelerinin sorularını yanıtlar, “özetle” bir kanalda kaçırdıklarını özetler",
-  "pricing.premium.automation": "Otomasyon: görsel editörde özel komutlar ve zamanlanmış görevler"
+  "pricing.premium.automation": "Otomasyon: görsel editörde özel komutlar ve zamanlanmış görevler",
+  "channels.title": "Kanalları yapay zeka ile düzenle",
+  "channels.intro": "Yapay zeka temiz bir düzen önersin: mantıklı kategoriler ve uygun simgeler.",
+  "channels.organize": "Yapay zeka ile düzenle",
+  "channels.generating": "Analiz ediliyor…",
+  "channels.previewOnly": "Yalnızca önizleme — sunucunda henüz hiçbir şey değişmez. Uygulama yakında.",
+  "channels.before": "Şimdi",
+  "channels.after": "Önerilen",
+  "channels.uncategorized": "Kategorisiz",
+  "channels.premium.title": "Premium özellik",
+  "channels.premium.body": "Kanalları yapay zeka ile düzenleme premium hesaplara özeldir. Açmak için sunucunu bir premium hesaba bağla.",
+  "channels.error.ai": "Yapay zeka bu sefer başaramadı, lütfen tekrar dene."
 }

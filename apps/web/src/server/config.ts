@@ -20,6 +20,10 @@ const Env = z.object({
   ALERT_WEBHOOK_URL: z.string().optional().default(''),
   // Comma-separated Discord user ids allowed into the owner/super-admin panel.
   SUPER_ADMIN_IDS: z.string().optional().default(''),
+  // Groq powers the AI channel organizer (dashboard, premium). Optional: the
+  // feature returns a 503 when unset instead of breaking the rest of the app.
+  GROQ_API_KEY: z.string().optional().default(''),
+  GROQ_MODEL: z.string().default('llama-3.3-70b-versatile'),
 });
 
 export const config = Env.parse(process.env);

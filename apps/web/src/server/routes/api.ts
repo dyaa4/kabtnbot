@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { z } from 'zod';
 import {
   getGuildConfig, updateGuildConfig, getUsage,
@@ -17,6 +18,7 @@ import { hasPremiumAccess, invalidateGuildListCache, listEligibleGuilds, require
 import { apiError } from '../app.js';
 import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
+import { generateOrganizePlan, isOrganizerConfigured, AiPlanError } from '../channel-organizer.js';
 
 const ConfigPatch = z
   .object({
@@ -226,6 +228,44 @@ export function apiRouter(rest: DiscordRest): Router {
     try {
       res.json(await rest.listVoiceChannels(req.params.guildId));
     } catch (err) {
+      next(err);
+    }
+  });
+
+  // AI channel organizer — generate a proposed layout for PREVIEW only (no
+  // Discord writes). Each call spends an LLM request, so it is strictly premium
+  // (a PREMIUM-linked guild, like the voice assistant) and rate-limited.
+  const organizeLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: { code: 'RATE_LIMITED', message: 'Too many organize requests, try again later' } },
+  });
+  router.post('/guilds/:guildId/channels/organize/preview', guard, organizeLimiter, async (req, res, next) => {
+    try {
+      const session = res.locals.session as Session;
+      const allowed = isSuperAdmin(session.uid) || (await isGuildPremium(req.params.guildId));
+      if (!allowed) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'The AI channel organizer requires a premium account');
+        return;
+      }
+      if (!isOrganizerConfigured()) {
+        apiError(res, 503, 'AI_UNAVAILABLE', 'The AI organizer is not configured');
+        return;
+      }
+      const otherLabel =
+        typeof req.body?.otherLabel === 'string' && req.body.otherLabel.trim()
+          ? req.body.otherLabel.trim().slice(0, 80)
+          : 'Other';
+      const channels = await rest.listAllChannels(req.params.guildId);
+      const plan = await generateOrganizePlan(channels, otherLabel);
+      res.json({ channels, plan });
+    } catch (err) {
+      if (err instanceof AiPlanError) {
+        apiError(res, 502, 'AI_BAD_OUTPUT', 'The AI returned an unusable layout, please try again');
+        return;
+      }
       next(err);
     }
   });
