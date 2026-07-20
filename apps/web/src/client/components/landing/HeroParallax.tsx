@@ -19,6 +19,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const bgRef = useRef<HTMLDivElement>(null);
   const revealRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const pillsRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
   const [interactive] = useState(() => !reducedMotion());
 
@@ -31,16 +32,22 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
     const apply = () => {
       raf = 0;
       // Cinematic push-in (scale grows with scroll) + subtle mouse tilt.
-      const scale = 1.08 + smoothstep(0, 1, p) * 0.24;
+      const scale = 1.08 + smoothstep(0, 1, p) * 0.34;
       if (bgRef.current) {
         bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -20}px, ${my * -20}px, 0)`;
       }
       // The scene lights up as you scroll (dark veil clears).
-      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.4);
+      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.55);
       // Content parallax-rises with the cursor; releases (fades) at the very end.
       if (contentRef.current) {
         contentRef.current.style.transform = `translate3d(${mx * 12}px, ${my * 12 - p * 60}px, 0)`;
         contentRef.current.style.opacity = String(1 - smoothstep(0.82, 1, p));
+      }
+      // Feature pills rise INTO view on scroll — the "something appears" beat.
+      if (pillsRef.current) {
+        const r = smoothstep(0.18, 0.55, p);
+        pillsRef.current.style.opacity = String(r);
+        pillsRef.current.style.transform = `translateY(${(1 - r) * 28}px)`;
       }
       if (hintRef.current) hintRef.current.style.opacity = String(1 - smoothstep(0, 0.12, p));
     };
@@ -121,6 +128,22 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
                 <Zap className="inline h-4 w-4 align-[-2px]" /> {t(socialKey).replace('{count}', String(guilds))}
               </p>
             )}
+
+            {/* Revealed on scroll (the effect) — quick feature pills rise in. */}
+            <div
+              ref={pillsRef}
+              className="mt-6 flex flex-wrap justify-center gap-2 will-change-transform md:justify-start"
+              style={interactive ? { opacity: 0 } : undefined}
+            >
+              {(['voice', 'protection', 'automation'] as const).map((k) => (
+                <span
+                  key={k}
+                  className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-slate-200 backdrop-blur"
+                >
+                  {t(`landing.feature.${k}.title`)}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
