@@ -56,6 +56,16 @@ function mentionedIdsIn(content: string): string[] {
   return [...content.matchAll(/<@!?(\d+)>/g)].map((m) => m[1]).slice(0, 25);
 }
 
+/**
+ * Replace the {member} placeholder with a per-recipient display name. Uses a
+ * function replacer (NOT String.replaceAll's string form) so a display name
+ * containing `$&`, `$1`, `$$`… is inserted verbatim instead of triggering
+ * replacement-pattern substitution and garbling the message. Exported for tests.
+ */
+export function fillMember(text: string, displayName: string): string {
+  return text.replace(/\{member\}/g, () => displayName);
+}
+
 /** Members of the voice channel the command concerns (session's, else the invoker's). */
 function voiceChannelMembers(ctx: ExecContext): { id: string; displayName: string }[] {
   const channelId =
@@ -258,7 +268,7 @@ export async function executeActions(
             const member = await resolveTargetMember(action, ctx);
             if (!member) { replies.push(strings.kickNoMatch); break; }
             if (member.user.bot) break;
-            const text = expand(action.text, ctx).replaceAll('{member}', member.displayName).slice(0, 2000);
+            const text = fillMember(expand(action.text, ctx), member.displayName).slice(0, 2000);
             await member.send({ content: text }).catch(() => replies.push(strings.dmFailed));
             break;
           }
@@ -281,7 +291,7 @@ export async function executeActions(
           // dozens of sequential DMs must not block the reply or poke rate limits.
           void (async () => {
             for (const m of targets) {
-              await m.send({ content: text.replaceAll('{member}', m.displayName).slice(0, 2000) }).catch(() => {});
+              await m.send({ content: fillMember(text, m.displayName).slice(0, 2000) }).catch(() => {});
               await new Promise((resolve) => setTimeout(resolve, 1500));
             }
           })();
@@ -300,7 +310,7 @@ export async function executeActions(
           // otherwise block the reply for a minute and poke Discord's limits.
           void (async () => {
             for (const m of targets) {
-              await m.send({ content: text.replaceAll('{member}', m.displayName).slice(0, 2000) }).catch(() => {});
+              await m.send({ content: fillMember(text, m.displayName).slice(0, 2000) }).catch(() => {});
               await new Promise((resolve) => setTimeout(resolve, 1500));
             }
           })();
