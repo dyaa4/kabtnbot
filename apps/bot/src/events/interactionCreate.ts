@@ -1,11 +1,11 @@
-import type { Client, ChatInputCommandInteraction, GuildMember } from 'discord.js';
+import type { Client, ChatInputCommandInteraction } from 'discord.js';
 import { MessageFlags } from 'discord.js';
 import { isSpeakerAllowed, type SlashCommandKey } from '@gamebot/shared';
 import { registerCommands } from '../commands/index.js';
 import { S, t } from '../lib/strings.js';
 import { getCachedGuildConfig } from '../lib/config-cache.js';
 import { getCachedCommandFlows } from '../lib/flows-cache.js';
-import { isGuildAdmin } from '../lib/permissions.js';
+import { isInteractionMemberAdmin } from '../lib/permissions.js';
 
 /**
  * Dashboard-configured gate for slash commands (commands page → "Discord /"):
@@ -30,9 +30,9 @@ async function slashRefusal(interaction: ChatInputCommandInteraction): Promise<s
       ? member.roles
       : [...member.roles.cache.keys()]
     : [];
-  if (member && !Array.isArray(member.roles) && isGuildAdmin(member as GuildMember, config.admin_role_id)) {
-    return null;
-  }
+  // Admins ALWAYS bypass (either member shape) — else disabling /settings could
+  // lock the admins out of their own bot with no way back.
+  if (isInteractionMemberAdmin(member, roleIds, config.admin_role_id)) return null;
   if (!override.enabled) return strings.slashDisabled;
   if (!isSpeakerAllowed(override, interaction.user.id, roleIds)) return strings.commandNotAllowed;
   return null;
