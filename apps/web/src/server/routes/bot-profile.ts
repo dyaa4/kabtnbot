@@ -39,6 +39,18 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
   // Created per registration so each app instance gets its own counter store.
   const profileLimiter = rateLimit({ windowMs: 10 * 60 * 1000, limit: 30, standardHeaders: true, legacyHeaders: false });
 
+  // Premium gate as MIDDLEWARE so it runs BEFORE the 8 MB avatar body is read —
+  // a non-premium admin shouldn't be able to make the server buffer a full
+  // upload only to reject it (Customize is premium, owner decision 2026-07-19).
+  const requirePremium: express.RequestHandler = (req, res, next) => {
+    hasPremiumAccess(req.params.guildId, res)
+      .then((ok) => {
+        if (ok) return next();
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Bot customization requires premium');
+      })
+      .catch(next);
+  };
+
   router.get('/guilds/:guildId/bot-profile', guard, async (req, res, next) => {
     try {
       const member = await rest.getBotMember(req.params.guildId);
@@ -56,14 +68,10 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
     }
   });
 
-  router.patch('/guilds/:guildId/bot-profile', profileLimiter, guard, async (req, res, next) => {
+  // Customize tab is premium; GET stays open so the read-only card can still
+  // display the current profile.
+  router.patch('/guilds/:guildId/bot-profile', profileLimiter, guard, requirePremium, async (req, res, next) => {
     try {
-      // Customize tab is premium (owner decision 2026-07-19); GET stays open
-      // so the read-only card can still display the current profile.
-      if (!(await hasPremiumAccess(req.params.guildId, res))) {
-        apiError(res, 403, 'PREMIUM_REQUIRED', 'Bot customization requires premium');
-        return;
-      }
       const parsed = NicknamePatch.safeParse(req.body);
       if (!parsed.success) {
         apiError(res, 400, 'VALIDATION', parsed.error.issues[0]?.message ?? 'Invalid nickname');
@@ -80,12 +88,8 @@ export function registerBotProfileRoutes(router: Router, rest: DiscordRest): voi
     }
   });
 
-  router.put('/guilds/:guildId/bot-profile/avatar', profileLimiter, guard, rawImage, async (req, res, next) => {
+  router.put('/guilds/:guildId/bot-profile/avatar', profileLimiter, guard, requirePremium, rawImage, async (req, res, next) => {
     try {
-      if (!(await hasPremiumAccess(req.params.guildId, res))) {
-        apiError(res, 403, 'PREMIUM_REQUIRED', 'Bot customization requires premium');
-        return;
-      }
       const body = req.body as unknown;
       if (!Buffer.isBuffer(body) || body.length === 0) {
         apiError(res, 400, 'VALIDATION', 'Missing image body');
