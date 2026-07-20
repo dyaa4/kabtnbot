@@ -20,11 +20,6 @@ export const summarizeCommand: Command = {
     }
     const config = await getGuildConfig(interaction.guildId);
     const strings = t(config.language);
-    // Shares the daily AI-questions quota with /ask and /chat.
-    if (!(await tryConsumeAiQuestion(interaction.guildId))) {
-      await interaction.reply({ content: strings.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
-      return;
-    }
     const channel = interaction.channel;
     if (!channel?.isTextBased() || !('messages' in channel)) {
       await interaction.reply({ content: S.guildOnly, flags: MessageFlags.Ephemeral });
@@ -44,6 +39,13 @@ export const summarizeCommand: Command = {
       : [];
     if (lines.length === 0) {
       await interaction.editReply(strings.summaryEmpty);
+      return;
+    }
+    // Consume the shared AI quota only now that there's real content to
+    // summarize — an empty channel / missing MessageContent intent must not
+    // burn a question for a "nothing to summarize" reply.
+    if (!(await tryConsumeAiQuestion(interaction.guildId))) {
+      await interaction.editReply(strings.aiQuotaExhausted);
       return;
     }
 
