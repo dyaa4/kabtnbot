@@ -9,7 +9,7 @@ import {
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
   countActiveInvitedGuilds, hasOrganizeSnapshot,
 } from '@gamebot/db';
-import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey } from '@gamebot/shared';
+import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey, ORGANIZABLE_TYPES } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -19,7 +19,7 @@ import { apiError } from '../app.js';
 import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
 import { generateOrganizePlan, isOrganizerConfigured, AiPlanError } from '../channel-organizer.js';
-import { applyOrganizePlan, undoOrganize, InvalidPlanError } from '../channel-apply.js';
+import { applyOrganizePlan, undoOrganize, InvalidPlanError, SnapshotExistsError } from '../channel-apply.js';
 import { consumeOrganizeQuota, refundOrganizeQuota, getOrganizeUsage } from '../organize-quota.js';
 import { DiscordApiError } from '../discord-rest.js';
 
@@ -271,15 +271,26 @@ export function apiRouter(rest: DiscordRest): Router {
         typeof req.body?.otherLabel === 'string' && req.body.otherLabel.trim()
           ? req.body.otherLabel.trim().slice(0, 80)
           : 'Other';
+      let channels;
+      let plan;
       try {
-        const channels = await rest.listAllChannels(guildId);
-        const plan = await generateOrganizePlan(channels, otherLabel);
-        const usage = await getOrganizeUsage(guildId);
-        res.json({ channels, plan, usage });
+        channels = await rest.listAllChannels(guildId);
+        // Nothing to organize → refund (don't burn a generation on the LLM for
+        // an empty result) and tell the user, rather than returning {categories:[]}.
+        if (!channels.some((c) => (ORGANIZABLE_TYPES as readonly number[]).includes(c.type))) {
+          if (!isAdmin) await refundOrganizeQuota(guildId);
+          apiError(res, 400, 'NO_CHANNELS', 'This server has no channels to organize');
+          return;
+        }
+        plan = await generateOrganizePlan(channels, otherLabel);
       } catch (genErr) {
+        // Refund only around the generation itself — a failure AFTER this (usage
+        // read / serialization) must not hand back a generation that was spent.
         if (!isAdmin) await refundOrganizeQuota(guildId);
         throw genErr;
       }
+      const usage = await getOrganizeUsage(guildId);
+      res.json({ channels, plan, usage });
     } catch (err) {
       if (err instanceof AiPlanError) {
         apiError(res, 502, 'AI_BAD_OUTPUT', 'The AI returned an unusable layout, please try again');
@@ -322,6 +333,10 @@ export function apiRouter(rest: DiscordRest): Router {
     } catch (err) {
       if (err instanceof InvalidPlanError) {
         apiError(res, 400, 'INVALID_PLAN', 'The layout to apply is invalid');
+        return;
+      }
+      if (err instanceof SnapshotExistsError) {
+        apiError(res, 409, 'SNAPSHOT_EXISTS', 'Undo the previous organize before applying a new layout');
         return;
       }
       if (err instanceof DiscordApiError && err.status === 403) {

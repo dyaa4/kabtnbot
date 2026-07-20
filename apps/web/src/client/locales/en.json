@@ -441,6 +441,8 @@
   "channels.previewOnly": "Review the suggestion, then click Apply. Reversible for 24 hours.",
   "channels.quota": "Auto-organize: {remaining} of {limit} left this month",
   "channels.error.limit": "Monthly organize limit reached. Try again next month.",
+  "channels.error.snapshotExists": "Undo the previous organize before applying a new layout.",
+  "channels.error.noChannels": "This server has no channels to organize.",
   "channels.before": "Now",
   "channels.after": "Proposed",
   "channels.apply": "Apply this layout",

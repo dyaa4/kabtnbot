@@ -441,6 +441,8 @@
   "channels.previewOnly": "Öneriyi incele, sonra Uygula'ya tıkla. 24 saat geri alınabilir.",
   "channels.quota": "Otomatik düzenleme: bu ay {limit} hakkının {remaining} kaldı",
   "channels.error.limit": "Aylık düzenleme sınırına ulaşıldı. Gelecek ay tekrar dene.",
+  "channels.error.snapshotExists": "Yeni bir düzen uygulamadan önce önceki düzenlemeyi geri al.",
+  "channels.error.noChannels": "Bu sunucuda düzenlenecek kanal yok.",
   "channels.before": "Şimdi",
   "channels.after": "Önerilen",
   "channels.apply": "Bu düzeni uygula",

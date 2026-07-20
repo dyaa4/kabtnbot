@@ -441,6 +441,8 @@
   "channels.previewOnly": "Prüfe den Vorschlag und klicke „Anwenden\". Rückgängig machbar für 24 Stunden.",
   "channels.quota": "Auto-Organisieren: {remaining} von {limit} übrig diesen Monat",
   "channels.error.limit": "Monatslimit fürs Organisieren erreicht. Nächsten Monat wieder.",
+  "channels.error.snapshotExists": "Mach das vorherige Organisieren rückgängig, bevor du ein neues anwendest.",
+  "channels.error.noChannels": "Dieser Server hat keine Kanäle zum Organisieren.",
   "channels.before": "Jetzt",
   "channels.after": "Vorschlag",
   "channels.apply": "Dieses Layout anwenden",

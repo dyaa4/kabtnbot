@@ -3,13 +3,22 @@ import {
   reconcileOrganizePlan,
   CATEGORY_TYPE,
 } from '@gamebot/shared';
-import { saveOrganizeSnapshot, getOrganizeSnapshot, clearOrganizeSnapshot } from '@gamebot/db';
+import { saveOrganizeSnapshot, getOrganizeSnapshot, clearOrganizeSnapshot, hasOrganizeSnapshot } from '@gamebot/db';
 import type { DiscordRest } from './discord-rest.js';
 import { DiscordApiError } from './discord-rest.js';
 
 export class InvalidPlanError extends Error {
   constructor() {
     super('INVALID_PLAN');
+  }
+}
+
+// A prior apply is still undoable. Applying again would overwrite that snapshot
+// with the ALREADY-organized layout, making the true original unrecoverable —
+// so re-apply is refused until the user undoes (or the 24h snapshot expires).
+export class SnapshotExistsError extends Error {
+  constructor() {
+    super('SNAPSHOT_EXISTS');
   }
 }
 
@@ -59,6 +68,10 @@ export async function applyOrganizePlan(
   const parsed = OrganizePlanSchema.safeParse(rawPlan);
   if (!parsed.success) throw new InvalidPlanError();
 
+  // Refuse re-apply while a previous apply is still undoable, so its snapshot
+  // (the true original layout) is never overwritten by an organized one.
+  if (await hasOrganizeSnapshot(guildId)) throw new SnapshotExistsError();
+
   const channels = await rest.listAllChannels(guildId);
   const plan = reconcileOrganizePlan(parsed.data, channels, otherLabel);
   if (plan.categories.length === 0) throw new InvalidPlanError();
@@ -84,11 +97,18 @@ export async function applyOrganizePlan(
   }
 
   // Snapshot the ORIGINAL layout (categories included) before reordering, plus
-  // which categories we created, so undo can fully reverse this.
-  await saveOrganizeSnapshot(guildId, {
-    channels: channels.map((c) => ({ id: c.id, name: c.name, position: c.position, parent_id: c.parent_id })),
-    created_category_ids: createdCategoryIds,
-  });
+  // which categories we created, so undo can fully reverse this. If the snapshot
+  // write fails, roll back the just-created categories so they don't orphan with
+  // no undo record.
+  try {
+    await saveOrganizeSnapshot(guildId, {
+      channels: channels.map((c) => ({ id: c.id, name: c.name, position: c.position, parent_id: c.parent_id })),
+      created_category_ids: createdCategoryIds,
+    });
+  } catch (err) {
+    await Promise.all(createdCategoryIds.map((id) => rest.deleteChannel(id).catch(() => {})));
+    throw err;
+  }
 
   // Per-channel edits: reparent + rename. Discord's BULK positions endpoint
   // rejects changing more than one parent_id at once (code 40009), so reparents

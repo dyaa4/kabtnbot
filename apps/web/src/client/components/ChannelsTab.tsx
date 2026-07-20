@@ -110,14 +110,15 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
     enabled: voicePremium,
   });
 
-  const errText = (err: unknown) =>
-    err instanceof ApiError && err.code === 'BOT_MISSING_PERMISSION'
-      ? t('channels.error.permission')
-      : err instanceof ApiError && err.code === 'ORGANIZE_LIMIT'
-        ? t('channels.error.limit')
-        : err instanceof ApiError && err.code === 'AI_BAD_OUTPUT'
-          ? t('channels.error.ai')
-          : t('error.generic');
+  const errText = (err: unknown) => {
+    const code = err instanceof ApiError ? err.code : '';
+    if (code === 'BOT_MISSING_PERMISSION') return t('channels.error.permission');
+    if (code === 'ORGANIZE_LIMIT') return t('channels.error.limit');
+    if (code === 'AI_BAD_OUTPUT') return t('channels.error.ai');
+    if (code === 'SNAPSHOT_EXISTS') return t('channels.error.snapshotExists');
+    if (code === 'NO_CHANNELS') return t('channels.error.noChannels');
+    return t('error.generic');
+  };
 
   const preview = useMutation({
     mutationFn: () =>
@@ -137,6 +138,9 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
       }),
     onSuccess: () => {
       toast.success(t('channels.applied'));
+      // Clear the preview so the Apply button/after-view disappear (re-apply is
+      // refused until Undo); the header now shows Undo once status refetches.
+      preview.reset();
       void qc.invalidateQueries({ queryKey: ['organize-status', guildId] });
     },
     onError: (err) => toast.error(errText(err)),

@@ -441,6 +441,8 @@
   "channels.previewOnly": "راجع الاقتراح ثم اضغط «طبّق». التغيير قابل للتراجع خلال 24 ساعة.",
   "channels.quota": "الترتيب التلقائي: متبقٍ {remaining} من {limit} هذا الشهر",
   "channels.error.limit": "استنفدت حدّ الترتيب الشهري. حاول الشهر القادم.",
+  "channels.error.snapshotExists": "تراجع عن الترتيب السابق قبل تطبيق ترتيب جديد.",
+  "channels.error.noChannels": "لا توجد قنوات لترتيبها في هذا السيرفر.",
   "channels.before": "الآن",
   "channels.after": "المقترح",
   "channels.apply": "طبّق هذا الترتيب",

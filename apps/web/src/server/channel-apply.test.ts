@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb, hasOrganizeSnapshot } from '@gamebot/db';
 import { FakeDiscordRest } from './testing/fake-rest.js';
-import { applyOrganizePlan, undoOrganize } from './channel-apply.js';
+import { applyOrganizePlan, undoOrganize, SnapshotExistsError } from './channel-apply.js';
 import { DiscordApiError } from './discord-rest.js';
 
 let mongod: MongoMemoryServer;
@@ -78,6 +78,17 @@ describe('applyOrganizePlan / undoOrganize', () => {
     // The category the apply created is gone.
     expect(rest.allChannels.get('g1')!.some((c) => c.type === 4 && c.name === '🔊 Voice')).toBe(false);
     expect(await hasOrganizeSnapshot('g1')).toBe(false);
+  });
+
+  it('refuses a second apply while a snapshot is still undoable (protects the original)', async () => {
+    const rest = guildWithChannels();
+    await applyOrganizePlan(rest, 'g1', PLAN, 'Other');
+    // Re-applying now would overwrite the original snapshot with the organized
+    // layout — must be refused until undo.
+    await expect(applyOrganizePlan(rest, 'g1', PLAN, 'Other')).rejects.toBeInstanceOf(SnapshotExistsError);
+    // After undo, applying is allowed again.
+    await undoOrganize(rest, 'g1');
+    await expect(applyOrganizePlan(rest, 'g1', PLAN, 'Other')).resolves.toBeTruthy();
   });
 
   it('undo is a no-op when there is no snapshot', async () => {

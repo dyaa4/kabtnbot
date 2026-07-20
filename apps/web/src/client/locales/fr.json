@@ -441,6 +441,8 @@
   "channels.previewOnly": "Vérifie la proposition puis clique sur Appliquer. Réversible pendant 24 heures.",
   "channels.quota": "Organisation auto : {remaining} sur {limit} ce mois-ci",
   "channels.error.limit": "Limite mensuelle d’organisation atteinte. Réessaie le mois prochain.",
+  "channels.error.snapshotExists": "Annule l’organisation précédente avant d’en appliquer une nouvelle.",
+  "channels.error.noChannels": "Ce serveur n’a aucun salon à organiser.",
   "channels.before": "Actuel",
   "channels.after": "Proposé",
   "channels.apply": "Appliquer cette organisation",
