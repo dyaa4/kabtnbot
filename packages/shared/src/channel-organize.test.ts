@@ -1,10 +1,30 @@
 import { describe, it, expect } from 'vitest';
 import {
   sanitizeChannelName,
+  oneLeadingEmoji,
   reconcileOrganizePlan,
   type GuildChannelLite,
   type OrganizePlan,
 } from './channel-organize.js';
+
+describe('oneLeadingEmoji', () => {
+  it('keeps a single leading emoji untouched', () => {
+    expect(oneLeadingEmoji('🎮 gaming')).toBe('🎮 gaming');
+  });
+  it('strips extra emoji, keeping only the first as the icon', () => {
+    expect(oneLeadingEmoji('🎮🔥 gaming')).toBe('🎮 gaming');
+    expect(oneLeadingEmoji('🎯 ✅ tickets')).toBe('🎯 tickets');
+  });
+  it('removes emoji from the middle/end too', () => {
+    expect(oneLeadingEmoji('gaming 🎮 zone 🔥')).toBe('🎮 gaming zone');
+  });
+  it('handles ZWJ sequences and skin tones as one cluster', () => {
+    expect(oneLeadingEmoji('👨‍👩‍👧 family 👍🏽')).toBe('👨‍👩‍👧 family');
+  });
+  it('leaves emoji-less names unchanged (no icon invented)', () => {
+    expect(oneLeadingEmoji('general')).toBe('general');
+  });
+});
 
 describe('sanitizeChannelName', () => {
   it('lowercases text channels and turns spaces into hyphens', () => {
@@ -16,6 +36,10 @@ describe('sanitizeChannelName', () => {
   });
   it('preserves non-latin (Arabic) text and just collapses spaces', () => {
     expect(sanitizeChannelName('💬 دردشة عامة', 0)).toBe('💬-دردشة-عامة');
+  });
+  it('collapses multiple emoji down to a single leading icon', () => {
+    expect(sanitizeChannelName('🎮🔥 gaming', 0)).toBe('🎮-gaming');
+    expect(sanitizeChannelName('🔊🎧 Music Lounge', 2)).toBe('🔊 Music Lounge');
   });
 });
 

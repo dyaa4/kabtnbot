@@ -37,14 +37,32 @@ export function isVoiceType(type: number): boolean {
   return type === 2 || type === 13;
 }
 
-/** Discord lowercases text-channel names and turns spaces into hyphens; mirror
- * that in the preview so what the admin approves matches what they'll get.
- * Voice/stage channels keep spaces and case. Emoji are preserved either way. */
+// One emoji "cluster": flag pairs, keycaps, or a pictographic base with any
+// variation-selector / skin-tone / ZWJ-joined continuation.
+const EMOJI_SEQ =
+  /(?:\p{Regional_Indicator}\p{Regional_Indicator})|(?:[0-9#*]️?⃣)|(?:\p{Extended_Pictographic}(?:️|‍\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}]|⃣)*)/gu;
+
+/**
+ * Force a name to carry AT MOST ONE leading emoji icon: keep the first emoji
+ * found, strip every other emoji (a name that already had one plus the model's
+ * added one would otherwise show two), and put the survivor at the front.
+ * Names with no emoji are returned unchanged (no icon invented here).
+ */
+export function oneLeadingEmoji(name: string): string {
+  const found = name.match(EMOJI_SEQ);
+  const text = name.replace(EMOJI_SEQ, ' ').replace(/\s+/g, ' ').trim();
+  if (!found || found.length === 0) return text;
+  return text ? `${found[0]} ${text}` : found[0];
+}
+
+/** Normalize a proposed channel name: exactly one leading emoji (never more),
+ * then Discord's own text rules. Discord lowercases text-channel names and
+ * turns spaces into hyphens; voice/stage channels keep spaces and case. */
 export function sanitizeChannelName(name: string, type: number): string {
-  const n = name.trim().slice(0, 100);
-  if (isVoiceType(type)) return n;
+  const single = oneLeadingEmoji(name).slice(0, 100);
+  if (isVoiceType(type)) return single;
   // Text/announcement/forum: Discord's own normalization.
-  return n.toLowerCase().replace(/\s+/g, '-');
+  return single.toLowerCase().replace(/\s+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
 }
 
 /**
@@ -74,7 +92,8 @@ export function reconcileOrganizePlan(
         used.add(ch.id);
         channels.push({ id: ch.id, name: sanitizeChannelName(ch.name || c.name, c.type) });
       }
-      return { name: cat.name.trim().slice(0, 100), channels };
+      // Category names get the same one-emoji guarantee as channels.
+      return { name: oneLeadingEmoji(cat.name).slice(0, 100), channels };
     })
     .filter((cat) => cat.channels.length > 0);
 
