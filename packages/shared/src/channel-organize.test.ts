@@ -66,8 +66,10 @@ describe('reconcileOrganizePlan', () => {
   it('sweeps forgotten channels into the otherLabel category, each exactly once', () => {
     const plan: OrganizePlan = { categories: [{ name: '💬 Text', channels: [{ id: 'c1', name: 'general' }] }] };
     const out = reconcileOrganizePlan(plan, channels, 'غير مصنّف');
-    const other = out.categories.find((c) => c.name === 'غير مصنّف');
+    // The bucket keeps the label but gains a single leading icon (folder default).
+    const other = out.categories.find((c) => c.name.endsWith('غير مصنّف'));
     expect(other).toBeDefined();
+    expect(other!.name).toBe('📁 غير مصنّف');
     expect(other!.channels.map((c) => c.id).sort()).toEqual(['c2', 'c3']);
     // Categories (type 4) are never treated as placeable channels.
     const allIds = out.categories.flatMap((c) => c.channels.map((ch) => ch.id));

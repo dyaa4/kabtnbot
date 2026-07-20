@@ -99,8 +99,12 @@ export function reconcileOrganizePlan(
 
   const leftovers = [...byId.values()].filter((c) => !used.has(c.id));
   if (leftovers.length > 0) {
+    // The fallback bucket earns an icon too (the one-icon rule applies to every
+    // category). Default to a folder when the caller's label carries none.
+    const label = oneLeadingEmoji(otherLabel).slice(0, 100) || 'Other';
+    const name = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator})/u.test(label) ? label : `📁 ${label}`;
     categories.push({
-      name: otherLabel.trim().slice(0, 100) || 'Other',
+      name,
       channels: leftovers.map((c) => ({ id: c.id, name: sanitizeChannelName(c.name, c.type) })),
     });
   }
