@@ -6,10 +6,11 @@ import { DiscordIcon } from './icons.js';
 import heroBg from '../../assets/hero-bg.webp';
 
 // The hero background is an ambient, autoplaying loop (assets/hero.mp4) that
-// plays normally while scrolling drives a professional, staggered reveal of the
-// copy on top. With no video it falls back to numbered image frames that
-// crossfade on scroll (hero-1.webp … hero-N), and to the single hero-bg.webp
-// with none of those. Drop the file into assets/ — it's picked up automatically.
+// plays normally while scrolling drives a professional reveal: first the hero
+// copy rises in line by line, then a sequence of meaningful "beats" cycles
+// through over the video. With no video it falls back to numbered image frames
+// that crossfade (hero-1.webp … hero-N), and to the single hero-bg.webp with
+// none of those. Drop the file into assets/ — it's picked up automatically.
 const videoMods = import.meta.glob('../../assets/hero.mp4', {
   eager: true,
   import: 'default',
@@ -28,14 +29,21 @@ const FRAMES: string[] = (() => {
   return seq.length ? seq : [heroBg];
 })();
 
+// Storytelling beats that cycle in over the video as the user scrolls deeper.
+// Each has an [in-start, in-end, out-start, out-end] window over scroll progress.
+const BEATS = [
+  { title: 'landing.hero.beat1.title', sub: 'landing.hero.beat1.sub', win: [0.34, 0.42, 0.5, 0.58] },
+  { title: 'landing.hero.beat2.title', sub: 'landing.hero.beat2.sub', win: [0.56, 0.64, 0.72, 0.8] },
+  { title: 'landing.hero.beat3.title', sub: 'landing.hero.beat3.sub', win: [0.78, 0.86, 0.97, 1.0] },
+] as const;
+
 function reducedMotion(): boolean {
   return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
 // Opacity of frame `i` at scroll progress `p`, for an N-frame stack painted
-// bottom-to-top. Frame 0 is the always-opaque base (so the dark backdrop never
-// bleeds through mid-crossfade); each higher frame fades IN over its own scroll
-// segment and then stays, covering the ones below — the film "advances".
+// bottom-to-top. Frame 0 is the always-opaque base; each higher frame fades IN
+// over its own scroll segment and covers the ones below — the film "advances".
 function frameOpacity(i: number, n: number, p: number): number {
   if (i === 0 || n <= 1) return 1;
   const step = 1 / (n - 1);
@@ -56,16 +64,25 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
   const socialRef = useRef<HTMLParagraphElement>(null);
-  const pillsRef = useRef<HTMLDivElement>(null);
+  const beatsRef = useRef<HTMLDivElement[]>([]);
+  const progressRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
   const [interactive] = useState(() => !reducedMotion());
 
-  // Nudge the ambient video into playing even if the autoplay attribute is
-  // ignored (muted inline playback is allowed, so this virtually always succeeds).
-  // play() may return undefined in non-browser environments (jsdom), so guard it.
+  // Kick the ambient video into playing immediately (muted inline playback is
+  // allowed, so autoplay should work — this covers browsers that ignore the
+  // attribute until the element is ready). play() may return undefined under
+  // jsdom, so it is guarded.
   useEffect(() => {
-    const playing = videoRef.current?.play();
-    if (playing && typeof playing.catch === 'function') playing.catch(() => {});
+    const v = videoRef.current;
+    if (!v) return;
+    const tryPlay = () => {
+      const r = v.play();
+      if (r && typeof r.catch === 'function') r.catch(() => {});
+    };
+    tryPlay();
+    v.addEventListener('canplay', tryPlay);
+    return () => v.removeEventListener('canplay', tryPlay);
   }, []);
 
   useEffect(() => {
@@ -74,8 +91,8 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
     if (!track) return;
     let mx = 0, my = 0, p = 0, raf = 0;
 
-    // Staggered reveal of one copy element over its own [a,b] slice of scroll,
-    // rising `dist`px into place — the "text appears as you scroll" beat.
+    // Reveal one copy element over its own [a,b] slice of scroll, rising `dist`px
+    // into place — the "text appears as you scroll" beat.
     const reveal = (el: HTMLElement | null, a: number, b: number, dist: number) => {
       if (!el) return;
       const r = smoothstep(a, b, p);
@@ -89,33 +106,46 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       const scale = 1.06 + smoothstep(0, 1, p) * 0.16;
       if (bgRef.current) {
         bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -16}px, ${my * -16}px, 0)`;
-        // Blur-clear only applies to the image fallback (a blur filter over a
-        // playing video would be needlessly heavy).
         bgRef.current.style.filter = HERO_VIDEO ? 'none' : `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
       }
       if (!HERO_VIDEO) {
-        // Crossfade the image frames as the scroll advances.
         const n = layersRef.current.length;
         for (let i = 0; i < n; i++) {
           const layer = layersRef.current[i];
           if (layer) layer.style.opacity = String(frameOpacity(i, n, p));
         }
       }
-      // Dark veil lifts as the copy reveals, so it starts moody and opens up.
-      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.45, p)) * 0.6);
-      // Wrapper only carries the mouse tilt + a gentle release at the very end;
-      // the per-line reveal below does the actual entrance.
-      if (contentRef.current) {
-        contentRef.current.style.transform = `translate3d(${mx * 10}px, ${my * 10}px, 0)`;
-        contentRef.current.style.opacity = String(1 - smoothstep(0.86, 1, p));
+      // Dark veil lifts as the copy reveals: moody at the top, open once scrolling.
+      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.4, p)) * 0.45 + 0.12);
+      // Wrapper carries only the mouse tilt; the per-line reveal does the entrance.
+      if (contentRef.current) contentRef.current.style.transform = `translate3d(${mx * 10}px, ${my * 10}px, 0)`;
+
+      // Hero copy rises in early and stays: badge → title → tagline → CTAs → proof.
+      reveal(badgeRef.current, 0.02, 0.12, 20);
+      // Title additionally focus-blurs in for a premium feel.
+      if (titleRef.current) {
+        const r = smoothstep(0.06, 0.2, p);
+        titleRef.current.style.opacity = String(r);
+        titleRef.current.style.transform = `translateY(${(1 - r) * 26}px)`;
+        titleRef.current.style.filter = `blur(${(1 - r) * 9}px)`;
       }
-      // Professional line-by-line reveal: badge → title → tagline → CTAs → pills.
-      reveal(badgeRef.current, 0.04, 0.20, 22);
-      reveal(titleRef.current, 0.10, 0.32, 26);
-      reveal(taglineRef.current, 0.20, 0.44, 24);
-      reveal(ctaRef.current, 0.30, 0.54, 24);
-      reveal(socialRef.current, 0.36, 0.60, 22);
-      reveal(pillsRef.current, 0.44, 0.68, 26);
+      reveal(taglineRef.current, 0.12, 0.26, 22);
+      reveal(ctaRef.current, 0.18, 0.3, 22);
+      reveal(socialRef.current, 0.2, 0.32, 20);
+
+      // Meaningful beats cycle in over the video as the user scrolls deeper.
+      for (let i = 0; i < BEATS.length; i++) {
+        const el = beatsRef.current[i];
+        if (!el) continue;
+        const [is, ie, os, oe] = BEATS[i].win;
+        const enter = smoothstep(is, ie, p);
+        const exit = smoothstep(os, oe, p);
+        el.style.opacity = String(enter * (1 - exit));
+        el.style.transform = `translateY(${(1 - enter) * 34 - exit * 22}px) scale(${0.96 + enter * 0.04})`;
+      }
+
+      // Slim scroll-progress indicator fills as you move through the hero.
+      if (progressRef.current) progressRef.current.style.transform = `scaleY(${p})`;
       if (hintRef.current) hintRef.current.style.opacity = String(1 - smoothstep(0, 0.12, p));
     };
     const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
@@ -148,17 +178,15 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       : 'landing.social';
 
   return (
-    // Tall track: the stage is pinned for one extra viewport of scroll, during
-    // which the copy reveals line by line over the playing video, then releases.
-    <section ref={trackRef} className="relative h-[200vh]">
+    // Tall track: the stage is pinned across three viewports of scroll, over
+    // which the copy reveals and the story beats cycle, then it releases.
+    <section ref={trackRef} className="relative h-[300vh]">
       <div ref={stageRef} className="sticky top-0 flex h-screen items-center overflow-hidden">
-        {/* The film stack. origin-left on mobile so the push-in scale zooms FROM
-            the left and never pushes the bot out of frame; centered on desktop
-            where the whole 16:9 fits. */}
+        {/* Ambient background: the playing video (or image-frame fallback). */}
         <div
           ref={bgRef}
           className="absolute inset-0 origin-left will-change-transform md:origin-center"
-          style={{ transform: 'scale(1.08)' }}
+          style={{ transform: 'scale(1.06)' }}
         >
           {HERO_VIDEO ? (
             <video
@@ -183,23 +211,30 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
                 }}
                 src={src}
                 alt=""
-                // Only the first frame matters for LCP; it is the always-visible base.
                 fetchPriority={i === 0 ? 'high' : 'low'}
                 className="absolute inset-0 h-full w-full object-cover object-left will-change-[opacity] md:object-center"
-                // Base frame opaque; higher frames start hidden and crossfade in on
-                // scroll. Without JS (reduced motion) every frame shows, so the last
-                // (resolved) frame wins.
                 style={{ opacity: interactive ? (i === 0 ? 1 : 0) : 1 }}
               />
             ))
           )}
         </div>
 
-        {/* Dark veil that clears on scroll (the "reveal") */}
-        <div ref={revealRef} className="absolute inset-0 bg-slate-950" style={{ opacity: 0.4 }} />
+        {/* Dark veil that lifts on scroll (the "reveal") */}
+        <div ref={revealRef} className="absolute inset-0 bg-slate-950" style={{ opacity: 0.45 }} />
         {/* Readability scrims: bottom + the RIGHT side where the text lives */}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-l from-slate-950/90 via-slate-950/30 to-transparent" />
+
+        {/* Slim scroll-progress indicator on the leading edge */}
+        {interactive && (
+          <div className="pointer-events-none absolute inset-y-0 start-4 z-10 my-auto hidden h-40 w-[3px] overflow-hidden rounded-full bg-white/10 md:block">
+            <div
+              ref={progressRef}
+              className="h-full w-full origin-top rounded-full bg-gradient-to-b from-blue-400 to-blue-500 will-change-transform"
+              style={{ transform: 'scaleY(0)' }}
+            />
+          </div>
+        )}
 
         {/* Text overlay — real HTML, pinned RIGHT so it never covers the bot */}
         <div ref={contentRef} className="relative z-10 mx-auto w-full max-w-6xl px-6 will-change-transform">
@@ -254,21 +289,31 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
               </p>
             )}
 
-            {/* Revealed on scroll (the effect) — quick feature pills rise in. */}
-            <div
-              ref={pillsRef}
-              className="mt-6 flex flex-wrap justify-center gap-2 will-change-transform md:justify-start"
-              style={interactive ? { opacity: 0 } : undefined}
-            >
-              {(['voice', 'protection', 'automation'] as const).map((k) => (
-                <span
-                  key={k}
-                  className="rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold text-slate-200 backdrop-blur"
-                >
-                  {t(`landing.feature.${k}.title`)}
-                </span>
-              ))}
-            </div>
+            {/* Cycling story beats — meaningful lines that reveal as you scroll on.
+                Interactive only: they crossfade in a shared slot, so without the
+                scroll driver they'd overlap. */}
+            {interactive && (
+              <div className="relative mt-8 min-h-[6rem]">
+                {BEATS.map((b, i) => (
+                  <div
+                    key={b.title}
+                    ref={(el) => {
+                      if (el) beatsRef.current[i] = el;
+                    }}
+                    className="absolute inset-x-0 flex items-start gap-3 will-change-transform"
+                    style={{ opacity: 0 }}
+                  >
+                    <span className="mt-1 h-10 w-1 shrink-0 rounded-full bg-gradient-to-b from-blue-400 to-blue-500 shadow-[0_0_16px_-2px_rgba(59,130,246,0.9)]" />
+                    <div className="text-start">
+                      <p className="text-lg font-bold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)] md:text-xl">
+                        {t(b.title)}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-300">{t(b.sub)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
