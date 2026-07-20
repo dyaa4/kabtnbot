@@ -46,7 +46,16 @@ export function onInteractionCreate(client: Client): void {
         if (!cmd) {
           // Not one of ours → a custom flow registered as a guild slash command.
           const { runFlowSlashCommand } = await import('../modules/custom-commands/slash-runner.js');
-          await runFlowSlashCommand(interaction);
+          const handled = await runFlowSlashCommand(interaction);
+          // A stale guild command (its flow was disabled/renamed/deleted before
+          // Discord re-synced the command set) matches nothing — acknowledge it
+          // so the user doesn't get Discord's red "application did not respond".
+          if (!handled && interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+            const strings = interaction.guildId
+              ? t((await getCachedGuildConfig(interaction.guildId).catch(() => null))?.language ?? 'ar')
+              : S;
+            await interaction.reply({ content: strings.slashDisabled, flags: MessageFlags.Ephemeral }).catch(() => {});
+          }
           return;
         }
         const refusal = await slashRefusal(interaction);
