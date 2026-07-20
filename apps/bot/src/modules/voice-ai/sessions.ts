@@ -75,7 +75,10 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
         entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
       ]);
     } catch {
-      leaveGuildVoice(channel.guildId);
+      // Only tear down if THIS connection still owns the guild's session. A
+      // rejoin during the 5s reconnect race may have already replaced it with a
+      // live one — tearing that down would silently kill the user's fresh join.
+      if (sessions.get(channel.guildId)?.connection === connection) leaveGuildVoice(channel.guildId);
     }
   });
   connection.on('error', (err) => console.error(`[Voice ${channel.guildId}] conn:`, err));
