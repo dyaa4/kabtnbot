@@ -31,12 +31,13 @@ function BotStatusBadge() {
     <span
       data-testid="bot-status"
       title={status.data.last_seen ?? ''}
-      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+      className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-1 text-xs sm:px-2.5 ${
         online ? 'border-emerald-500/30 bg-emerald-900/30 text-emerald-300' : 'border-red-500/30 bg-red-900/30 text-red-300'
       }`}
     >
       <span className={`h-2 w-2 rounded-full ${online ? 'animate-pulse bg-emerald-400' : 'bg-red-400'}`} />
-      {online ? t('bot.online') : t('bot.offline')}
+      {/* Label hides on mobile to save navbar width — the dot still conveys state. */}
+      <span className="hidden sm:inline">{online ? t('bot.online') : t('bot.offline')}</span>
     </span>
   );
 }
@@ -52,18 +53,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/70 px-6 py-4 backdrop-blur-md">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-white/10 bg-slate-950/70 px-4 py-4 backdrop-blur-md sm:px-6">
         {/* The brand goes to the public home page; the landing header is
             session-aware (shows a Dashboard button when logged in), so this no
             longer reads as a logout. */}
         <Link
           to="/"
-          className="text-xl font-black"
+          className="shrink-0 text-xl font-black"
         >
           <span className="bg-gradient-to-r from-blue-400 via-blue-400 to-blue-400 bg-clip-text text-transparent">{t('brand.name')}</span>
           <span className="ms-1 text-slate-400">{t('brand.suffix')}</span>
         </Link>
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-4">
           {/* Same-tab nav to the landing #features — the session-aware landing
               header keeps a way back to the dashboard, so no new tab needed. */}
           <a
@@ -82,9 +83,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <LangSwitcher />
           {me.data && (
             <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-300">{me.data.uname}</span>
+              {/* Username hides on mobile — the logout button is enough there. */}
+              <span className="hidden max-w-[8rem] truncate text-sm text-slate-300 sm:inline">{me.data.uname}</span>
               <button
-                className="text-sm text-slate-400 hover:text-blue-300"
+                className="shrink-0 text-sm text-slate-400 hover:text-blue-300"
                 onClick={async () => {
                   await fetch('/auth/logout', { method: 'POST' });
                   window.location.href = '/';
