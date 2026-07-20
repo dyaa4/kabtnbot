@@ -5,11 +5,17 @@ import { scrollProgress, smoothstep } from '../../hooks/use-scroll-progress.js';
 import { DiscordIcon } from './icons.js';
 import heroBg from '../../assets/hero-bg.webp';
 
-// The hero background is a scroll-scrubbed "film": a sequence of frames
-// (hero-1.webp … hero-N.webp) that crossfade as the user scrolls through the
-// pinned section, while the whole scene pushes IN cinematically and lights up.
-// Drop numbered frames into assets/ and they're picked up automatically; with
-// none present it gracefully falls back to the single hero-bg.webp.
+// The hero background is a scroll-scrubbed "film". Preferred source is an
+// actual video (assets/hero.mp4) whose playhead is driven by scroll progress;
+// with no video it falls back to numbered image frames (hero-1.webp … hero-N),
+// and with none of those to the single hero-bg.webp. Drop the file into assets/
+// and it's picked up automatically — no code change needed.
+const videoMods = import.meta.glob('../../assets/hero.mp4', {
+  eager: true,
+  import: 'default',
+});
+const HERO_VIDEO: string | null = (Object.values(videoMods)[0] as string | undefined) ?? null;
+
 const frameMods = import.meta.glob('../../assets/hero-*.webp', {
   eager: true,
   import: 'default',
@@ -42,6 +48,8 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const stageRef = useRef<HTMLDivElement>(null);
   const bgRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef<HTMLImageElement[]>([]);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const durationRef = useRef(0);
   const revealRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const pillsRef = useRef<HTMLDivElement>(null);
@@ -60,14 +68,24 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       const scale = 1.08 + smoothstep(0, 1, p) * 0.34;
       if (bgRef.current) {
         bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -20}px, ${my * -20}px, 0)`;
-        // The scene comes INTO FOCUS as you scroll (a soft blur clears).
-        bgRef.current.style.filter = `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
+        // Soft blur clears as the scene comes INTO FOCUS. Skipped for the video
+        // path — a CSS blur filter during seeking is far too heavy to stay smooth.
+        bgRef.current.style.filter = HERO_VIDEO ? 'none' : `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
       }
-      // Crossfade the film frames as the scroll advances.
-      const n = layersRef.current.length;
-      for (let i = 0; i < n; i++) {
-        const layer = layersRef.current[i];
-        if (layer) layer.style.opacity = String(frameOpacity(i, n, p));
+      if (HERO_VIDEO) {
+        // Scroll drives the playhead — linear so scroll distance maps 1:1 to the
+        // footage. Stop a hair short of the end so it never wraps/pauses.
+        const d = durationRef.current;
+        if (videoRef.current && d > 0) {
+          videoRef.current.currentTime = Math.min(p * d, d - 0.05);
+        }
+      } else {
+        // Crossfade the image frames as the scroll advances.
+        const n = layersRef.current.length;
+        for (let i = 0; i < n; i++) {
+          const layer = layersRef.current[i];
+          if (layer) layer.style.opacity = String(frameOpacity(i, n, p));
+        }
       }
       // The scene lights up as you scroll (dark veil clears).
       if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.55);
@@ -127,23 +145,41 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
           className="absolute inset-0 origin-left will-change-transform md:origin-center"
           style={{ transform: 'scale(1.08)' }}
         >
-          {FRAMES.map((src, i) => (
-            <img
-              key={src}
-              ref={(el) => {
-                if (el) layersRef.current[i] = el;
+          {HERO_VIDEO ? (
+            <video
+              ref={videoRef}
+              src={HERO_VIDEO}
+              // muted + playsInline are mandatory for iOS to decode/seek an inline
+              // video; poster paints instantly (good LCP) before the video is ready.
+              muted
+              playsInline
+              preload="auto"
+              poster={heroBg}
+              onLoadedMetadata={(e) => {
+                durationRef.current = e.currentTarget.duration;
+                if (typeof window !== 'undefined') window.dispatchEvent(new Event('scroll'));
               }}
-              src={src}
-              alt=""
-              // Only the first frame matters for LCP; it is the always-visible base.
-              fetchPriority={i === 0 ? 'high' : 'low'}
-              className="absolute inset-0 h-full w-full object-cover object-left will-change-[opacity] md:object-center"
-              // Base frame opaque; higher frames start hidden and crossfade in on
-              // scroll. Without JS (reduced motion) every frame shows, so the last
-              // (resolved) frame wins.
-              style={{ opacity: interactive ? (i === 0 ? 1 : 0) : 1 }}
+              className="absolute inset-0 h-full w-full object-cover object-left md:object-center"
             />
-          ))}
+          ) : (
+            FRAMES.map((src, i) => (
+              <img
+                key={src}
+                ref={(el) => {
+                  if (el) layersRef.current[i] = el;
+                }}
+                src={src}
+                alt=""
+                // Only the first frame matters for LCP; it is the always-visible base.
+                fetchPriority={i === 0 ? 'high' : 'low'}
+                className="absolute inset-0 h-full w-full object-cover object-left will-change-[opacity] md:object-center"
+                // Base frame opaque; higher frames start hidden and crossfade in on
+                // scroll. Without JS (reduced motion) every frame shows, so the last
+                // (resolved) frame wins.
+                style={{ opacity: interactive ? (i === 0 ? 1 : 0) : 1 }}
+              />
+            ))
+          )}
         </div>
 
         {/* Dark veil that clears on scroll (the "reveal") */}
