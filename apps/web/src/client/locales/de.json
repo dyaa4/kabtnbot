@@ -439,6 +439,8 @@
   "channels.organize": "Mit KI ordnen",
   "channels.generating": "Analysiere …",
   "channels.previewOnly": "Prüfe den Vorschlag und klicke „Anwenden\". Rückgängig machbar für 24 Stunden.",
+  "channels.quota": "Auto-Organisieren: {remaining} von {limit} übrig diesen Monat",
+  "channels.error.limit": "Monatslimit fürs Organisieren erreicht. Nächsten Monat wieder.",
   "channels.before": "Jetzt",
   "channels.after": "Vorschlag",
   "channels.apply": "Dieses Layout anwenden",

@@ -439,6 +439,8 @@
   "channels.organize": "Yapay zeka ile düzenle",
   "channels.generating": "Analiz ediliyor…",
   "channels.previewOnly": "Öneriyi incele, sonra Uygula'ya tıkla. 24 saat geri alınabilir.",
+  "channels.quota": "Otomatik düzenleme: bu ay {limit} hakkının {remaining} kaldı",
+  "channels.error.limit": "Aylık düzenleme sınırına ulaşıldı. Gelecek ay tekrar dene.",
   "channels.before": "Şimdi",
   "channels.after": "Önerilen",
   "channels.apply": "Bu düzeni uygula",

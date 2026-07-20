@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb } from '../connect.js';
 import { getGuildConfig, getGuildConfigRead, updateGuildConfig } from './guild-config-repo.js';
-import { incrementAiQuestions, incrementListenSeconds, getUsage } from './usage-repo.js';
+import { incrementAiQuestions, incrementListenSeconds, getUsage, consumeOrganize, refundOrganize } from './usage-repo.js';
 import { putGuildAsset, getGuildAsset, deleteGuildAsset, MAX_ASSET_BYTES } from './guild-asset-repo.js';
 import { recordBotHeartbeat, getBotStatus, clearBotHeartbeat, BOT_OFFLINE_AFTER_MS } from './bot-status-repo.js';
 import { getUserPlan, setUserPremium, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, setUserBlocked, isUserBlocked } from './user-accounts-repo.js';
@@ -264,6 +264,14 @@ describe('usage-repo', () => {
     expect(u.ai_questions).toBe(2);
     expect(u.listen_seconds).toBe(30);
     expect((await getUsage('gU', '2026-07-05')).ai_questions).toBe(0);
+  });
+
+  it('consumeOrganize returns the running total and refund rolls it back', async () => {
+    expect(await consumeOrganize('user:org', '2026-08')).toBe(1);
+    expect(await consumeOrganize('user:org', '2026-08')).toBe(2);
+    expect((await getUsage('user:org', '2026-08')).organizes).toBe(2);
+    await refundOrganize('user:org', '2026-08');
+    expect((await getUsage('user:org', '2026-08')).organizes).toBe(1);
   });
 });
 

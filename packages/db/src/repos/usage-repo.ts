@@ -36,7 +36,30 @@ export async function refundAiQuestion(guildId: string, dateKey: string): Promis
   await UsageModel.updateOne({ guild_id: guildId, date: dateKey }, { $inc: { ai_questions: -1 } });
 }
 
-export async function getUsage(guildId: string, dateKey: string): Promise<{ listen_seconds: number; ai_questions: number }> {
+/** Atomically consume one channel-organizer generation, returning the NEW total
+ * (same overshoot-refund pattern as consumeAiQuestion). */
+export async function consumeOrganize(guildId: string, dateKey: string): Promise<number> {
+  const doc = await retryOnDupKey(() => UsageModel.findOneAndUpdate(
+    { guild_id: guildId, date: dateKey },
+    { $inc: { organizes: 1 } },
+    { upsert: true, new: true },
+  ).lean());
+  return doc?.organizes ?? 1;
+}
+
+/** Rolls back a consumeOrganize that overshot the monthly limit or failed. */
+export async function refundOrganize(guildId: string, dateKey: string): Promise<void> {
+  await UsageModel.updateOne({ guild_id: guildId, date: dateKey }, { $inc: { organizes: -1 } });
+}
+
+export async function getUsage(
+  guildId: string,
+  dateKey: string,
+): Promise<{ listen_seconds: number; ai_questions: number; organizes: number }> {
   const doc = await UsageModel.findOne({ guild_id: guildId, date: dateKey }).lean();
-  return { listen_seconds: doc?.listen_seconds ?? 0, ai_questions: doc?.ai_questions ?? 0 };
+  return {
+    listen_seconds: doc?.listen_seconds ?? 0,
+    ai_questions: doc?.ai_questions ?? 0,
+    organizes: doc?.organizes ?? 0,
+  };
 }

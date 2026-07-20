@@ -439,6 +439,8 @@
   "channels.organize": "Organiser avec l'IA",
   "channels.generating": "Analyse…",
   "channels.previewOnly": "Vérifie la proposition puis clique sur Appliquer. Réversible pendant 24 heures.",
+  "channels.quota": "Organisation auto : {remaining} sur {limit} ce mois-ci",
+  "channels.error.limit": "Limite mensuelle d’organisation atteinte. Réessaie le mois prochain.",
   "channels.before": "Actuel",
   "channels.after": "Proposé",
   "channels.apply": "Appliquer cette organisation",

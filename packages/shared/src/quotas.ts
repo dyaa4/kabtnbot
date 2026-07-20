@@ -17,6 +17,10 @@ export const PREMIUM_QUOTAS = {
   ai_questions_per_month: 600,
 } as const;
 
+/** AI channel-organizer generations allowed per month, pooled per premium
+ * account (a premium-only feature — free accounts get none). */
+export const PREMIUM_ORGANIZES_PER_MONTH = 5;
+
 /** Effective MONTHLY limits. A premium-linked guild gets at least the premium
  * limits; an explicitly higher configured quota is never reduced. Free guilds
  * default to 0 — the voice assistant is a premium-only feature. */

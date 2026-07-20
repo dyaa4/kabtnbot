@@ -11,9 +11,11 @@ const guildConfigSchema = new Schema(
 
 export interface UsageDoc {
   guild_id: string;
-  date: string; // UTC YYYY-MM-DD
+  date: string; // UTC YYYY-MM-DD (quota rows use the YYYY-MM month key)
   listen_seconds: number;
   ai_questions: number;
+  // AI channel-organizer generations this period (pooled per premium account).
+  organizes: number;
   created_at: Date;
 }
 
@@ -23,6 +25,7 @@ const usageSchema = new Schema<UsageDoc>(
     date: { type: String, required: true },
     listen_seconds: { type: Number, default: 0 },
     ai_questions: { type: Number, default: 0 },
+    organizes: { type: Number, default: 0 },
     created_at: { type: Date, default: Date.now, expires: '90d' },
   },
 );

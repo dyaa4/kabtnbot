@@ -14,9 +14,19 @@ import { PremiumUpsell } from './PremiumUpsell.js';
 import { FormSkeleton } from './Skeleton.js';
 import { useToast } from './Toast.js';
 
+interface OrganizeUsage {
+  used: number;
+  limit: number;
+  remaining: number;
+}
 interface PreviewResp {
   channels: GuildChannelLite[];
   plan: OrganizePlan;
+  usage: OrganizeUsage;
+}
+interface StatusResp {
+  canUndo: boolean;
+  usage: OrganizeUsage;
 }
 
 interface Row {
@@ -96,16 +106,18 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
 
   const status = useQuery({
     queryKey: ['organize-status', guildId],
-    queryFn: () => api<{ canUndo: boolean }>(`/api/guilds/${guildId}/channels/organize/status`),
+    queryFn: () => api<StatusResp>(`/api/guilds/${guildId}/channels/organize/status`),
     enabled: voicePremium,
   });
 
   const errText = (err: unknown) =>
     err instanceof ApiError && err.code === 'BOT_MISSING_PERMISSION'
       ? t('channels.error.permission')
-      : err instanceof ApiError && err.code === 'AI_BAD_OUTPUT'
-        ? t('channels.error.ai')
-        : t('error.generic');
+      : err instanceof ApiError && err.code === 'ORGANIZE_LIMIT'
+        ? t('channels.error.limit')
+        : err instanceof ApiError && err.code === 'AI_BAD_OUTPUT'
+          ? t('channels.error.ai')
+          : t('error.generic');
 
   const preview = useMutation({
     mutationFn: () =>
@@ -113,6 +125,7 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
         method: 'POST',
         body: JSON.stringify({ otherLabel: other }),
       }),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['organize-status', guildId] }),
     onError: (err) => toast.error(errText(err)),
   });
 
@@ -144,6 +157,8 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
 
   const data = preview.data;
   const canUndo = status.data?.canUndo ?? false;
+  const usage = status.data?.usage;
+  const exhausted = usage ? usage.remaining <= 0 : false;
   const busy = preview.isPending || apply.isPending || undo.isPending;
 
   const onApply = () => {
@@ -159,6 +174,13 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
               <Sparkles className="h-5 w-5 text-blue-400" /> {t('channels.title')}
             </h3>
             <p className="mt-1 max-w-xl text-sm text-slate-400">{t('channels.intro')}</p>
+            {usage && (
+              <p className={`mt-2 text-xs font-semibold ${exhausted ? 'text-red-300' : 'text-slate-400'}`}>
+                {t('channels.quota')
+                  .replace('{remaining}', String(usage.remaining))
+                  .replace('{limit}', String(usage.limit))}
+              </p>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {canUndo && (
@@ -172,7 +194,7 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
             )}
             <button
               onClick={() => preview.mutate()}
-              disabled={busy}
+              disabled={busy || exhausted}
               className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-5 py-3 font-semibold text-slate-950 shadow-[0_0_30px_-6px_rgba(59,130,246,0.7)] transition hover:opacity-90 disabled:opacity-50"
             >
               <Sparkles className="h-4 w-4" /> {preview.isPending ? t('channels.generating') : t('channels.organize')}

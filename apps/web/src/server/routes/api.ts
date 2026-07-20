@@ -20,6 +20,7 @@ import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
 import { generateOrganizePlan, isOrganizerConfigured, AiPlanError } from '../channel-organizer.js';
 import { applyOrganizePlan, undoOrganize, InvalidPlanError } from '../channel-apply.js';
+import { consumeOrganizeQuota, refundOrganizeQuota, getOrganizeUsage } from '../organize-quota.js';
 import { DiscordApiError } from '../discord-rest.js';
 
 const ConfigPatch = z
@@ -245,10 +246,10 @@ export function apiRouter(rest: DiscordRest): Router {
     message: { error: { code: 'RATE_LIMITED', message: 'Too many organize requests, try again later' } },
   });
   router.post('/guilds/:guildId/channels/organize/preview', guard, organizeLimiter, async (req, res, next) => {
+    const guildId = req.params.guildId;
+    const isAdmin = isSuperAdmin((res.locals.session as Session).uid);
     try {
-      const session = res.locals.session as Session;
-      const allowed = isSuperAdmin(session.uid) || (await isGuildPremium(req.params.guildId));
-      if (!allowed) {
+      if (!isAdmin && !(await isGuildPremium(guildId))) {
         apiError(res, 403, 'PREMIUM_REQUIRED', 'The AI channel organizer requires a premium account');
         return;
       }
@@ -256,13 +257,29 @@ export function apiRouter(rest: DiscordRest): Router {
         apiError(res, 503, 'AI_UNAVAILABLE', 'The AI organizer is not configured');
         return;
       }
+      // Each generation spends one of the monthly allowance (pooled per premium
+      // account). Super-admins bypass the cap. Consumed up-front, refunded if the
+      // AI call fails so a broken generation is never charged.
+      if (!isAdmin) {
+        const quota = await consumeOrganizeQuota(guildId);
+        if (!quota.ok) {
+          apiError(res, 429, 'ORGANIZE_LIMIT', `Monthly limit reached (${quota.usage.limit} per month)`);
+          return;
+        }
+      }
       const otherLabel =
         typeof req.body?.otherLabel === 'string' && req.body.otherLabel.trim()
           ? req.body.otherLabel.trim().slice(0, 80)
           : 'Other';
-      const channels = await rest.listAllChannels(req.params.guildId);
-      const plan = await generateOrganizePlan(channels, otherLabel);
-      res.json({ channels, plan });
+      try {
+        const channels = await rest.listAllChannels(guildId);
+        const plan = await generateOrganizePlan(channels, otherLabel);
+        const usage = await getOrganizeUsage(guildId);
+        res.json({ channels, plan, usage });
+      } catch (genErr) {
+        if (!isAdmin) await refundOrganizeQuota(guildId);
+        throw genErr;
+      }
     } catch (err) {
       if (err instanceof AiPlanError) {
         apiError(res, 502, 'AI_BAD_OUTPUT', 'The AI returned an unusable layout, please try again');
@@ -278,7 +295,11 @@ export function apiRouter(rest: DiscordRest): Router {
   // Whether the last apply can still be undone (a snapshot exists, <24h old).
   router.get('/guilds/:guildId/channels/organize/status', guard, async (req, res, next) => {
     try {
-      res.json({ canUndo: await hasOrganizeSnapshot(req.params.guildId) });
+      const [canUndo, usage] = await Promise.all([
+        hasOrganizeSnapshot(req.params.guildId),
+        getOrganizeUsage(req.params.guildId),
+      ]);
+      res.json({ canUndo, usage });
     } catch (err) {
       next(err);
     }
