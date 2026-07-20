@@ -5,11 +5,11 @@ import { scrollProgress, smoothstep } from '../../hooks/use-scroll-progress.js';
 import { DiscordIcon } from './icons.js';
 import heroBg from '../../assets/hero-bg.webp';
 
-// The hero background is a scroll-scrubbed "film". Preferred source is an
-// actual video (assets/hero.mp4) whose playhead is driven by scroll progress;
-// with no video it falls back to numbered image frames (hero-1.webp … hero-N),
-// and with none of those to the single hero-bg.webp. Drop the file into assets/
-// and it's picked up automatically — no code change needed.
+// The hero background is an ambient, autoplaying loop (assets/hero.mp4) that
+// plays normally while scrolling drives a professional, staggered reveal of the
+// copy on top. With no video it falls back to numbered image frames that
+// crossfade on scroll (hero-1.webp … hero-N), and to the single hero-bg.webp
+// with none of those. Drop the file into assets/ — it's picked up automatically.
 const videoMods = import.meta.glob('../../assets/hero.mp4', {
   eager: true,
   import: 'default',
@@ -49,33 +49,48 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const bgRef = useRef<HTMLDivElement>(null);
   const layersRef = useRef<HTMLImageElement[]>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const durationRef = useRef(0);
   const revealRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
+  const badgeRef = useRef<HTMLSpanElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const taglineRef = useRef<HTMLParagraphElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const socialRef = useRef<HTMLParagraphElement>(null);
   const pillsRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
   const [interactive] = useState(() => !reducedMotion());
+
+  // Nudge the ambient video into playing even if the autoplay attribute is
+  // ignored (muted inline playback is allowed, so this virtually always succeeds).
+  // play() may return undefined in non-browser environments (jsdom), so guard it.
+  useEffect(() => {
+    const playing = videoRef.current?.play();
+    if (playing && typeof playing.catch === 'function') playing.catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!interactive) return;
     const track = trackRef.current;
     if (!track) return;
-    // `pTarget` tracks the real scroll instantly; `pVideo` eases toward it so the
-    // playhead glides instead of snapping — smaller per-frame seeks read far
-    // smoother than one big jump per scroll event. The parallax/veil optics stay
-    // on the real target so they never feel laggy.
-    let mx = 0, my = 0, pTarget = 0, pVideo = 0, raf = 0, running = false;
-    // Per-frame approach to the target (~0.18 ≈ settles in a few frames). Lower =
-    // silkier but more lag; higher = tighter but closer to a raw snap.
-    const EASE = 0.18;
+    let mx = 0, my = 0, p = 0, raf = 0;
 
-    const applyVisuals = (p: number) => {
-      // Cinematic push-in (scale grows with scroll) + subtle mouse tilt.
-      const scale = 1.08 + smoothstep(0, 1, p) * 0.34;
+    // Staggered reveal of one copy element over its own [a,b] slice of scroll,
+    // rising `dist`px into place — the "text appears as you scroll" beat.
+    const reveal = (el: HTMLElement | null, a: number, b: number, dist: number) => {
+      if (!el) return;
+      const r = smoothstep(a, b, p);
+      el.style.opacity = String(r);
+      el.style.transform = `translateY(${(1 - r) * dist}px)`;
+    };
+
+    const apply = () => {
+      raf = 0;
+      // Gentle cinematic push-in on the ambient video + subtle mouse tilt.
+      const scale = 1.06 + smoothstep(0, 1, p) * 0.16;
       if (bgRef.current) {
-        bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -20}px, ${my * -20}px, 0)`;
-        // Soft blur clears as the scene comes INTO FOCUS. Skipped for the video
-        // path — a CSS blur filter during seeking is far too heavy to stay smooth.
+        bgRef.current.style.transform = `scale(${scale}) translate3d(${mx * -16}px, ${my * -16}px, 0)`;
+        // Blur-clear only applies to the image fallback (a blur filter over a
+        // playing video would be needlessly heavy).
         bgRef.current.style.filter = HERO_VIDEO ? 'none' : `blur(${(1 - smoothstep(0, 0.4, p)) * 3}px)`;
       }
       if (!HERO_VIDEO) {
@@ -86,54 +101,35 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
           if (layer) layer.style.opacity = String(frameOpacity(i, n, p));
         }
       }
-      // The scene lights up as you scroll (dark veil clears).
-      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.5, p)) * 0.55);
-      // Content parallax-rises with the cursor; releases (fades) at the very end.
+      // Dark veil lifts as the copy reveals, so it starts moody and opens up.
+      if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.45, p)) * 0.6);
+      // Wrapper only carries the mouse tilt + a gentle release at the very end;
+      // the per-line reveal below does the actual entrance.
       if (contentRef.current) {
-        contentRef.current.style.transform = `translate3d(${mx * 12}px, ${my * 12 - p * 60}px, 0)`;
-        contentRef.current.style.opacity = String(1 - smoothstep(0.82, 1, p));
+        contentRef.current.style.transform = `translate3d(${mx * 10}px, ${my * 10}px, 0)`;
+        contentRef.current.style.opacity = String(1 - smoothstep(0.86, 1, p));
       }
-      // Feature pills rise INTO view on scroll — the "something appears" beat.
-      if (pillsRef.current) {
-        const r = smoothstep(0.18, 0.55, p);
-        pillsRef.current.style.opacity = String(r);
-        pillsRef.current.style.transform = `translateY(${(1 - r) * 28}px)`;
-      }
+      // Professional line-by-line reveal: badge → title → tagline → CTAs → pills.
+      reveal(badgeRef.current, 0.04, 0.20, 22);
+      reveal(titleRef.current, 0.10, 0.32, 26);
+      reveal(taglineRef.current, 0.20, 0.44, 24);
+      reveal(ctaRef.current, 0.30, 0.54, 24);
+      reveal(socialRef.current, 0.36, 0.60, 22);
+      reveal(pillsRef.current, 0.44, 0.68, 26);
       if (hintRef.current) hintRef.current.style.opacity = String(1 - smoothstep(0, 0.12, p));
     };
-
-    const frame = () => {
-      // Ease the video playhead toward the live scroll target.
-      pVideo += (pTarget - pVideo) * EASE;
-      const settled = Math.abs(pTarget - pVideo) < 0.0004;
-      if (settled) pVideo = pTarget;
-
-      applyVisuals(pTarget);
-      if (HERO_VIDEO) {
-        const d = durationRef.current;
-        if (videoRef.current && d > 0) {
-          videoRef.current.currentTime = Math.min(pVideo * d, d - 0.05);
-        }
-      }
-
-      // Keep looping while the playhead is still catching up; park otherwise.
-      if (settled) { running = false; raf = 0; }
-      else raf = requestAnimationFrame(frame);
-    };
-    const ensureRunning = () => { if (!running) { running = true; raf = requestAnimationFrame(frame); } };
-
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(apply); };
     const onMove = (e: PointerEvent) => {
       const r = (stageRef.current ?? track).getBoundingClientRect();
       mx = (e.clientX - r.left) / r.width - 0.5;
       my = (e.clientY - r.top) / r.height - 0.5;
-      ensureRunning();
+      schedule();
     };
     const onScroll = () => {
       const r = track.getBoundingClientRect();
-      pTarget = scrollProgress(r.top, r.height, window.innerHeight);
-      ensureRunning();
+      p = scrollProgress(r.top, r.height, window.innerHeight);
+      schedule();
     };
-    // Prime the first paint synchronously (pVideo already equals pTarget at 0).
     onScroll();
     window.addEventListener('pointermove', onMove);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -153,8 +149,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
 
   return (
     // Tall track: the stage is pinned for one extra viewport of scroll, during
-    // which the cinematic push-in / light-up / frame crossfade plays, then it
-    // releases.
+    // which the copy reveals line by line over the playing video, then releases.
     <section ref={trackRef} className="relative h-[200vh]">
       <div ref={stageRef} className="sticky top-0 flex h-screen items-center overflow-hidden">
         {/* The film stack. origin-left on mobile so the push-in scale zooms FROM
@@ -169,16 +164,14 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
             <video
               ref={videoRef}
               src={HERO_VIDEO}
-              // muted + playsInline are mandatory for iOS to decode/seek an inline
-              // video; poster paints instantly (good LCP) before the video is ready.
+              // Ambient background playback: autoplay+loop, muted+playsInline are
+              // mandatory for autoplay/inline on iOS; poster paints instantly (LCP).
+              autoPlay
               muted
+              loop
               playsInline
               preload="auto"
               poster={heroBg}
-              onLoadedMetadata={(e) => {
-                durationRef.current = e.currentTarget.duration;
-                if (typeof window !== 'undefined') window.dispatchEvent(new Event('scroll'));
-              }}
               className="absolute inset-0 h-full w-full object-cover object-left md:object-center"
             />
           ) : (
@@ -211,16 +204,30 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
         {/* Text overlay — real HTML, pinned RIGHT so it never covers the bot */}
         <div ref={contentRef} className="relative z-10 mx-auto w-full max-w-6xl px-6 will-change-transform">
           <div className="ml-auto max-w-xl text-center md:text-start">
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-sm font-semibold text-blue-200 backdrop-blur">
+            <span
+              ref={badgeRef}
+              className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-sm font-semibold text-blue-200 backdrop-blur will-change-transform"
+              style={interactive ? { opacity: 0 } : undefined}
+            >
               {t('landing.badge')}
             </span>
             {/* leading + vertical padding give Arabic ascenders/descenders room
                 so the gradient-text clip (background-clip:text) never crops them. */}
-            <h1 className="hero-title mb-5 py-1 text-4xl font-extrabold leading-[1.28] md:text-5xl lg:text-6xl">
+            <h1
+              ref={titleRef}
+              className="hero-title mb-5 py-1 text-4xl font-extrabold leading-[1.28] will-change-transform md:text-5xl lg:text-6xl"
+              style={interactive ? { opacity: 0 } : undefined}
+            >
               {t('landing.title')}
             </h1>
-            <p className="mb-7 text-lg text-slate-200">{t('landing.tagline')}</p>
-            <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
+            <p ref={taglineRef} className="mb-7 text-lg text-slate-200 will-change-transform" style={interactive ? { opacity: 0 } : undefined}>
+              {t('landing.tagline')}
+            </p>
+            <div
+              ref={ctaRef}
+              className="flex flex-wrap items-center justify-center gap-3 will-change-transform md:justify-start"
+              style={interactive ? { opacity: 0 } : undefined}
+            >
               <a
                 href={inviteUrl}
                 target="_blank"
@@ -238,7 +245,11 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
               </a>
             </div>
             {guilds >= 3 && (
-              <p className="mt-5 text-sm font-semibold text-blue-300">
+              <p
+                ref={socialRef}
+                className="mt-5 text-sm font-semibold text-blue-300 will-change-transform"
+                style={interactive ? { opacity: 0 } : undefined}
+              >
                 <Zap className="inline h-4 w-4 align-[-2px]" /> {t(socialKey).replace('{count}', String(guilds))}
               </p>
             )}
