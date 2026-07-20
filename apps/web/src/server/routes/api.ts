@@ -7,7 +7,7 @@ import {
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
-  countActiveInvitedGuilds,
+  countActiveInvitedGuilds, hasOrganizeSnapshot,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -19,6 +19,8 @@ import { apiError } from '../app.js';
 import { registerAssetRoutes } from './assets.js';
 import { registerBotProfileRoutes } from './bot-profile.js';
 import { generateOrganizePlan, isOrganizerConfigured, AiPlanError } from '../channel-organizer.js';
+import { applyOrganizePlan, undoOrganize, InvalidPlanError } from '../channel-apply.js';
+import { DiscordApiError } from '../discord-rest.js';
 
 const ConfigPatch = z
   .object({
@@ -264,6 +266,67 @@ export function apiRouter(rest: DiscordRest): Router {
     } catch (err) {
       if (err instanceof AiPlanError) {
         apiError(res, 502, 'AI_BAD_OUTPUT', 'The AI returned an unusable layout, please try again');
+        return;
+      }
+      next(err);
+    }
+  });
+
+  const isOrganizerPremium = async (guildId: string, res: import('express').Response): Promise<boolean> =>
+    isSuperAdmin((res.locals.session as Session).uid) || (await isGuildPremium(guildId));
+
+  // Whether the last apply can still be undone (a snapshot exists, <24h old).
+  router.get('/guilds/:guildId/channels/organize/status', guard, async (req, res, next) => {
+    try {
+      res.json({ canUndo: await hasOrganizeSnapshot(req.params.guildId) });
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Apply an approved plan to the guild (create/rename categories, reorder,
+  // reparent, rename channels) after snapshotting the current layout for undo.
+  router.post('/guilds/:guildId/channels/organize/apply', guard, organizeLimiter, async (req, res, next) => {
+    try {
+      if (!(await isOrganizerPremium(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'The AI channel organizer requires a premium account');
+        return;
+      }
+      const otherLabel =
+        typeof req.body?.otherLabel === 'string' && req.body.otherLabel.trim()
+          ? req.body.otherLabel.trim().slice(0, 80)
+          : 'Other';
+      const result = await applyOrganizePlan(rest, req.params.guildId, req.body?.plan, otherLabel);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      if (err instanceof InvalidPlanError) {
+        apiError(res, 400, 'INVALID_PLAN', 'The layout to apply is invalid');
+        return;
+      }
+      if (err instanceof DiscordApiError && err.status === 403) {
+        apiError(res, 403, 'BOT_MISSING_PERMISSION', 'The bot needs the Manage Channels permission to reorganize channels');
+        return;
+      }
+      next(err);
+    }
+  });
+
+  // Revert the last apply from the stored snapshot.
+  router.post('/guilds/:guildId/channels/organize/undo', guard, organizeLimiter, async (req, res, next) => {
+    try {
+      if (!(await isOrganizerPremium(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'The AI channel organizer requires a premium account');
+        return;
+      }
+      const done = await undoOrganize(rest, req.params.guildId);
+      if (!done) {
+        apiError(res, 404, 'NO_SNAPSHOT', 'There is nothing to undo');
+        return;
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      if (err instanceof DiscordApiError && err.status === 403) {
+        apiError(res, 403, 'BOT_MISSING_PERMISSION', 'The bot needs the Manage Channels permission to undo');
         return;
       }
       next(err);

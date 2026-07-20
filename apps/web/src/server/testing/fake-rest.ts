@@ -66,8 +66,55 @@ export class FakeDiscordRest implements DiscordRest {
     return this.textChannels.get(guildId) ?? [];
   }
   allChannels = new Map<string, { id: string; name: string; type: number; position: number; parent_id: string | null }[]>();
+  private channelSeq = 0;
+  forbidManageChannels = false;
   async listAllChannels(guildId: string) {
     return this.allChannels.get(guildId) ?? [];
+  }
+  async createChannel(guildId: string, body: { name: string; type: number; parent_id?: string | null }) {
+    if (this.forbidManageChannels) throw new DiscordApiError(403, 'Missing Permissions');
+    const list = this.allChannels.get(guildId) ?? [];
+    const id = `new-${++this.channelSeq}`;
+    list.push({ id, name: body.name, type: body.type, position: list.length, parent_id: body.parent_id ?? null });
+    this.allChannels.set(guildId, list);
+    return { id };
+  }
+  private findChannel(channelId: string) {
+    for (const list of this.allChannels.values()) {
+      const c = list.find((x) => x.id === channelId);
+      if (c) return c;
+    }
+    return null;
+  }
+  async editChannel(channelId: string, patch: { name?: string; parent_id?: string | null }) {
+    if (this.forbidManageChannels) throw new DiscordApiError(403, 'Missing Permissions');
+    const c = this.findChannel(channelId);
+    if (!c) throw new DiscordApiError(404, 'Unknown Channel');
+    if (patch.name !== undefined) c.name = patch.name;
+    if (patch.parent_id !== undefined) c.parent_id = patch.parent_id;
+  }
+  async deleteChannel(channelId: string) {
+    for (const [g, list] of this.allChannels.entries()) {
+      const i = list.findIndex((x) => x.id === channelId);
+      if (i >= 0) {
+        list.splice(i, 1);
+        this.allChannels.set(g, list);
+        return;
+      }
+    }
+  }
+  async modifyChannelPositions(
+    guildId: string,
+    positions: { id: string; position: number; parent_id?: string | null }[],
+  ) {
+    if (this.forbidManageChannels) throw new DiscordApiError(403, 'Missing Permissions');
+    const list = this.allChannels.get(guildId) ?? [];
+    for (const p of positions) {
+      const c = list.find((x) => x.id === p.id);
+      if (!c) continue;
+      c.position = p.position;
+      if (p.parent_id !== undefined) c.parent_id = p.parent_id;
+    }
   }
   async listRoles(guildId: string) {
     return this.roles.get(guildId) ?? [];

@@ -1,5 +1,5 @@
-import { Sparkles, Hash, Volume2, Folder } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { Sparkles, Hash, Volume2, Folder, Undo2, Check } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ORGANIZABLE_TYPES,
   CATEGORY_TYPE,
@@ -85,29 +85,70 @@ function LayoutColumn({ title, groups, muted }: { title: string; groups: Group[]
   );
 }
 
-/** AI channel organizer — Phase 1: generate a proposed layout for PREVIEW only.
- * Premium (a PREMIUM-linked guild), mirroring the voice assistant gate. */
+/** AI channel organizer — generate a proposed layout, preview it, then apply it
+ * to the server (reversible via Undo). Premium (a PREMIUM-linked guild). */
 export function ChannelsTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const toast = useToast();
+  const qc = useQueryClient();
   const { loading, voicePremium } = usePremiumStatus(guildId);
+  const other = t('channels.uncategorized');
+
+  const status = useQuery({
+    queryKey: ['organize-status', guildId],
+    queryFn: () => api<{ canUndo: boolean }>(`/api/guilds/${guildId}/channels/organize/status`),
+    enabled: voicePremium,
+  });
+
+  const errText = (err: unknown) =>
+    err instanceof ApiError && err.code === 'BOT_MISSING_PERMISSION'
+      ? t('channels.error.permission')
+      : err instanceof ApiError && err.code === 'AI_BAD_OUTPUT'
+        ? t('channels.error.ai')
+        : t('error.generic');
 
   const preview = useMutation({
     mutationFn: () =>
       api<PreviewResp>(`/api/guilds/${guildId}/channels/organize/preview`, {
         method: 'POST',
-        body: JSON.stringify({ otherLabel: t('channels.uncategorized') }),
+        body: JSON.stringify({ otherLabel: other }),
       }),
-    onError: (err) => {
-      const code = err instanceof ApiError ? err.code : '';
-      toast.error(code === 'AI_BAD_OUTPUT' ? t('channels.error.ai') : t('error.generic'));
+    onError: (err) => toast.error(errText(err)),
+  });
+
+  const apply = useMutation({
+    mutationFn: () =>
+      api(`/api/guilds/${guildId}/channels/organize/apply`, {
+        method: 'POST',
+        body: JSON.stringify({ plan: preview.data?.plan, otherLabel: other }),
+      }),
+    onSuccess: () => {
+      toast.success(t('channels.applied'));
+      void qc.invalidateQueries({ queryKey: ['organize-status', guildId] });
     },
+    onError: (err) => toast.error(errText(err)),
+  });
+
+  const undo = useMutation({
+    mutationFn: () => api(`/api/guilds/${guildId}/channels/organize/undo`, { method: 'POST' }),
+    onSuccess: () => {
+      toast.success(t('channels.undone'));
+      preview.reset();
+      void qc.invalidateQueries({ queryKey: ['organize-status', guildId] });
+    },
+    onError: (err) => toast.error(errText(err)),
   });
 
   if (loading) return <FormSkeleton sections={1} />;
   if (!voicePremium) return <PremiumUpsell title={t('channels.premium.title')} body={t('channels.premium.body')} />;
 
   const data = preview.data;
+  const canUndo = status.data?.canUndo ?? false;
+  const busy = preview.isPending || apply.isPending || undo.isPending;
+
+  const onApply = () => {
+    if (window.confirm(t('channels.applyConfirm'))) apply.mutate();
+  };
 
   return (
     <div className="grid gap-6">
@@ -119,13 +160,24 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
             </h3>
             <p className="mt-1 max-w-xl text-sm text-slate-400">{t('channels.intro')}</p>
           </div>
-          <button
-            onClick={() => preview.mutate()}
-            disabled={preview.isPending}
-            className="flex shrink-0 items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-5 py-3 font-semibold text-slate-950 shadow-[0_0_30px_-6px_rgba(59,130,246,0.7)] transition hover:opacity-90 disabled:opacity-50"
-          >
-            <Sparkles className="h-4 w-4" /> {preview.isPending ? t('channels.generating') : t('channels.organize')}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {canUndo && (
+              <button
+                onClick={() => undo.mutate()}
+                disabled={busy}
+                className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10 disabled:opacity-50"
+              >
+                <Undo2 className="h-4 w-4" /> {undo.isPending ? t('channels.undoing') : t('channels.undo')}
+              </button>
+            )}
+            <button
+              onClick={() => preview.mutate()}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-blue-500 to-blue-400 px-5 py-3 font-semibold text-slate-950 shadow-[0_0_30px_-6px_rgba(59,130,246,0.7)] transition hover:opacity-90 disabled:opacity-50"
+            >
+              <Sparkles className="h-4 w-4" /> {preview.isPending ? t('channels.generating') : t('channels.organize')}
+            </button>
+          </div>
         </div>
         <p className="mt-4 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
           {t('channels.previewOnly')}
@@ -133,10 +185,21 @@ export function ChannelsTab({ guildId }: { guildId: string }) {
       </section>
 
       {data && (
-        <div className="grid gap-6 md:grid-cols-2">
-          <LayoutColumn title={t('channels.before')} groups={currentGroups(data.channels, t('channels.uncategorized'))} muted />
-          <LayoutColumn title={t('channels.after')} groups={planGroups(data.plan, data.channels)} />
-        </div>
+        <>
+          <div className="grid gap-6 md:grid-cols-2">
+            <LayoutColumn title={t('channels.before')} groups={currentGroups(data.channels, other)} muted />
+            <LayoutColumn title={t('channels.after')} groups={planGroups(data.plan, data.channels)} />
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={onApply}
+              disabled={busy}
+              className="flex items-center gap-2 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-400 px-6 py-3 font-semibold text-slate-950 shadow-[0_0_30px_-6px_rgba(16,185,129,0.7)] transition hover:opacity-90 disabled:opacity-50"
+            >
+              <Check className="h-4 w-4" /> {apply.isPending ? t('channels.applying') : t('channels.apply')}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

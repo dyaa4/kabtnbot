@@ -298,4 +298,35 @@ export const GuildDirectoryModel =
   (mongoose.models.GuildDirectory as mongoose.Model<GuildDirectoryDoc>) ??
   mongoose.model<GuildDirectoryDoc>('GuildDirectory', guildDirectorySchema);
 
+// Pre-apply channel layout captured by the AI channel organizer so a single
+// click can UNDO the last apply. One doc per guild (the latest apply wins), and
+// it self-expires after 24h — undo is a short-lived safety net, not history.
+export interface OrganizeSnapshotDoc {
+  guild_id: string;
+  // Every channel (categories included) as it was before the apply.
+  channels: { id: string; name: string; position: number; parent_id: string | null }[];
+  // Category channels the apply CREATED — undo deletes these.
+  created_category_ids: string[];
+  created_at: Date;
+}
+
+const organizeSnapshotSchema = new Schema<OrganizeSnapshotDoc>({
+  guild_id: { type: String, required: true, unique: true },
+  channels: [
+    {
+      _id: false,
+      id: { type: String, required: true },
+      name: { type: String, default: '' },
+      position: { type: Number, default: 0 },
+      parent_id: { type: String, default: null },
+    },
+  ],
+  created_category_ids: { type: [String], default: [] },
+  created_at: { type: Date, default: Date.now, expires: '1d' },
+});
+
+export const OrganizeSnapshotModel =
+  (mongoose.models.OrganizeSnapshot as mongoose.Model<OrganizeSnapshotDoc>) ??
+  mongoose.model<OrganizeSnapshotDoc>('OrganizeSnapshot', organizeSnapshotSchema);
+
 export type { GuildConfig };

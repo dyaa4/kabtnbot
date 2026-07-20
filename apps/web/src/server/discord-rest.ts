@@ -60,6 +60,18 @@ export interface DiscordRest {
    * unaffected. An empty list clears all guild-scoped commands.
    */
   setGuildCommands(guildId: string, commands: { name: string; description: string }[]): Promise<void>;
+  /** Create a channel (used by the organizer to add categories). */
+  createChannel(guildId: string, body: { name: string; type: number; parent_id?: string | null }): Promise<{ id: string }>;
+  /** Patch a single channel — rename and/or reparent. */
+  editChannel(channelId: string, patch: { name?: string; parent_id?: string | null }): Promise<void>;
+  /** Delete a channel (undo removes categories the apply created). */
+  deleteChannel(channelId: string): Promise<void>;
+  /** Bulk reorder/reparent via PATCH /guilds/:id/channels — one call, not
+   * subject to the per-channel rename rate limit. */
+  modifyChannelPositions(
+    guildId: string,
+    positions: { id: string; position: number; parent_id?: string | null }[],
+  ): Promise<void>;
   getBotMember(guildId: string): Promise<BotMember | null>;
   editBotMember(guildId: string, patch: { nick?: string | null; avatar?: string | null }): Promise<BotMember>;
   editBotUser(patch: { avatar: string }): Promise<void>;
@@ -318,6 +330,36 @@ export function createDiscordRest(): DiscordRest {
         `${API}/applications/${config.DISCORD_CLIENT_ID}/guilds/${guildId}/commands`,
         { method: 'PUT', headers: { ...bot, 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
       );
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+    },
+    async createChannel(guildId, body) {
+      const res = await discordFetch(`${API}/guilds/${guildId}/channels`, {
+        method: 'POST',
+        headers: { ...bot, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+      return (await res.json()) as { id: string };
+    },
+    async editChannel(channelId, patch) {
+      const res = await discordFetch(`${API}/channels/${channelId}`, {
+        method: 'PATCH',
+        headers: { ...bot, 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+    },
+    async deleteChannel(channelId) {
+      const res = await discordFetch(`${API}/channels/${channelId}`, { method: 'DELETE', headers: bot });
+      // 404 = already gone, which is the desired end state for undo.
+      if (!res.ok && res.status !== 404) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
+    },
+    async modifyChannelPositions(guildId, positions) {
+      const res = await discordFetch(`${API}/guilds/${guildId}/channels`, {
+        method: 'PATCH',
+        headers: { ...bot, 'Content-Type': 'application/json' },
+        body: JSON.stringify(positions),
+      });
       if (!res.ok) throw new DiscordApiError(res.status, await res.text().catch(() => ''));
     },
     async getBotMember(guildId) {
