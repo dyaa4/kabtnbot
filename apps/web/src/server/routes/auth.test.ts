@@ -55,6 +55,17 @@ describe('auth routes', () => {
     expect(decryptToken(session.eat)).toBe('at-123'); // FakeDiscordRest maps any code to 'at-123'
   });
 
+  it('callback surfaces a clear OAuth error (not a generic 500) when the token exchange fails', async () => {
+    const { app, rest } = appWithFake();
+    rest.oauthError = 'invalid_client'; // e.g. wrong DISCORD_CLIENT_SECRET on the deploy
+    const res = await request(app)
+      .get('/auth/callback?code=c&state=S')
+      .set('Cookie', 'gb_state=S');
+    expect(res.status).toBe(502);
+    expect(res.body.error.code).toBe('OAUTH_FAILED');
+    expect(res.body.error.message).toContain('invalid_client');
+  });
+
   it('logout clears the cookie', async () => {
     const { app } = appWithFake();
     const res = await request(app).post('/auth/logout');

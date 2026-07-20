@@ -101,6 +101,18 @@ export class DiscordApiError extends Error {
   }
 }
 
+// The OAuth token exchange failed. Carries Discord's `error` field (e.g.
+// invalid_client = wrong client secret, invalid_grant = bad code/redirect_uri)
+// so a misconfigured deploy surfaces the real reason instead of a generic 500.
+export class OAuthError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly oauthError: string,
+  ) {
+    super(`OAUTH_FAILED_${oauthError || status}`);
+  }
+}
+
 // Discord rate-limits aggressively (429 + Retry-After in seconds). Retry once
 // after the advertised wait (capped) so a transient limit doesn't surface as a
 // 500 in the dashboard.
@@ -142,11 +154,18 @@ export function createDiscordRest(): DiscordRest {
         code,
         redirect_uri: `${config.WEB_BASE_URL}/auth/callback`,
       });
-      return (await discordJson(`${API}/oauth2/token`, {
+      const res = await discordFetch(`${API}/oauth2/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body,
-      }))!;
+      });
+      if (!res.ok) {
+        // Discord returns { error, error_description } on failure — surface the
+        // `error` so a bad client secret / redirect shows a clear cause.
+        const detail = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new OAuthError(res.status, detail?.error ?? '');
+      }
+      return (await res.json()) as { access_token: string };
     },
     async getMe(accessToken) {
       return (await discordJson(

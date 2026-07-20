@@ -3,6 +3,7 @@ import { randomBytes } from 'crypto';
 import rateLimit from 'express-rate-limit';
 import { config } from '../config.js';
 import type { DiscordRest } from '../discord-rest.js';
+import { OAuthError } from '../discord-rest.js';
 import { encryptToken } from '../crypto.js';
 import { recordUserLogin } from '@gamebot/db';
 import { setSessionCookie, clearSessionCookie } from '../session.js';
@@ -53,6 +54,14 @@ export function authRouter(rest: DiscordRest): Router {
       });
       res.redirect('/app');
     } catch (err) {
+      // A failed token exchange is a config problem (wrong client secret /
+      // redirect_uri), not a server bug — surface the real reason instead of a
+      // generic 500 so it's diagnosable without digging through server logs.
+      if (err instanceof OAuthError) {
+        console.error(`[Auth] Discord token exchange failed: HTTP ${err.status} ${err.oauthError || '(no error field)'}`);
+        apiError(res, 502, 'OAUTH_FAILED', `Discord login failed (${err.oauthError || `HTTP ${err.status}`})`);
+        return;
+      }
       next(err);
     }
   });

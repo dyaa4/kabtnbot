@@ -1,4 +1,4 @@
-import { DiscordAuthError, DiscordApiError } from '../discord-rest.js';
+import { DiscordAuthError, DiscordApiError, OAuthError } from '../discord-rest.js';
 import type { DiscordRest, DiscordMember, BotMember } from '../discord-rest.js';
 
 export class FakeDiscordRest implements DiscordRest {
@@ -26,8 +26,12 @@ export class FakeDiscordRest implements DiscordRest {
   globalAvatar: string | null = null;
   // Access token that exchangeCode issues for any OAuth code (override per scenario).
   exchangeToken = 'at-123';
+  // Set to a Discord OAuth error code (e.g. 'invalid_client') to simulate a
+  // failed token exchange.
+  oauthError: string | null = null;
 
   async exchangeCode(_code: string) {
+    if (this.oauthError) throw new OAuthError(401, this.oauthError);
     return { access_token: this.exchangeToken };
   }
   async getMe(accessToken: string) {
