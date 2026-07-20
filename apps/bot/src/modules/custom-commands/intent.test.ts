@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseIntentReply } from './intent.js';
+import { parseIntentReply, buildIntentSystemPrompt } from './intent.js';
 import { checkCooldown, clearCooldowns } from './cooldown.js';
 
 const ids = new Set(['f1', 'f2']);
@@ -21,6 +21,24 @@ describe('parseIntentReply', () => {
     expect(parseIntentReply('the user wants to leave', ids)).toBeNull();
     expect(parseIntentReply('{broken json', ids)).toBeNull();
     expect(parseIntentReply('', ids)).toBeNull();
+  });
+});
+
+describe('buildIntentSystemPrompt', () => {
+  const prompt = buildIntentSystemPrompt([
+    { id: 'f-songs', name: 'Play songs', triggers: ['شغل الاغاني', 'play music'] },
+  ]);
+
+  it('lists the candidate id, name and example phrases', () => {
+    expect(prompt).toContain('f-songs');
+    expect(prompt).toContain('Play songs');
+    expect(prompt).toContain('شغل الاغاني');
+  });
+
+  it('hard-guards against firing on questions/chat addressed to the bot (the reported bug)', () => {
+    expect(prompt).toMatch(/talking to the bot is NOT automatically a command/i);
+    expect(prompt).toMatch(/question/i);
+    expect(prompt).toMatch(/when in doubt, return null/i);
   });
 });
 
