@@ -32,9 +32,9 @@ const FRAMES: string[] = (() => {
 // Storytelling beats that cycle in over the video as the user scrolls deeper.
 // Each has an [in-start, in-end, out-start, out-end] window over scroll progress.
 const BEATS = [
-  { title: 'landing.hero.beat1.title', sub: 'landing.hero.beat1.sub', win: [0.34, 0.42, 0.5, 0.58] },
-  { title: 'landing.hero.beat2.title', sub: 'landing.hero.beat2.sub', win: [0.56, 0.64, 0.72, 0.8] },
-  { title: 'landing.hero.beat3.title', sub: 'landing.hero.beat3.sub', win: [0.78, 0.86, 0.97, 1.0] },
+  { title: 'landing.hero.beat1.title', sub: 'landing.hero.beat1.sub', win: [0.14, 0.24, 0.34, 0.44] },
+  { title: 'landing.hero.beat2.title', sub: 'landing.hero.beat2.sub', win: [0.42, 0.52, 0.62, 0.72] },
+  { title: 'landing.hero.beat3.title', sub: 'landing.hero.beat3.sub', win: [0.7, 0.8, 0.95, 1.0] },
 ] as const;
 
 function reducedMotion(): boolean {
@@ -59,11 +59,6 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
   const videoRef = useRef<HTMLVideoElement>(null);
   const revealRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const badgeRef = useRef<HTMLSpanElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const taglineRef = useRef<HTMLParagraphElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
-  const socialRef = useRef<HTMLParagraphElement>(null);
   const beatsRef = useRef<HTMLDivElement[]>([]);
   const progressRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
@@ -91,15 +86,6 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
     if (!track) return;
     let mx = 0, my = 0, p = 0, raf = 0;
 
-    // Reveal one copy element over its own [a,b] slice of scroll, rising `dist`px
-    // into place — the "text appears as you scroll" beat.
-    const reveal = (el: HTMLElement | null, a: number, b: number, dist: number) => {
-      if (!el) return;
-      const r = smoothstep(a, b, p);
-      el.style.opacity = String(r);
-      el.style.transform = `translateY(${(1 - r) * dist}px)`;
-    };
-
     const apply = () => {
       raf = 0;
       // Gentle cinematic push-in on the ambient video + subtle mouse tilt.
@@ -117,21 +103,9 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
       }
       // Dark veil lifts as the copy reveals: moody at the top, open once scrolling.
       if (revealRef.current) revealRef.current.style.opacity = String((1 - smoothstep(0, 0.4, p)) * 0.45 + 0.12);
-      // Wrapper carries only the mouse tilt; the per-line reveal does the entrance.
+      // The hero copy is always visible (no scroll needed); the wrapper only
+      // carries a subtle mouse tilt.
       if (contentRef.current) contentRef.current.style.transform = `translate3d(${mx * 10}px, ${my * 10}px, 0)`;
-
-      // Hero copy rises in early and stays: badge → title → tagline → CTAs → proof.
-      reveal(badgeRef.current, 0.02, 0.12, 20);
-      // Title additionally focus-blurs in for a premium feel.
-      if (titleRef.current) {
-        const r = smoothstep(0.06, 0.2, p);
-        titleRef.current.style.opacity = String(r);
-        titleRef.current.style.transform = `translateY(${(1 - r) * 26}px)`;
-        titleRef.current.style.filter = `blur(${(1 - r) * 9}px)`;
-      }
-      reveal(taglineRef.current, 0.12, 0.26, 22);
-      reveal(ctaRef.current, 0.18, 0.3, 22);
-      reveal(socialRef.current, 0.2, 0.32, 20);
 
       // Meaningful beats cycle in over the video as the user scrolls deeper.
       for (let i = 0; i < BEATS.length; i++) {
@@ -239,30 +213,16 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
         {/* Text overlay — real HTML, pinned RIGHT so it never covers the bot */}
         <div ref={contentRef} className="relative z-10 mx-auto w-full max-w-6xl px-6 will-change-transform">
           <div className="ml-auto max-w-xl text-center md:text-start">
-            <span
-              ref={badgeRef}
-              className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-sm font-semibold text-blue-200 backdrop-blur will-change-transform"
-              style={interactive ? { opacity: 0 } : undefined}
-            >
+            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-400/10 px-4 py-1.5 text-sm font-semibold text-blue-200 backdrop-blur">
               {t('landing.badge')}
             </span>
             {/* leading + vertical padding give Arabic ascenders/descenders room
                 so the gradient-text clip (background-clip:text) never crops them. */}
-            <h1
-              ref={titleRef}
-              className="hero-title mb-5 py-1 text-4xl font-extrabold leading-[1.28] will-change-transform md:text-5xl lg:text-6xl"
-              style={interactive ? { opacity: 0 } : undefined}
-            >
+            <h1 className="hero-title mb-5 py-1 text-4xl font-extrabold leading-[1.28] md:text-5xl lg:text-6xl">
               {t('landing.title')}
             </h1>
-            <p ref={taglineRef} className="mb-7 text-lg text-slate-200 will-change-transform" style={interactive ? { opacity: 0 } : undefined}>
-              {t('landing.tagline')}
-            </p>
-            <div
-              ref={ctaRef}
-              className="flex flex-wrap items-center justify-center gap-3 will-change-transform md:justify-start"
-              style={interactive ? { opacity: 0 } : undefined}
-            >
+            <p className="mb-7 text-lg text-slate-200">{t('landing.tagline')}</p>
+            <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
               <a
                 href={inviteUrl}
                 target="_blank"
@@ -280,11 +240,7 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
               </a>
             </div>
             {guilds >= 3 && (
-              <p
-                ref={socialRef}
-                className="mt-5 text-sm font-semibold text-blue-300 will-change-transform"
-                style={interactive ? { opacity: 0 } : undefined}
-              >
+              <p className="mt-5 text-sm font-semibold text-blue-300">
                 <Zap className="inline h-4 w-4 align-[-2px]" /> {t(socialKey).replace('{count}', String(guilds))}
               </p>
             )}
