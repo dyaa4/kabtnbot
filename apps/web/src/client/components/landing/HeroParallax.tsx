@@ -87,8 +87,14 @@ export function HeroParallax({ inviteUrl, guilds }: { inviteUrl: string; guilds:
     // which the cinematic push-in / light-up plays, then it releases.
     <section ref={trackRef} className="relative h-[200vh]">
       <div ref={stageRef} className="sticky top-0 flex h-screen items-center overflow-hidden">
-        {/* Rendered scene (bot on the LEFT) */}
-        <div ref={bgRef} className="absolute inset-0 will-change-transform" style={{ transform: 'scale(1.08)' }}>
+        {/* Rendered scene (bot on the LEFT). origin-left on mobile so the
+            push-in scale zooms FROM the left and never pushes the bot out of
+            frame; centered on desktop where the whole 16:9 fits. */}
+        <div
+          ref={bgRef}
+          className="absolute inset-0 origin-left will-change-transform md:origin-center"
+          style={{ transform: 'scale(1.08)' }}
+        >
           {/* object-left on mobile keeps the bot (left of the art) in frame; */}
           {/* centered on desktop where the full 16:9 fits. */}
           <img src={heroBg} alt="" fetchpriority="high" className="h-full w-full object-cover object-left md:object-center" />
