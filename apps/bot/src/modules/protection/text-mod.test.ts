@@ -4,7 +4,7 @@ import { connectDb, disconnectDb, updateGuildConfig } from '@gamebot/db';
 import type { Client, Message } from 'discord.js';
 import {
   shouldModerate, editNeedsRescan, logSnippet, moderateMessage, registerTextProtection,
-  registerStrike, clearStrikes, timeoutMsForStrike,
+  registerStrike, clearStrikes, timeoutMsForStrike, strikeMapSize,
 } from './text-mod.js';
 import { clearConfigCache } from '../../lib/config-cache.js';
 
@@ -81,6 +81,17 @@ describe('strike escalation', () => {
     expect(registerStrike('g:u', 60_000)).toBe(2);
     expect(registerStrike('g:u', 61 * 60_000)).toBe(1); // window expired → fresh count
     expect(registerStrike('g:other', 0)).toBe(1); // counted per guild:user
+  });
+
+  it('sweeps expired strikes once the map grows large (bounded memory)', () => {
+    clearStrikes();
+    // Seed >1000 stale entries at t=0, then a fresh strike an hour+ later trips
+    // the prune, dropping all the expired ones (behaviour-neutral).
+    for (let i = 0; i < 1100; i++) registerStrike(`stale:${i}`, 0);
+    expect(strikeMapSize()).toBe(1100);
+    const late = 2 * 60 * 60 * 1000; // 2h later — all seeded entries are expired
+    registerStrike('fresh:1', late);
+    expect(strikeMapSize()).toBe(1); // only the fresh one survives
   });
 
   it('maps strike counts to escalating timeouts', () => {

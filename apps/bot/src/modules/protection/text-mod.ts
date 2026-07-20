@@ -45,14 +45,31 @@ export function logSnippet(content: string): string {
 const STRIKE_WINDOW_MS = 60 * 60 * 1000;
 const strikes = new Map<string, { count: number; firstAt: number }>();
 
+// Sweep expired strikes once the map grows large. Behaviour-neutral: an entry
+// older than the window is treated as a fresh strike anyway, so dropping it
+// changes nothing but keeps the map bounded on long-lived deployments.
+const STRIKE_PRUNE_AT = 1000;
+function pruneStrikes(nowMs: number): void {
+  if (strikes.size < STRIKE_PRUNE_AT) return;
+  for (const [k, s] of strikes) {
+    if (nowMs - s.firstAt > STRIKE_WINDOW_MS) strikes.delete(k);
+  }
+}
+
 export function registerStrike(key: string, nowMs: number = Date.now()): number {
   const current = strikes.get(key);
   if (!current || nowMs - current.firstAt > STRIKE_WINDOW_MS) {
+    pruneStrikes(nowMs);
     strikes.set(key, { count: 1, firstAt: nowMs });
     return 1;
   }
   current.count += 1;
   return current.count;
+}
+
+/** Test-only view of how many strike entries are currently tracked. */
+export function strikeMapSize(): number {
+  return strikes.size;
 }
 
 export function clearStrikes(): void {

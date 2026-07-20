@@ -20,6 +20,18 @@ const KICK_THRESHOLD = 2; // warn on strike 1, kick from strike 2 on
 
 const strikes = new Map<string, StrikeState>();
 
+// Above this many tracked users, sweep entries older than the strike window.
+// Purely hygiene: an expired strike already resets to zero in nextStrike, so
+// dropping it changes no behavior — it just stops the map growing unbounded on
+// long-lived, high-traffic deployments.
+const STRIKE_PRUNE_AT = 1000;
+function pruneStrikes(now: number): void {
+  if (strikes.size < STRIKE_PRUNE_AT) return;
+  for (const [k, s] of strikes) {
+    if (now - s.lastAt > STRIKE_WINDOW_MS) strikes.delete(k);
+  }
+}
+
 /** Test hook: clear all accumulated strikes. */
 export function resetModerationState(): void {
   strikes.clear();
@@ -92,6 +104,7 @@ export async function handleTranscriptModeration(
   const key = `${guild.id}:${userId}`;
   const threshold = config.protection.voice_kick_immediately ? 1 : KICK_THRESHOLD;
   const { state, action } = nextStrike(strikes.get(key), now, threshold);
+  pruneStrikes(now);
   strikes.set(key, state);
   console.log(`[Mod ${guild.id}] matched word="${matched}" user=${userId} strike=${state.count} action=${action}`);
   if (action === 'cooldown') return true;
