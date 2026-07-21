@@ -14,8 +14,11 @@ import { registerChatLog } from './events/chat-log.js';
 import { registerGuildDirectory } from './events/guild-directory.js';
 import { registerWeeklySummary } from './lib/weekly-summary.js';
 import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/resilience.js';
+import { startHealthServer } from './lib/health.js';
+import { registerConnectionWatchdog } from './lib/watchdog.js';
 
 async function main(): Promise<void> {
+  console.log('[Boot] Kabtn bot starting…');
   registerProcessSafetyNets();
   // Voice deps must load native (davey) + encryption (sodium) modules. On the
   // Railway (Linux) image these can silently fail to resolve; the report tells
@@ -41,6 +44,14 @@ async function main(): Promise<void> {
     return client;
   };
   let client = buildClient(wantsMessageContent);
+
+  // Observability + self-healing: a health endpoint the platform can poll
+  // (200 only when the gateway is live) plus a watchdog that exits after a
+  // prolonged disconnect so the platform restarts a fresh process. Both read
+  // the CURRENT client via a getter — `client` is rebuilt on the content-intent
+  // fallback below, so a captured reference would go stale.
+  startHealthServer(() => client.isReady(), Number(process.env.PORT) || 8080);
+  registerConnectionWatchdog(() => client.isReady());
 
   // Graceful shutdown: clear the heartbeat so the dashboard shows offline
   // immediately (instead of after the 90s staleness window), then close the

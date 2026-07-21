@@ -9,6 +9,13 @@ export function registerClientErrorLogging(client: Client): void {
   client.on('error', (err) => console.error('[Client]', err));
   client.on('shardError', (err) => console.error('[Shard]', err));
   client.on('warn', (msg) => console.warn('[Client]', msg));
+  // Gateway lifecycle: makes a silent "connected but no events" state visible in
+  // the logs — a disconnect that never resumes is exactly the wedged case the
+  // watchdog exits on.
+  client.on('shardDisconnect', (event, id) => console.warn(`[Shard ${id}] disconnected (code ${event.code})`));
+  client.on('shardReconnecting', (id) => console.warn(`[Shard ${id}] reconnecting…`));
+  client.on('shardResume', (id, replayed) => console.log(`[Shard ${id}] resumed (${replayed} events replayed)`));
+  client.on('shardReady', (id) => console.log(`[Shard ${id}] gateway ready`));
 }
 
 export interface ProcessLike {
