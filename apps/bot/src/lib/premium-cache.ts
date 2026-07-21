@@ -10,13 +10,16 @@ const cache = new Map<string, { at: number; value: boolean }>();
 export async function isGuildPremiumCached(guildId: string): Promise<boolean> {
   const hit = cache.get(guildId);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
-  // Promise.resolve().then also catches sync throws (e.g. partial db mocks in
-  // tests); on failure keep the last known value rather than flapping to free.
-  const value = await Promise.resolve()
-    .then(() => isGuildPremium(guildId))
-    .catch(() => hit?.value ?? false);
-  cache.set(guildId, { at: Date.now(), value });
-  return value;
+  try {
+    const value = await Promise.resolve().then(() => isGuildPremium(guildId));
+    cache.set(guildId, { at: Date.now(), value });
+    return value;
+  } catch {
+    // DB lookup failed: serve the last known value but DON'T refresh `at` — else
+    // a sustained outage keeps re-stamping the stale value and the entry never
+    // expires, pinning a since-revoked premium/link gate open indefinitely.
+    return hit?.value ?? false;
+  }
 }
 
 const linkedCache = new Map<string, { at: number; value: boolean }>();
@@ -28,11 +31,13 @@ const linkedCache = new Map<string, { at: number; value: boolean }>();
 export async function isGuildLinkedCached(guildId: string): Promise<boolean> {
   const hit = linkedCache.get(guildId);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
-  const value = await Promise.resolve()
-    .then(() => isGuildLinked(guildId))
-    .catch(() => hit?.value ?? false);
-  linkedCache.set(guildId, { at: Date.now(), value });
-  return value;
+  try {
+    const value = await Promise.resolve().then(() => isGuildLinked(guildId));
+    linkedCache.set(guildId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return hit?.value ?? false; // serve stale without re-stamping `at` (see above)
+  }
 }
 
 const ownerCache = new Map<string, { at: number; value: string | null }>();
@@ -45,11 +50,13 @@ const ownerCache = new Map<string, { at: number; value: string | null }>();
 export async function getPremiumOwnerCached(guildId: string): Promise<string | null> {
   const hit = ownerCache.get(guildId);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value;
-  const value = await Promise.resolve()
-    .then(() => getPremiumLinker(guildId))
-    .catch(() => hit?.value ?? null);
-  ownerCache.set(guildId, { at: Date.now(), value });
-  return value;
+  try {
+    const value = await Promise.resolve().then(() => getPremiumLinker(guildId));
+    ownerCache.set(guildId, { at: Date.now(), value });
+    return value;
+  } catch {
+    return hit?.value ?? null; // serve stale without re-stamping `at` (see above)
+  }
 }
 
 export function clearPremiumCache(): void {
