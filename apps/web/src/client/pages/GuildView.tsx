@@ -1,4 +1,5 @@
-import { NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { Link, NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
@@ -32,6 +33,14 @@ export function GuildView() {
 
   return (
     <Layout>
+      {/* The dashboard had no direct way back to the server list — only an
+          indirect brand → landing → dashboard hop. This is the explicit return. */}
+      <Link
+        to="/app"
+        className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-slate-400 transition hover:text-blue-300"
+      >
+        <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('nav.backToServers')}
+      </Link>
       <nav className="mb-6 flex flex-wrap gap-2">
         {tabs.map((tab) => (
           <NavLink
