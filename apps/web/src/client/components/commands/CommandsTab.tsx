@@ -238,16 +238,15 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   };
 
   return (
-    // Break out of the layout's max-w-4xl: the flow editor needs the whole
-    // viewport width (centered, capped at 1700px). Symmetric negative margins
-    // expand the block equally on both sides of its centered parent — unlike a
-    // left/translate trick this is direction-agnostic (RTL-safe) and cannot
-    // drift sideways. The measured height makes it fit with no page scroll.
+    // The wide, viewport-spanning layout is applied by GuildView (it bleeds the
+    // whole sidebar+content block for this route). Here we simply fill the
+    // available column — the sidebar stays at the edge, no overlap. The
+    // measured height makes the editor fit with no page scroll.
     <form
       ref={rootRef}
       onSubmit={onSubmit}
       style={{ height: editorHeight ?? 'calc(100vh - 230px)' }}
-      className="mx-[calc((100%-min(100vw-2rem,1700px))/2)] flex w-[min(100vw-2rem,1700px)] flex-col gap-3"
+      className="flex w-full flex-col gap-3"
     >
       <div className="flex min-h-0 flex-1 flex-col gap-3 lg:flex-row">
         <FolderSidebar draft={draft} selection={selection} onSelect={setSelection} onChange={setDraft} />
