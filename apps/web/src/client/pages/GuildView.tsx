@@ -21,11 +21,10 @@ export function GuildView() {
   const location = useLocation();
   if (!guildId) return null;
 
-  // The automation editor is a full-viewport canvas. Rather than let it break
-  // out on its own (which offsets it past the sidebar and overlaps it), bleed
-  // the WHOLE sidebar+content block wide here — the editor then just fills its
-  // column and the sidebar stays cleanly at the edge. Only this route bleeds;
-  // every other tab keeps the narrow, centered max-w-4xl column.
+  // The automation editor is a full-viewport canvas, so this route widens the
+  // whole page (Layout drops its max-w-4xl). No negative-margin bleed — that
+  // was direction-unsafe and drifted the sidebar in RTL. A plain wide column
+  // lets flex-row place the tab sidebar correctly (right in RTL, left in LTR).
   const isEditorTab = location.pathname.endsWith('/commands');
 
   const tabs = [
@@ -42,7 +41,7 @@ export function GuildView() {
   ];
 
   return (
-    <Layout>
+    <Layout wide={isEditorTab}>
       {/* The dashboard had no direct way back to the server list — only an
           indirect brand → landing → dashboard hop. This is the explicit return. */}
       <Link
@@ -54,13 +53,7 @@ export function GuildView() {
       {/* Tabs as a sidebar on desktop; a horizontal scroll strip on mobile.
           items-start so the sidebar keeps its natural height and isn't stretched
           to a tall tab body (e.g. the full-viewport automation editor). */}
-      <div
-        className={`flex flex-col gap-6 md:flex-row md:items-start ${
-          isEditorTab
-            ? 'md:w-[min(100vw-2rem,1900px)] md:mx-[calc((100%-min(100vw-2rem,1900px))/2)]'
-            : ''
-        }`}
-      >
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
         {/* On desktop the sidebar sticks so it stays visible while a tab scrolls. */}
         <nav className="flex gap-2 overflow-x-auto pb-1 md:sticky md:top-24 md:w-48 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0">
           {tabs.map((tab) => (

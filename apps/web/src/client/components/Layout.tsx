@@ -42,7 +42,7 @@ function BotStatusBadge() {
   );
 }
 
-export function Layout({ children }: { children: React.ReactNode }) {
+export function Layout({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
   const { t } = useI18n();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
   const admin = useQuery({
@@ -98,7 +98,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </header>
-      <main className="mx-auto w-full max-w-4xl flex-1 px-6 py-8">{children}</main>
+      {/* `wide` pages (the automation editor) need the whole viewport; everyone
+          else stays in the narrow, readable column. Widening the container —
+          rather than negative-margin bleeding a child — keeps the layout
+          direction-safe (the sidebar lands correctly in both RTL and LTR). */}
+      <main className={`mx-auto w-full flex-1 px-6 py-8 ${wide ? 'max-w-[1900px]' : 'max-w-4xl'}`}>{children}</main>
       <footer className="border-t border-white/10 px-6 py-6 text-sm text-slate-500">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-2">
           <Link to="/terms" className="transition hover:text-blue-300">{t('footer.terms')}</Link>
