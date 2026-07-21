@@ -41,6 +41,8 @@ export interface RealtimeCallbacks {
   onAnswerText(text: string): void;
   /** Playback sink for answer audio (48k s16le stereo); null drops the audio. */
   openAudioSink(): NodeJS.WritableStream | null;
+  /** Fires when an answer has fully finished — arms the conversation idle timeout. */
+  onResponseDone?(): void;
 }
 
 interface ServerEvent {
@@ -48,6 +50,7 @@ interface ServerEvent {
   item_id?: string;
   transcript?: string;
   delta?: string;
+  item?: { id?: string };
   error?: { type?: string; code?: string; message?: string };
 }
 
@@ -65,6 +68,10 @@ export class RealtimeClient {
   private pendingSpeakers: string[] = [];
   private itemSpeakers = new Map<string, string>();
   private queuedUtterances: Array<{ pcm: Buffer; userId: string }> = [];
+  // Every conversation item id (user utterance, assistant answer, system note)
+  // currently in the model's context — so clearContext() can wipe the lot when
+  // the active speaker changes, keeping one user's history out of the next's.
+  private convoItems = new Set<string>();
 
   private activeResponse = false;
   // One (and only one) response.create held back while a response is active.
@@ -185,8 +192,24 @@ export class RealtimeClient {
 
   /** Drop an unaddressed/moderated utterance from the model's context. */
   deleteItem(itemId: string): void {
+    this.convoItems.delete(itemId);
     if (this.ws?.readyState !== WebSocket.OPEN) return;
     this.send({ type: 'conversation.item.delete', item_id: itemId });
+  }
+
+  /**
+   * Wipe the whole conversation from the model's context — called when the
+   * ACTIVE speaker changes so a new user never inherits the previous one's
+   * history (context isolation). The active-user lock keeps only one person's
+   * turns in context at a time; this clears them on handover.
+   */
+  clearContext(): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      for (const id of this.convoItems) this.send({ type: 'conversation.item.delete', item_id: id });
+    }
+    this.convoItems.clear();
+    this.pendingSpeakers = [];
+    this.itemSpeakers.clear();
   }
 
   close(): void {
@@ -206,9 +229,18 @@ export class RealtimeClient {
     try { ev = JSON.parse(raw) as ServerEvent; } catch { return; }
 
     switch (ev.type) {
+      case 'conversation.item.created': {
+        // Track EVERY item (user/assistant/system) so clearContext() can wipe
+        // the whole conversation on an active-speaker change.
+        if (ev.item?.id) this.convoItems.add(ev.item.id);
+        break;
+      }
       case 'input_audio_buffer.committed': {
         const userId = this.pendingSpeakers.shift();
-        if (userId && ev.item_id) this.itemSpeakers.set(ev.item_id, userId);
+        if (userId && ev.item_id) {
+          this.itemSpeakers.set(ev.item_id, userId);
+          this.convoItems.add(ev.item_id);
+        }
         break;
       }
       case 'conversation.item.input_audio_transcription.completed': {
@@ -241,6 +273,10 @@ export class RealtimeClient {
           this.pendingResponse = false;
           this.activeResponse = true;
           this.send({ type: 'response.create' });
+        } else {
+          // A fully settled answer (nothing queued behind it) arms the
+          // conversation's idle timeout via the manager.
+          this.callbacks?.onResponseDone?.();
         }
         break;
       }
@@ -333,6 +369,7 @@ export class RealtimeClient {
   private resetTurnState(): void {
     this.pendingSpeakers = [];
     this.itemSpeakers.clear();
+    this.convoItems.clear();
     this.activeResponse = false;
     this.pendingResponse = false;
     this.audioSink?.end();

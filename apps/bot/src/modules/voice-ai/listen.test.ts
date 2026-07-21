@@ -51,8 +51,9 @@ const routerMock = vi.hoisted(() => ({
 vi.mock('./router.js', () => ({ routeVoiceCommand: routerMock.routeVoiceCommand }));
 
 import { handleTranscript, shouldRenewSubscription } from './listen.js';
+import { Conversation } from './conversation.js';
 
-const guild = { id: 'g1' } as never;
+const guild = { id: 'g1', members: { cache: new Map() } } as never;
 
 describe('shouldRenewSubscription (leak guard)', () => {
   const guildWith = (userId: string, member: unknown) =>
@@ -78,11 +79,23 @@ describe('shouldRenewSubscription (leak guard)', () => {
   });
 });
 
-function freshSession(followUp?: { userId: string; until: number }) {
+/** A session whose conversation is put into `setup` state before the test. */
+function freshSession(setup?: (c: Conversation) => void) {
+  const conversation = new Conversation(10_000);
+  setup?.(conversation);
   sessionMock.current = {
-    guildId: 'g1', channelId: 'vc1', listening: true, subscriptions: new Map(), followUp,
+    guildId: 'g1', channelId: 'vc1', listening: true, subscriptions: new Map(), conversation,
   };
-  return sessionMock.current as { followUp?: { userId: string; until: number } };
+  return sessionMock.current as { conversation: Conversation };
+}
+
+/** Bring a user to "active with an open follow-up window" (i.e. just answered). */
+function engagedAndAnswered(userId: string) {
+  return (c: Conversation) => {
+    c.onWakeWord(userId);
+    c.onActiveUtterance();
+    c.onResponseEnd(Date.now());
+  };
 }
 
 beforeEach(() => {
@@ -91,45 +104,50 @@ beforeEach(() => {
   routerMock.routeVoiceCommand.mockClear();
 });
 
-describe('handleTranscript follow-up window', () => {
-  it('a wake-word utterance routes and opens the follow-up window', async () => {
-    const session = freshSession();
+describe('handleTranscript — multi-user conversation', () => {
+  it('a wake word from an idle channel engages that user and routes', async () => {
+    const s = freshSession();
     await handleTranscript(guild, 'u1', 'i1', 'يا كابتن كيف الحال');
     expect(routerMock.routeVoiceCommand).toHaveBeenCalledOnce();
-    expect(session.followUp?.userId).toBe('u1');
-    expect(session.followUp!.until).toBeGreaterThan(Date.now());
+    expect(routerMock.routeVoiceCommand.mock.calls[0][4]).toEqual({ followUp: false });
+    expect(s.conversation.activeUser).toBe('u1');
   });
 
-  it('a follow-up is routed but does NOT extend the window (noise loops must decay)', async () => {
-    const until = Date.now() + 3_000;
-    const session = freshSession({ userId: 'u1', until });
-    await handleTranscript(guild, 'u1', 'i1', 'وش رايك');
+  it('the active user may follow up without the wake word inside the window', async () => {
+    freshSession(engagedAndAnswered('u1'));
+    await handleTranscript(guild, 'u1', 'i2', 'وش رايك');
     expect(routerMock.routeVoiceCommand).toHaveBeenCalledOnce();
     expect(routerMock.routeVoiceCommand.mock.calls[0][4]).toEqual({ followUp: true });
-    // Extending here is the runaway: every answered noise transcript would
-    // keep the window open forever while a second user keeps making sounds.
-    expect(session.followUp!.until).toBe(until);
   });
 
-  it('drops a follow-up while the bot is speaking (overlap talk is not a question)', async () => {
-    freshSession({ userId: 'u1', until: Date.now() + 5_000 });
+  it('drops a follow-up while the bot is speaking (overlap talk is not a turn)', async () => {
+    freshSession(engagedAndAnswered('u1'));
     realtimeMock.responding = true;
-    await handleTranscript(guild, 'u1', 'i2', 'ايوه صح');
+    await handleTranscript(guild, 'u1', 'i3', 'ايوه صح');
     expect(routerMock.routeVoiceCommand).not.toHaveBeenCalled();
-    expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i2');
+    expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i3');
   });
 
-  it('an explicit wake-word utterance still routes while the bot is speaking', async () => {
-    freshSession({ userId: 'u1', until: Date.now() + 5_000 });
+  it('an explicit wake word from the active user still routes while the bot is speaking', async () => {
+    freshSession(engagedAndAnswered('u1'));
     realtimeMock.responding = true;
-    await handleTranscript(guild, 'u1', 'i3', 'يا كابتن اسكتي');
+    await handleTranscript(guild, 'u1', 'i4', 'يا كابتن اسكتي');
     expect(routerMock.routeVoiceCommand).toHaveBeenCalledOnce();
   });
 
-  it('another speaker inside someone else\'s window is still gated by the wake word', async () => {
-    freshSession({ userId: 'u1', until: Date.now() + 5_000 });
-    await handleTranscript(guild, 'u2', 'i4', 'كلام جانبي');
+  it('ignores a non-active speaker who has no wake word', async () => {
+    freshSession((c) => c.onWakeWord('u1'));
+    await handleTranscript(guild, 'u2', 'i5', 'كلام جانبي');
     expect(routerMock.routeVoiceCommand).not.toHaveBeenCalled();
-    expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i4');
+    expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i5');
+  });
+
+  it('QUEUES another speaker who says the wake word — no instant takeover', async () => {
+    const s = freshSession((c) => c.onWakeWord('u1'));
+    await handleTranscript(guild, 'u2', 'i6', 'يا كابتن تعال');
+    expect(routerMock.routeVoiceCommand).not.toHaveBeenCalled();
+    expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i6');
+    expect(s.conversation.activeUser).toBe('u1'); // unchanged
+    expect(s.conversation.queued).toEqual(['u2']); // waiting
   });
 });

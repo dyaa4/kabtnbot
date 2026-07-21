@@ -6,6 +6,7 @@ import {
 import { PassThrough, Readable } from 'stream';
 import type { VoiceBasedChannel, VoiceState } from 'discord.js';
 import type { OpusDecoder } from './opus-decoder.js';
+import { Conversation } from './conversation.js';
 import { synthesizeSpeech } from './tts.js';
 import { closeRealtime } from './realtime.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
@@ -17,10 +18,11 @@ export interface VoiceSession {
   player: AudioPlayer;
   listening: boolean;
   subscriptions: Map<string, { decoder: OpusDecoder; stream: Readable }>;
-  /** Open conversation window: this speaker may follow up without the wake word until `until` (ms epoch). */
-  followUp?: { userId: string; until: number };
-  /** Focus lock: while active, only this speaker is answered — others are ignored until `until` (ms epoch). */
-  focus?: { userId: string; until: number };
+  /** Multi-user conversation brain: active-user lock, wake-word queue, dynamic
+   * idle timeout, phase machine. Drives who the bot is talking with. */
+  conversation: Conversation;
+  /** Interval that ticks the conversation so the idle timeout can fire. */
+  convoTimer?: NodeJS.Timeout;
   /** Detaches this session's client-level voiceStateUpdate listener (set by startListening). */
   removeVoiceHandler?: () => void;
   /** Detaches the listener that tracks the bot being dragged to another channel. */
@@ -92,6 +94,9 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
     player,
     listening: false,
     subscriptions: new Map(),
+    // Timeout is synced from guild config once listening starts; 6s is the
+    // spec default until then.
+    conversation: new Conversation(6000),
   };
 
   // Keep channelId in sync when an admin drags the bot to another channel —
@@ -117,6 +122,7 @@ export function leaveGuildVoice(guildId: string): boolean {
   // handler checks it after STT returns and would otherwise re-subscribe on
   // the destroyed connection, leaking a decoder per voice-leave.
   if (session) session.listening = false;
+  if (session?.convoTimer) clearInterval(session.convoTimer);
   session?.removeVoiceHandler?.();
   session?.removeBotMoveHandler?.();
   for (const { decoder, stream } of session?.subscriptions.values() ?? []) {

@@ -35,6 +35,7 @@ import { routeVoiceCommand } from './router.js';
 import { clearFlowsCache } from '../../lib/flows-cache.js';
 import { clearCooldowns } from '../custom-commands/cooldown.js';
 import { S } from '../../lib/strings.js';
+import { Conversation } from './conversation.js';
 
 function fakeGuild(memberIds: string[], extraMembers: Record<string, unknown> = {}) {
   return {
@@ -62,7 +63,10 @@ function fakeGuild(memberIds: string[], extraMembers: Record<string, unknown> = 
 }
 
 function fakeSession() {
-  return { guildId: 'g1', channelId: 'vc1', listening: true, subscriptions: new Map() } as never;
+  return {
+    guildId: 'g1', channelId: 'vc1', listening: true, subscriptions: new Map(),
+    conversation: new Conversation(6000),
+  } as never;
 }
 
 describe('routeVoiceCommand', () => {

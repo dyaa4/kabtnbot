@@ -7,7 +7,6 @@ import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
 import { playSpeech, playPcmStream, type VoiceSession, getSession } from './sessions.js';
 import { ensureRealtime, getRealtime } from './realtime.js';
 import { downmixStereoToMono, downsample48to24, normalizeQuietAudio, pcmPeak } from './audio-util.js';
-import { focusWindowMs, isBlockedByFocus, shouldRefreshFocus } from './focus.js';
 import { t } from '../../lib/strings.js';
 
 const SAMPLE_RATE = 48000;
@@ -60,10 +59,29 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
       mirrorAnswer(guild, text).catch(() => {});
     },
     openAudioSink: () => playPcmStream(guild.id),
+    onResponseDone: () => {
+      // Answer finished → arm the conversation's idle timeout (spec §5).
+      getSession(guild.id)?.conversation.onResponseEnd(Date.now());
+    },
   };
 
   session.listening = true;
   setSelfDeaf(session, false);
+
+  // Sync the idle timeout from config and tick the conversation so the timeout
+  // can fire, ending an idle conversation and promoting the next queued user.
+  const { voice } = await getCachedGuildConfig(guild.id);
+  session.conversation.setTimeout(voice.follow_up_seconds * 1000);
+  session.convoTimer = setInterval(() => {
+    const live = getSession(guild.id);
+    if (!live?.listening) return;
+    const h = live.conversation.tick(Date.now());
+    if (h.ended) {
+      console.log(`[Timeout] conversation with ${h.ended} ended [State] idle`);
+      getRealtime(guild.id)?.clearContext(); // isolation: next user starts clean
+      if (h.promoted) console.log(`[Queue] ${h.promoted} promoted to active`);
+    }
+  }, 1000);
 
   const members = guild.members.cache.filter(
     (m) => m.voice.channelId === session.channelId && !m.user.bot,
@@ -71,9 +89,20 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
   for (const [id] of members) subscribeToUser(session, guild, id);
   console.log(`[Listen ${guild.id}] listening to ${members.size} member(s) in ${session.channelId}`);
 
-  const onVoiceState = (_old: VoiceState, next: VoiceState) => {
+  const onVoiceState = (old: VoiceState, next: VoiceState) => {
     const live = getSession(guild.id);
-    if (!live?.listening || next.channelId !== live.channelId || next.member?.user.bot) return;
+    if (!live?.listening || next.member?.user.bot) return;
+    // Left this channel → free their spot in the conversation (hand off if active).
+    if (old.channelId === live.channelId && next.channelId !== live.channelId) {
+      const h = live.conversation.onUserLeft(next.id, Date.now());
+      if (h.ended) {
+        console.log(`[Session] ${next.id} left — conversation ended`);
+        getRealtime(guild.id)?.clearContext();
+        if (h.promoted) console.log(`[Queue] ${h.promoted} promoted to active`);
+      }
+      return;
+    }
+    if (next.channelId !== live.channelId) return;
     subscribeToUser(live, guild, next.id);
   };
   guild.client.on('voiceStateUpdate', onVoiceState);
@@ -102,6 +131,10 @@ export function stopListening(session: VoiceSession): void {
   session.listening = false;
   session.removeVoiceHandler?.();
   session.removeVoiceHandler = undefined;
+  if (session.convoTimer) clearInterval(session.convoTimer);
+  session.convoTimer = undefined;
+  session.conversation.end(Date.now()); // drop the active user + queue
+  getRealtime(session.guildId)?.clearContext();
   for (const { decoder, stream } of session.subscriptions.values()) {
     stream.destroy();
     decoder.delete?.();
@@ -129,80 +162,75 @@ export async function handleTranscript(
 
   const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
   // moderated → no reply, and the profanity never enters the model context.
-  // NOTE: moderation runs for EVERYONE, before the focus lock — a focused
-  // conversation never lets someone else's profanity through unchecked.
+  // NOTE: moderation runs for EVERYONE, before the active-user lock — a focused
+  // conversation never lets another user's profanity through unchecked.
   if (await handleTranscriptModeration(guild, session, userId, text)) {
     client?.deleteItem(itemId);
     return;
   }
 
-  // Focus lock: the bot commits to one speaker and ignores everyone else (even
-  // their wake word) while that speaker still holds the floor — i.e. the bot is
-  // mid-reply to them, or their follow-up window is still open. The moment the
-  // floor frees, the next person who addresses the bot becomes the new focus,
-  // and so on. Established further down, only when the bot actually answers.
-  if (config.voice.focus_active_speaker) {
-    const now = Date.now();
-    if (isBlockedByFocus(session.focus, userId, now, client?.isResponding() ?? false)) {
-      console.log(`[Voice ${guild.id}] focus lock: ignoring ${userId} (focused on ${session.focus?.userId})`);
+  // ── Multi-user turn-taking (Conversation state machine) ─────────────────
+  // Active-user lock: exactly one user holds the floor. A wake word from anyone
+  // else is QUEUED (never an instant takeover); a non-wake utterance is only
+  // answered when it comes from the active user inside the open conversation
+  // window. Everyone else's audio is dropped from the model's context so one
+  // user's words never bleed into another's.
+  const conv = session.conversation;
+  conv.setTimeout(config.voice.follow_up_seconds * 1000); // keep in sync with config
+  const speaker = guild.members.cache.get(userId)?.displayName ?? userId;
+  const wake = parseWakeWord(text, config.voice.wake_word);
+  console.log(`[Voice ${guild.id}] STT[${speaker}]="${text}" ${wake === null ? 'NO-WAKE' : 'WAKE'}`);
+
+  let isFollowUp: boolean;
+  if (wake !== null) {
+    const result = conv.onWakeWord(userId);
+    if (result === 'queued') {
+      console.log(`[Queue] ${speaker} is waiting — active user is ${conv.activeUser}`);
+      client?.deleteItem(itemId); // never pollute the active user's context
+      return;
+    }
+    console.log(`[WakeWord] ${speaker} ${result === 'engaged' ? 'engaged' : 'stays active'} [State] ${conv.phase}`);
+    isFollowUp = false;
+  } else {
+    // Only the ACTIVE user, and only inside the open window, may continue.
+    if (!conv.isActive(userId)) {
       client?.deleteItem(itemId);
       return;
     }
-    // The focused speaker talking again keeps their follow-up floor alive.
-    if (shouldRefreshFocus(session.focus, userId, now) && session.focus) {
-      session.focus.until = now + focusWindowMs(config.voice.follow_up_seconds);
+    if (client?.isResponding()) {
+      // Overlap with the bot's own answer is a reaction, not a turn.
+      console.log(`[Voice ${guild.id}] follow-up dropped (bot is speaking)`);
+      client.deleteItem(itemId);
+      return;
     }
+    if (conv.idleDeadline === null) {
+      // Window closed (or timeout disabled) → this speech isn't addressed to the bot.
+      client?.deleteItem(itemId);
+      return;
+    }
+    conv.onActiveSpeech(Date.now()); // active user kept talking → reset idle timer
+    isFollowUp = true;
+    console.log(`[Conversation] follow-up from ${speaker}`);
   }
 
-  let query = parseWakeWord(text, config.voice.wake_word);
-  // Follow-up window: after addressing the bot once, the same speaker keeps
-  // the conversation open for follow_up_seconds — no wake word needed.
-  const windowMs = config.voice.follow_up_seconds * 1000;
-  let isFollowUp = false;
-  if (query === null && windowMs > 0 && text.trim()) {
-    const fu = session.followUp;
-    if (fu && fu.userId === userId && Date.now() < fu.until) {
-      // Talk that overlaps the bot's own answer is a reaction, not a question —
-      // answering it queues reply after reply and the voices trample each
-      // other. Only an explicit wake word may interrupt an active response.
-      if (client?.isResponding()) {
-        console.log(`[Voice ${guild.id}] follow-up dropped (bot is speaking)`);
-        client.deleteItem(itemId);
-        return;
-      }
-      query = text;
-      isFollowUp = true;
-      console.log(`[Voice ${guild.id}] follow-up (${Math.round((fu.until - Date.now()) / 1000)}s left)`);
-    }
-  }
-  console.log(`[Voice ${guild.id}] wake="${config.voice.wake_word}" ${query === null ? 'NO-MATCH' : `query="${query}"`}`);
-  if (query === null) {
-    client?.deleteItem(itemId);
-    return;
-  }
-  // This speaker is addressing the bot → commit to them under focus mode, so
-  // anyone else is ignored until they go quiet for the focus window.
-  if (config.voice.focus_active_speaker) {
-    session.focus = { userId, until: Date.now() + focusWindowMs(config.voice.follow_up_seconds) };
-  }
-  // Only a wake-word utterance opens/extends the window (bare wake word too —
-  // "يا كابتن" … pause … question is the natural flow). Follow-ups must NOT
-  // extend it: one hallucinated wake word out of a noisy mic would otherwise
-  // start a self-sustaining loop where every answered noise transcript keeps
-  // the window open — the window has to decay on its own.
-  if (windowMs > 0 && !isFollowUp) session.followUp = { userId, until: Date.now() + windowMs };
-
+  // Committed to answering the active user.
+  conv.onActiveUtterance(); // → Thinking (disarms the idle timer)
+  const query = wake ?? text;
   const { routeVoiceCommand } = await import('./router.js');
   const answer = await routeVoiceCommand(guild, session, query, userId, { followUp: isFollowUp });
-  // streamed: the answer audio comes straight from the realtime session and
-  // onAnswerText mirrors its transcript to the log channel.
-  if (typeof answer !== 'string') return;
+  // Streamed: the realtime session answers directly; the idle timeout re-arms
+  // when that answer fully finishes (onResponseDone → conversation.onResponseEnd).
+  if (typeof answer !== 'string') {
+    conv.onResponseStart(); // → Speaking
+    return;
+  }
+  // Text-path (WS down) or a short built-in reply: no realtime response.done, so
+  // arm the idle timeout here after speaking it.
   if (answer) {
-    // Best-effort spoken reply...
     await playSpeech(guild.id, answer).catch((e) => console.error('[Listen] speak:', e));
-    // ...and always a text reply so the answer is visible without TTS.
     await mirrorAnswer(guild, answer);
   }
+  conv.onResponseEnd(Date.now());
 }
 
 /** Posts a spoken answer as text to the moderation/log channel. */
