@@ -83,6 +83,8 @@
   "pricing.premium.noCheckin": "تعمل 24/7 — بدون تأكيد دوري وبدون إعلانات",
   "nav.logout": "خروج",
   "nav.backToServers": "العودة إلى السيرفرات",
+  "nav.collapseSidebar": "طيّ الشريط الجانبي",
+  "nav.expandSidebar": "توسيع الشريط الجانبي",
   "lang.switch": "EN",
   "theme.light": "الوضع الفاتح",
   "theme.dark": "الوضع الداكن",

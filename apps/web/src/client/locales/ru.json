@@ -83,6 +83,8 @@
   "pricing.premium.noCheckin": "Работает 24/7 — без подтверждений и без рекламы",
   "nav.logout": "Выйти",
   "nav.backToServers": "Назад к серверам",
+  "nav.collapseSidebar": "Свернуть боковую панель",
+  "nav.expandSidebar": "Развернуть боковую панель",
   "lang.switch": "Язык",
   "theme.light": "Светлая тема",
   "theme.dark": "Тёмная тема",

@@ -83,6 +83,8 @@
   "pricing.premium.noCheckin": "Tourne 24h/24 — sans confirmation et sans publicité",
   "nav.logout": "Déconnexion",
   "nav.backToServers": "Retour aux serveurs",
+  "nav.collapseSidebar": "Réduire la barre latérale",
+  "nav.expandSidebar": "Développer la barre latérale",
   "lang.switch": "Langue",
   "theme.light": "Mode clair",
   "theme.dark": "Mode sombre",

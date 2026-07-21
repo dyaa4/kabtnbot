@@ -83,6 +83,8 @@
   "pricing.premium.noCheckin": "Läuft 24/7 — kein Check-in und werbefrei",
   "nav.logout": "Abmelden",
   "nav.backToServers": "Zurück zu den Servern",
+  "nav.collapseSidebar": "Seitenleiste einklappen",
+  "nav.expandSidebar": "Seitenleiste ausklappen",
   "lang.switch": "Sprache",
   "theme.light": "Heller Modus",
   "theme.dark": "Dunkler Modus",

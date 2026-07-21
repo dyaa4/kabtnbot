@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import {
   ArrowLeft, LayoutDashboard, Mic, Sparkles, Zap, Shield, Hand, BarChart3, FileText, Palette, Settings,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
@@ -26,6 +28,19 @@ export function GuildView() {
   // was direction-unsafe and drifted the sidebar in RTL. A plain wide column
   // lets flex-row place the tab sidebar correctly (right in RTL, left in LTR).
   const isEditorTab = location.pathname.endsWith('/commands');
+
+  // Collapsible feature sidebar: full (icon + label) by default, or icon-only
+  // when collapsed. The choice is remembered across visits. Collapse is a
+  // desktop concept — on mobile the sidebar is a horizontal strip with labels.
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('dash-sidebar-collapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () =>
+    setCollapsed((c) => {
+      const next = !c;
+      try { localStorage.setItem('dash-sidebar-collapsed', next ? '1' : '0'); } catch { /* private mode */ }
+      return next;
+    });
 
   const tabs = [
     { to: '', key: 'tabs.overview', Icon: LayoutDashboard },
@@ -54,15 +69,39 @@ export function GuildView() {
           items-start so the sidebar keeps its natural height and isn't stretched
           to a tall tab body (e.g. the full-viewport automation editor). */}
       <div className="flex flex-col gap-6 md:flex-row md:items-start">
-        {/* On desktop the sidebar sticks so it stays visible while a tab scrolls. */}
-        <nav className="flex gap-2 overflow-x-auto pb-1 md:sticky md:top-24 md:w-48 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0">
+        {/* On desktop the sidebar sticks so it stays visible while a tab scrolls.
+            Width shrinks to an icon rail when collapsed. Sits on the correct
+            side automatically (right in RTL, left in LTR) via flex-row + dir. */}
+        <nav
+          className={`flex gap-2 overflow-x-auto pb-1 md:sticky md:top-24 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0 ${
+            collapsed ? 'md:w-14' : 'md:w-48'
+          }`}
+        >
+          {/* Collapse toggle — desktop only (mobile is a scroll strip). The icon
+              mirrors in RTL so it always points "outward" toward the edge. */}
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+            className={`hidden rounded-xl px-4 py-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-200 md:mb-1 md:flex md:items-center ${
+              collapsed ? 'md:justify-center md:px-0' : 'md:justify-end'
+            }`}
+          >
+            {collapsed
+              ? <PanelLeftOpen className="h-5 w-5 rtl:-scale-x-100" />
+              : <PanelLeftClose className="h-5 w-5 rtl:-scale-x-100" />}
+          </button>
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === ''}
+              title={collapsed ? t(tab.key) : undefined}
               className={({ isActive }) =>
                 `flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition md:w-full ${
+                  collapsed ? 'md:justify-center md:px-0' : ''
+                } ${
                   isActive
                     ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
                     : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
@@ -70,7 +109,7 @@ export function GuildView() {
               }
             >
               <tab.Icon className="h-4 w-4 shrink-0" />
-              {t(tab.key)}
+              <span className={collapsed ? 'md:hidden' : ''}>{t(tab.key)}</span>
             </NavLink>
           ))}
         </nav>

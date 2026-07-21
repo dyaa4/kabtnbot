@@ -83,6 +83,8 @@
   "pricing.premium.noCheckin": "7/24 çalışır — onay yok ve reklamsız",
   "nav.logout": "Çıkış yap",
   "nav.backToServers": "Sunuculara dön",
+  "nav.collapseSidebar": "Kenar çubuğunu daralt",
+  "nav.expandSidebar": "Kenar çubuğunu genişlet",
   "lang.switch": "Dil",
   "theme.light": "Açık mod",
   "theme.dark": "Koyu mod",
