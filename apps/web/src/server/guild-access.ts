@@ -35,9 +35,22 @@ export function invalidateGuildListCache(uid: string): void {
 // resolves lets every concurrent cold-cache request run compute() in lockstep,
 // stampeding Discord's tightly rate-limited /users/@me/guilds into a 429. Storing
 // the promise immediately collapses that burst onto a single upstream call.
+// Entries are keyed per (user) and per (user, guild), so without eviction the
+// map grows one entry per distinct visitor forever. Sweep expired entries once
+// it gets large — behaviour-neutral, since an expired entry is recomputed anyway.
+const PRUNE_AT = 5000;
+function pruneCache(): void {
+  if (cache.size < PRUNE_AT) return;
+  const now = Date.now();
+  for (const [k, v] of cache) {
+    if (now - v.at >= TTL_MS) cache.delete(k);
+  }
+}
+
 function cached<T>(key: string, compute: () => Promise<T>): Promise<T> {
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < TTL_MS) return hit.value as Promise<T>;
+  pruneCache();
   const value = compute();
   cache.set(key, { at: Date.now(), value });
   // Don't let a rejection stick for the whole TTL — evict so the next request
