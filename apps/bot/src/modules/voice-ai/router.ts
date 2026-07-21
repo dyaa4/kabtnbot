@@ -9,7 +9,6 @@ import { tryConsumeAiQuestion } from '../../lib/quotas.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { executeActions, type ExecContext } from '../custom-commands/executor.js';
-import { classifyIntent, candidatesOf } from '../custom-commands/intent.js';
 import { checkCooldown } from '../custom-commands/cooldown.js';
 import { getAIProvider } from './providers.js';
 import { buildSystemPrompt } from './prompts.js';
@@ -112,13 +111,13 @@ function matchBuiltin(
 /**
  * Resolves a wake-word query. Returns the reply text to speak/post, or
  * `{ streamed: true }` when the realtime session answers directly with audio.
- * `followUp` marks an utterance from the open conversation window (no wake
- * word) — exact phrase triggers and built-ins still work there, but the loose
- * LLM intent fallback is skipped so casual chat can never fire an automation.
+ * `followUp` (utterance from the open conversation window) is accepted for call
+ * compatibility but no longer changes routing: automations fire only on exact
+ * trigger phrases, so casual chat can never fire one regardless.
  */
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
-  opts: { followUp?: boolean } = {},
+  _opts: { followUp?: boolean } = {},
 ): Promise<string | { streamed: true }> {
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
@@ -211,29 +210,17 @@ export async function routeVoiceCommand(
   // un-throttled ack turns that into the bot chattering at nobody.
   if (!q) return checkCooldown(`${guild.id}:wake-ack:${speakerId}`, 8) ? strings.wakeAck : '';
 
-  // 3+4 share ONE quota consume: the intent classification and the free-form
-  // answer are alternatives, not two questions.
+  // No exact phrase (step 1) or built-in (step 2) matched → treat it as a
+  // free-form question for the assistant. The LLM intent classifier that used to
+  // run here was removed from the answer path for latency (owner decision): it
+  // added a serial Groq round-trip BEFORE every answer. Voice automations now
+  // fire ONLY on their exact trigger phrases; the realtime session answers
+  // questions directly. (`opts.followUp` therefore no longer changes routing.)
   if (!(await tryConsumeAiQuestion(guild.id))) return strings.aiQuotaExhausted;
 
-  // 3. LLM intent fallback — did the speaker MEAN one of the custom commands?
-  // Skipped for follow-ups: inside the conversation window the speaker is
-  // just TALKING; only an exact trigger phrase (step 1) may run a flow.
-  const candidates = opts.followUp ? [] : candidatesOf(flows.flows);
-  if (candidates.length > 0) {
-    const matchedId = await classifyIntent(q, candidates).catch(() => null);
-    if (matchedId) {
-      console.log(`[Voice ${guild.id}] intent classifier → flow ${matchedId} for "${q}"`);
-      const flow = flows.flows.find((f) => f.id === matchedId);
-      // aiQuotaPrepaid: the consume above already paid for this question — an
-      // ai_reply action in the flow must not charge a second unit.
-      if (flow) return runFlow(flow, q, true);
-    }
-  }
-
-  // 4. Free-form question → the realtime session answers with audio directly
-  // (the utterance is already in its context; while an answer is playing the
-  // request queues instead of speaking over it). Falls back to the text
-  // Groq/Gemini path only when the WS is down.
+  // The realtime session answers with audio directly (the utterance is already
+  // in its context; while an answer is playing the request queues instead of
+  // speaking over it). Falls back to the text Groq/Gemini path only when WS down.
   if (getRealtime(guild.id)?.requestResponse()) return { streamed: true };
   try {
     const ai = getAIProvider();

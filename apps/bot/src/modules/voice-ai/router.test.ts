@@ -16,16 +16,6 @@ const realtimeMock = vi.hoisted(() => ({
 }));
 vi.mock('./realtime.js', () => ({ getRealtime: () => realtimeMock.client, closeRealtime: () => {} }));
 
-// Hermetic intent classifier: no candidates by default (step 3 skipped).
-const intentMock = vi.hoisted(() => ({
-  candidates: [] as Array<{ id: string; name: string; triggers: string[] }>,
-  result: null as string | null,
-}));
-vi.mock('../custom-commands/intent.js', () => ({
-  candidatesOf: () => intentMock.candidates,
-  classifyIntent: async () => intentMock.result,
-}));
-
 vi.mock('@gamebot/db', () => ({
   getGuildConfig: vi.fn(async () => baseConfig(true)),
   getGuildConfigRead: vi.fn(async () => baseConfig(true)),
@@ -80,8 +70,6 @@ describe('routeVoiceCommand', () => {
     clearFlowsCache();
     clearCooldowns();
     realtimeMock.client = undefined;
-    intentMock.candidates = [];
-    intentMock.result = null;
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({}));
   });
 
@@ -118,33 +106,44 @@ describe('routeVoiceCommand', () => {
     expect((reply as string).length).toBeGreaterThan(0);
   });
 
-  it('intent fallback runs the matched flow for a wake-word query', async () => {
+  it('an EXACT trigger phrase fires the flow', async () => {
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
       flows: [{
         id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
         actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
       }],
     }));
-    intentMock.candidates = [{ id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'] }];
-    intentMock.result = 'f-songs';
-    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ابي اسمع شي', 'u-speaker');
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'شغل الاغاني', 'u-speaker');
     expect(reply).toContain('الأغاني');
   });
 
-  it('follow-up utterances skip the intent classifier (chat must not fire automations)', async () => {
+  it('a NON-trigger utterance is answered by the assistant, never a fuzzy-matched flow', async () => {
+    // The LLM intent classifier was removed from the answer path (latency): an
+    // utterance that isn't the exact trigger must NOT fire the flow — the
+    // realtime assistant answers it directly.
     vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
       flows: [{
         id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
         actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
       }],
     }));
-    intentMock.candidates = [{ id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'] }];
-    intentMock.result = 'f-songs';
+    realtimeMock.client = { requestResponse: () => true };
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'ابي اسمع شي', 'u-speaker');
+    expect(reply).toEqual({ streamed: true });
+  });
+
+  it('a follow-up chat utterance is answered directly and never fires an automation', async () => {
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
+      }],
+    }));
     realtimeMock.client = { requestResponse: () => true };
     const reply = await routeVoiceCommand(
       fakeGuild([]), fakeSession(), 'ابي اسمع شي', 'u-speaker', { followUp: true },
     );
-    expect(reply).toEqual({ streamed: true }); // answered conversationally, no flow fired
+    expect(reply).toEqual({ streamed: true });
   });
 
   it('streams free-form questions through the realtime session when available', async () => {
