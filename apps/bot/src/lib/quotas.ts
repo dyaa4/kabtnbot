@@ -1,5 +1,6 @@
 import { consumeAiQuestion, refundAiQuestion, getUsage, incrementListenSeconds } from '@gamebot/db';
 import { effectiveQuotas, monthKey, todayKey } from '@gamebot/shared';
+import { isSuperAdmin } from '../config.js';
 import { getCachedGuildConfig } from './config-cache.js';
 import { getPremiumOwnerCached } from './premium-cache.js';
 
@@ -11,6 +12,8 @@ export { todayKey };
 // subscription's budget. Guilds without a premium linker fall back to their
 // own guild-keyed row (their limit is 0 unless manually granted).
 
+const UNLIMITED = { listen_minutes_per_month: Infinity, ai_questions_per_month: Infinity };
+
 async function quotaContext(guildId: string) {
   const [config, owner] = await Promise.all([
     // Cached read-only config: this runs on every utterance/command, so it
@@ -18,8 +21,11 @@ async function quotaContext(guildId: string) {
     getCachedGuildConfig(guildId),
     getPremiumOwnerCached(guildId),
   ]);
+  // Super-admin (owner) guilds bypass the monthly cap entirely — mirrors the
+  // web dashboard's super-admin bypass so the owner can use/test without hitting
+  // the per-account limit. Real premium accounts keep the standard quotas.
   return {
-    limits: effectiveQuotas(config, owner !== null),
+    limits: isSuperAdmin(owner) ? UNLIMITED : effectiveQuotas(config, owner !== null),
     budgetKey: owner ? `user:${owner}` : guildId,
   };
 }

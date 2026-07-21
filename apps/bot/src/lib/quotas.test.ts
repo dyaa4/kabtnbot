@@ -62,4 +62,16 @@ describe('quotas', () => {
     await addListenSeconds('p-a', 60);
     expect(await isListenQuotaExceeded('p-a')).toBe(true);
   });
+
+  it('a guild whose premium account is a super-admin has UNLIMITED voice quotas', async () => {
+    await setUserPremium('superadmin1', true); // in SUPER_ADMIN_IDS (see vitest.config)
+    await linkGuild('superadmin1', 'p-admin');
+    clearPremiumCache();
+
+    // Way past the 600-min pool — a super-admin guild is never exhausted.
+    await addListenSeconds('p-admin', 600 * 60 * 5);
+    expect(await isListenQuotaExceeded('p-admin')).toBe(false);
+    // ...and AI questions never run out either.
+    for (let i = 0; i < 3; i++) expect(await tryConsumeAiQuestion('p-admin')).toBe(true);
+  });
 });

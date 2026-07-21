@@ -46,6 +46,12 @@ const Env = z.object({
   ENABLE_TEXT_COMMANDS: z.string().optional().default(''),
   // Premium chat log (stores recent messages, 7-day TTL).
   ENABLE_CHAT_LOG: z.string().optional().default(''),
+  // Comma-separated Discord user ids of super-admins (the owner). Guilds whose
+  // premium account is a super-admin get UNLIMITED voice quotas (listen + AI) —
+  // mirrors the web dashboard's super-admin bypass, so the owner can use/test
+  // the bot without the per-account monthly cap. Keep in sync with the web
+  // service's SUPER_ADMIN_IDS.
+  SUPER_ADMIN_IDS: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
@@ -54,3 +60,11 @@ export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION !== 'false';
 export const summaryEnabled = config.ENABLE_SUMMARY !== 'false';
 export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS !== 'false';
 export const chatLogEnabled = config.ENABLE_CHAT_LOG !== 'false';
+
+const superAdminIds = new Set(
+  config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean),
+);
+/** Whether a Discord user id belongs to a super-admin (unlimited voice quotas). */
+export function isSuperAdmin(uid: string | null | undefined): boolean {
+  return uid != null && superAdminIds.has(uid);
+}
