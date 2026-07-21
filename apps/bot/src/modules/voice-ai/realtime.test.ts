@@ -225,6 +225,41 @@ describe('responses', () => {
   });
 });
 
+describe('error recovery', () => {
+  it('recovers activeResponse on a response error so later requests are not queued forever', async () => {
+    const { client, ws } = await openClient();
+    client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };
+    expect(client.requestResponse()).toBe(true);
+    expect(client.isResponding()).toBe(true);
+    // Server rejects the response — no response.done will ever arrive.
+    ws.message({ type: 'error', error: { code: 'response_error', message: 'boom' } });
+    expect(client.isResponding()).toBe(false); // recovered, not deadlocked
+    const before = ws.sent.filter((m) => m.type === 'response.create').length;
+    expect(client.requestResponse()).toBe(true);
+    expect(ws.sent.filter((m) => m.type === 'response.create').length).toBe(before + 1); // actually created
+  });
+
+  it('resyncs speaker attribution after a rejected (empty) commit', async () => {
+    const { client, ws } = await openClient();
+    const transcripts: Array<[string, string, string]> = [];
+    client.callbacks = {
+      onTranscript: (u, i, t) => transcripts.push([u, i, t]),
+      onAnswerText: () => {},
+      openAudioSink: () => null,
+    };
+    client.sendUtterance(pcm(10_000), 'user-a'); // commit 1 — server will reject as empty
+    client.sendUtterance(pcm(10_000), 'user-b'); // commit 2
+    ws.message({ type: 'error', error: { code: 'input_audio_buffer_commit_empty' } });
+    // The next committed event must now map to user-b (head resynced), not user-a.
+    ws.message({ type: 'input_audio_buffer.committed', item_id: 'item-2' });
+    ws.message({
+      type: 'conversation.item.input_audio_transcription.completed',
+      item_id: 'item-2', transcript: 'ثاني',
+    });
+    expect(transcripts).toEqual([['user-b', 'item-2', 'ثاني']]);
+  });
+});
+
 describe('deleteItem', () => {
   it('sends conversation.item.delete', async () => {
     const { client, ws } = await openClient();

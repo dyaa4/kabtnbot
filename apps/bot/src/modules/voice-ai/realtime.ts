@@ -233,7 +233,27 @@ export class RealtimeClient {
         break;
       }
       case 'error': {
-        console.error(`[Realtime ${this.guildId}] server error:`, ev.error?.code, ev.error?.message);
+        const code = ev.error?.code;
+        console.error(`[Realtime ${this.guildId}] server error:`, code, ev.error?.message);
+        if (code === 'input_audio_buffer_commit_empty') {
+          // A rejected commit never emits `committed`, so its queued speaker id
+          // would never be shifted and every later transcript would be mapped to
+          // the WRONG user (moderation then warns/kicks the wrong member). Drop
+          // the head that will never commit to resync the FIFO.
+          if (this.pendingSpeakers.length > 0) this.pendingSpeakers.shift();
+        } else if (this.activeResponse) {
+          // A rejected response.create never emits `response.done`, so
+          // activeResponse would stay true forever and every later request would
+          // silently queue instead of answering. Recover exactly like response.done.
+          this.activeResponse = false;
+          this.audioSink?.end();
+          this.audioSink = null;
+          if (this.pendingResponse) {
+            this.pendingResponse = false;
+            this.activeResponse = true;
+            this.send({ type: 'response.create' });
+          }
+        }
         break;
       }
     }
