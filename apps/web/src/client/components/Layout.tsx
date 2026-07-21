@@ -42,7 +42,18 @@ function BotStatusBadge() {
   );
 }
 
-export function Layout({ children, wide = false }: { children: React.ReactNode; wide?: boolean }) {
+export function Layout({
+  children,
+  wide = false,
+  sidebar,
+}: {
+  children: React.ReactNode;
+  wide?: boolean;
+  /** Optional navigation rail pinned to the viewport's inline-start edge (right
+   * in RTL, left in LTR). When given, the page becomes a sidebar + content
+   * shell instead of a single centered column. */
+  sidebar?: React.ReactNode;
+}) {
   const { t } = useI18n();
   const me = useQuery({ queryKey: ['me'], queryFn: () => api<Me>('/api/me'), retry: false });
   const admin = useQuery({
@@ -98,11 +109,21 @@ export function Layout({ children, wide = false }: { children: React.ReactNode; 
           )}
         </div>
       </header>
-      {/* `wide` pages (the automation editor) need the whole viewport; everyone
-          else stays in the narrow, readable column. Widening the container —
-          rather than negative-margin bleeding a child — keeps the layout
-          direction-safe (the sidebar lands correctly in both RTL and LTR). */}
-      <main className={`mx-auto w-full flex-1 px-6 py-8 ${wide ? 'max-w-[1900px]' : 'max-w-4xl'}`}>{children}</main>
+      {/* With a sidebar the page is an app shell: the rail is pinned to the
+          viewport's inline-start edge (right in RTL, left in LTR) via flex-row +
+          dir, and the content sits beside it in its own readable column. Without
+          a sidebar it stays a single centered column. `wide` pages (the
+          automation editor) widen that column to near-full width. */}
+      {sidebar ? (
+        <div className="flex flex-1 flex-col md:flex-row">
+          {sidebar}
+          <main className="min-w-0 flex-1 px-4 py-8 sm:px-6">
+            <div className={`mx-auto w-full ${wide ? 'max-w-[1700px]' : 'max-w-4xl'}`}>{children}</div>
+          </main>
+        </div>
+      ) : (
+        <main className={`mx-auto w-full flex-1 px-6 py-8 ${wide ? 'max-w-[1900px]' : 'max-w-4xl'}`}>{children}</main>
+      )}
       <footer className="border-t border-white/10 px-6 py-6 text-sm text-slate-500">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-6 gap-y-2">
           <Link to="/terms" className="transition hover:text-blue-300">{t('footer.terms')}</Link>

@@ -55,8 +55,56 @@ export function GuildView() {
     { to: 'settings', key: 'tabs.settings', Icon: Settings },
   ];
 
+  // The navigation rail: a vertical, edge-pinned sidebar on desktop (right in
+  // RTL, left in LTR), a horizontal scroll strip on mobile. Collapses to an
+  // icon-only rail on desktop. Passed to Layout so it's pinned to the viewport
+  // edge consistently on every tab — not tucked inside the centered column.
+  const sidebar = (
+    <aside
+      className={`flex shrink-0 gap-2 overflow-x-auto border-b border-white/10 bg-slate-950/40 px-4 py-3 md:sticky md:top-16 md:h-[calc(100vh-4rem)] md:flex-col md:gap-1 md:overflow-x-visible md:overflow-y-auto md:border-b-0 md:border-e md:px-3 md:py-4 ${
+        collapsed ? 'md:w-16' : 'md:w-56'
+      }`}
+    >
+      {/* Collapse toggle — desktop only (mobile is a scroll strip). The icon
+          mirrors in RTL so it always points "outward" toward the edge. */}
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+        aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+        className={`hidden rounded-xl px-3 py-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-200 md:mb-1 md:flex md:items-center ${
+          collapsed ? 'md:justify-center md:px-0' : 'md:justify-end'
+        }`}
+      >
+        {collapsed
+          ? <PanelLeftOpen className="h-5 w-5 rtl:-scale-x-100" />
+          : <PanelLeftClose className="h-5 w-5 rtl:-scale-x-100" />}
+      </button>
+      {tabs.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          end={tab.to === ''}
+          title={collapsed ? t(tab.key) : undefined}
+          className={({ isActive }) =>
+            `flex shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition md:w-full ${
+              collapsed ? 'md:justify-center md:px-0' : ''
+            } ${
+              isActive
+                ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
+                : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+            }`
+          }
+        >
+          <tab.Icon className="h-5 w-5 shrink-0" />
+          <span className={collapsed ? 'md:hidden' : ''}>{t(tab.key)}</span>
+        </NavLink>
+      ))}
+    </aside>
+  );
+
   return (
-    <Layout wide={isEditorTab}>
+    <Layout wide={isEditorTab} sidebar={sidebar}>
       {/* The dashboard had no direct way back to the server list — only an
           indirect brand → landing → dashboard hop. This is the explicit return. */}
       <Link
@@ -65,72 +113,21 @@ export function GuildView() {
       >
         <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('nav.backToServers')}
       </Link>
-      {/* Tabs as a sidebar on desktop; a horizontal scroll strip on mobile.
-          items-start so the sidebar keeps its natural height and isn't stretched
-          to a tall tab body (e.g. the full-viewport automation editor). */}
-      <div className="flex flex-col gap-6 md:flex-row md:items-start">
-        {/* On desktop the sidebar sticks so it stays visible while a tab scrolls.
-            Width shrinks to an icon rail when collapsed. Sits on the correct
-            side automatically (right in RTL, left in LTR) via flex-row + dir. */}
-        <nav
-          className={`flex gap-2 overflow-x-auto pb-1 md:sticky md:top-24 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0 ${
-            collapsed ? 'md:w-14' : 'md:w-48'
-          }`}
-        >
-          {/* Collapse toggle — desktop only (mobile is a scroll strip). The icon
-              mirrors in RTL so it always points "outward" toward the edge. */}
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-            aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
-            className={`hidden rounded-xl px-4 py-2 text-slate-400 transition hover:bg-white/5 hover:text-slate-200 md:mb-1 md:flex md:items-center ${
-              collapsed ? 'md:justify-center md:px-0' : 'md:justify-end'
-            }`}
-          >
-            {collapsed
-              ? <PanelLeftOpen className="h-5 w-5 rtl:-scale-x-100" />
-              : <PanelLeftClose className="h-5 w-5 rtl:-scale-x-100" />}
-          </button>
-          {tabs.map((tab) => (
-            <NavLink
-              key={tab.to}
-              to={tab.to}
-              end={tab.to === ''}
-              title={collapsed ? t(tab.key) : undefined}
-              className={({ isActive }) =>
-                `flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition md:w-full ${
-                  collapsed ? 'md:justify-center md:px-0' : ''
-                } ${
-                  isActive
-                    ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                }`
-              }
-            >
-              <tab.Icon className="h-4 w-4 shrink-0" />
-              <span className={collapsed ? 'md:hidden' : ''}>{t(tab.key)}</span>
-            </NavLink>
-          ))}
-        </nav>
-        <div className="min-w-0 flex-1">
-          <Routes>
-            <Route index element={<Overview guildId={guildId} />} />
-            <Route path="voice" element={<VoiceTab guildId={guildId} />} />
-            <Route path="channels" element={<ChannelsTab guildId={guildId} />} />
-            <Route path="settings" element={<SettingsTab guildId={guildId} />} />
-            <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
-            <Route path="commands" element={<CommandsTab guildId={guildId} />} />
-            <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
-            <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
-            <Route path="stats" element={<StatsTab guildId={guildId} />} />
-            <Route path="logs" element={<LogsTab guildId={guildId} />} />
-            {/* Redirect the old split-log paths so any saved links still land. */}
-            <Route path="voice-log" element={<Navigate to="../logs" replace />} />
-            <Route path="chat-log" element={<Navigate to="../logs" replace />} />
-          </Routes>
-        </div>
-      </div>
+      <Routes>
+        <Route index element={<Overview guildId={guildId} />} />
+        <Route path="voice" element={<VoiceTab guildId={guildId} />} />
+        <Route path="channels" element={<ChannelsTab guildId={guildId} />} />
+        <Route path="settings" element={<SettingsTab guildId={guildId} />} />
+        <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
+        <Route path="commands" element={<CommandsTab guildId={guildId} />} />
+        <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
+        <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
+        <Route path="stats" element={<StatsTab guildId={guildId} />} />
+        <Route path="logs" element={<LogsTab guildId={guildId} />} />
+        {/* Redirect the old split-log paths so any saved links still land. */}
+        <Route path="voice-log" element={<Navigate to="../logs" replace />} />
+        <Route path="chat-log" element={<Navigate to="../logs" replace />} />
+      </Routes>
     </Layout>
   );
 }
