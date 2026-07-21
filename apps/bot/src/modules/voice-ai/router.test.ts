@@ -146,6 +146,23 @@ describe('routeVoiceCommand', () => {
     expect(reply).toEqual({ streamed: true });
   });
 
+  it('even the EXACT trigger does not fire an automation inside the conversation window', async () => {
+    // While just talking with the bot (follow-up), custom automations are not
+    // matched at all — they require an explicit wake-word utterance. So even the
+    // literal trigger is answered by the assistant instead of running the flow.
+    vi.mocked(getCommandFlows).mockResolvedValue(GuildCommandFlowsSchema.parse({
+      flows: [{
+        id: 'f-songs', name: 'Songs', triggers: ['شغل الاغاني'],
+        actions: [{ id: 'a1', type: 'speak_tts', text: 'رح أشغل لك الأغاني' }],
+      }],
+    }));
+    realtimeMock.client = { requestResponse: () => true };
+    const reply = await routeVoiceCommand(
+      fakeGuild([]), fakeSession(), 'شغل الاغاني', 'u-speaker', { followUp: true },
+    );
+    expect(reply).toEqual({ streamed: true }); // assistant answered, flow did NOT run
+  });
+
   it('streams free-form questions through the realtime session when available', async () => {
     const requestResponse = vi.fn(() => true);
     realtimeMock.client = { requestResponse };

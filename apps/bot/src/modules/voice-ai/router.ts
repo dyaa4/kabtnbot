@@ -111,13 +111,14 @@ function matchBuiltin(
 /**
  * Resolves a wake-word query. Returns the reply text to speak/post, or
  * `{ streamed: true }` when the realtime session answers directly with audio.
- * `followUp` (utterance from the open conversation window) is accepted for call
- * compatibility but no longer changes routing: automations fire only on exact
- * trigger phrases, so casual chat can never fire one regardless.
+ * `followUp` marks an utterance from the open conversation window (no wake word
+ * repeated). Inside it the speaker is just TALKING with the bot, so custom
+ * automations are NOT matched there — an automation fires only from an explicit
+ * wake-word utterance + its exact trigger phrase, never from casual chat.
  */
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
-  _opts: { followUp?: boolean } = {},
+  opts: { followUp?: boolean } = {},
 ): Promise<string | { streamed: true }> {
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
@@ -148,9 +149,14 @@ export async function routeVoiceCommand(
   };
 
   // 1. Custom flows by phrase — deliberately BEFORE built-ins so an admin can
-  // shadow a stock phrase with their own command.
-  const custom = matchCustomFlows(flows.flows, q, 'voice');
-  if (custom) return runFlow(custom.flow, custom.args);
+  // shadow a stock phrase with their own command. NOT matched inside the
+  // follow-up window: while the speaker is just conversing with the bot, a
+  // phrase that happens to hit a trigger must not fire the automation — those
+  // require an explicit wake-word utterance.
+  if (!opts.followUp) {
+    const custom = matchCustomFlows(flows.flows, q, 'voice');
+    if (custom) return runFlow(custom.flow, custom.args);
+  }
 
   // 2. Built-ins, gated by dashboard overrides. With no overrides saved this
   // behaves byte-identically to the old if-chain.

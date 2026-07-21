@@ -402,6 +402,7 @@
   "commands.trigger.sub": "Quand s'exécute-t-elle ? Ajoutez des phrases dites ou écrites par les membres, ou activez la planification.",
   "commands.users.search": "Rechercher des membres…",
   "commands.textIntentHint": "Les déclencheurs texte nécessitent ENABLE_TEXT_COMMANDS côté déploiement",
+  "commands.voiceTriggerHint": "Les automatisations vocales ne se déclenchent que si tu dis le mot-clé puis exactement cette phrase — jamais pendant une conversation normale avec le bot.",
   "tabs.chatLog": "Journal de chat",
   "chatlog.title": "Journal de chat",
   "chatlog.hint": "Les derniers messages des salons sur 7 jours — supprimés automatiquement ensuite",

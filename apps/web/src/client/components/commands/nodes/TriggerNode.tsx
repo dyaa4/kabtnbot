@@ -208,6 +208,7 @@ export const TriggerNode = memo(function TriggerNode() {
                   {t('commands.trigger.text')}
                 </label>
               </div>
+              {flow.sources.voice && <p className="mt-1 text-xs text-slate-500">{t('commands.voiceTriggerHint')}</p>}
               {flow.sources.text && <p className="mt-1 text-xs text-blue-400/80">{t('commands.textIntentHint')}</p>}
 
               <label className="mt-3 block text-xs text-slate-400">{t('commands.trigger.matchMode')}</label>

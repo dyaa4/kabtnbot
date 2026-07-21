@@ -402,6 +402,7 @@
   "commands.trigger.sub": "Wann läuft sie? Füge Phrasen hinzu, die Mitglieder sagen oder tippen, oder aktiviere den Zeitplan.",
   "commands.users.search": "Mitglieder suchen…",
   "commands.textIntentHint": "Text-Auslöser benötigen ENABLE_TEXT_COMMANDS im Server-Deployment",
+  "commands.voiceTriggerHint": "Voice-Automationen lösen nur aus, wenn du das Weckwort und dann genau diese Phrase sagst — nicht während eines normalen Gesprächs mit dem Bot.",
   "tabs.chatLog": "Chat-Log",
   "chatlog.title": "Chat-Log",
   "chatlog.hint": "Die neuesten Kanalnachrichten der letzten 7 Tage — danach automatisch gelöscht",

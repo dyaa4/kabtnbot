@@ -402,6 +402,7 @@
   "commands.trigger.sub": "Ne zaman çalışır? Üyelerin söylediği ya da yazdığı ifadeler ekle veya zamanlamayı aç.",
   "commands.users.search": "Üye ara…",
   "commands.textIntentHint": "Metin tetikleyiciler sunucu dağıtımında ENABLE_TEXT_COMMANDS gerektirir",
+  "commands.voiceTriggerHint": "Sesli otomasyonlar yalnızca uyandırma sözcüğünü ve ardından tam olarak bu ifadeyi söylediğinde çalışır — botla normal sohbet sırasında asla.",
   "tabs.chatLog": "Sohbet kaydı",
   "chatlog.title": "Sohbet kaydı",
   "chatlog.hint": "Son 7 günün en yeni kanal mesajları — sonrasında otomatik silinir",

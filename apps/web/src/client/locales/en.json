@@ -402,6 +402,7 @@
   "commands.trigger.sub": "When does it run? Add phrases members say or type, or enable the schedule.",
   "commands.users.search": "Search members…",
   "commands.textIntentHint": "Text triggers require ENABLE_TEXT_COMMANDS on the server deployment",
+  "commands.voiceTriggerHint": "Voice automations fire only when you say the wake word followed by this exact phrase — never during a normal conversation with the bot.",
   "tabs.chatLog": "Chat log",
   "chatlog.title": "Chat log",
   "chatlog.hint": "The latest channel messages of the last 7 days — auto-deleted afterwards",
