@@ -246,7 +246,22 @@ export class RealtimeClient {
       }
       case 'error': {
         const code = ev.error?.code;
-        console.error(`[Realtime ${this.guildId}] server error:`, code, ev.error?.message);
+        const message = ev.error?.message ?? '';
+        console.error(`[Realtime ${this.guildId}] server error:`, code, message);
+        // A wrong/inaccessible model is NOT transient: the server closes the
+        // socket, and a plain reconnect just re-opens (resetting the backoff),
+        // hits the same error, and closes again — a 1s hammer loop that also
+        // starves the event loop (slash commands time out → Unknown interaction).
+        // Stop reconnecting until something explicitly re-opens the session.
+        if (code === 'model_not_found' || /does not exist or you do not have access/i.test(message)) {
+          console.error(
+            `[Realtime ${this.guildId}] FATAL: model "${config.OPENAI_REALTIME_MODEL}" is unavailable — ` +
+              'not reconnecting. Set OPENAI_REALTIME_MODEL to an accessible model (e.g. gpt-realtime-mini).',
+          );
+          this.closed = true;
+          try { this.ws?.close(); } catch { /* already closing */ }
+          break;
+        }
         if (code === 'input_audio_buffer_commit_empty') {
           // A rejected commit never emits `committed`, so its queued speaker id
           // would never be shifted and every later transcript would be mapped to

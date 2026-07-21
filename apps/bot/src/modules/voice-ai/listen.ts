@@ -1,5 +1,5 @@
-import OpusScript from 'opusscript';
 import { EndBehaviorType } from '@discordjs/voice';
+import { createOpusDecoder } from './opus-decoder.js';
 import type { Guild, VoiceState } from 'discord.js';
 import { parseWakeWord } from '@gamebot/shared';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
@@ -104,7 +104,7 @@ export function stopListening(session: VoiceSession): void {
   session.removeVoiceHandler = undefined;
   for (const { decoder, stream } of session.subscriptions.values()) {
     stream.destroy();
-    decoder.delete();
+    decoder.delete?.();
   }
   session.subscriptions.clear();
   // The realtime WS stays open on purpose: /listen resumes with the
@@ -231,7 +231,7 @@ export function shouldRenewSubscription(session: VoiceSession, guild: Guild, use
 function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): void {
   if (!session.listening || session.subscriptions.has(userId)) return;
 
-  const decoder = new OpusScript(SAMPLE_RATE, OPUS_CHANNELS, OpusScript.Application.AUDIO);
+  const decoder = createOpusDecoder(SAMPLE_RATE, OPUS_CHANNELS);
   const pcmFrames: Buffer[] = [];
   let totalFrames = 0;
 
@@ -261,8 +261,8 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     if (decoderFreed) return;
     decoderFreed = true;
     try {
-      decoder.delete();
-    } catch { /* already freed by stopListening's sweep */ }
+      decoder.delete?.();
+    } catch { /* already freed by stopListening's sweep, or native (no-op) */ }
   };
 
   stream.once('close', () => {

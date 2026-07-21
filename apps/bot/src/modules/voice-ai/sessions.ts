@@ -5,7 +5,7 @@ import {
 } from '@discordjs/voice';
 import { PassThrough, Readable } from 'stream';
 import type { VoiceBasedChannel, VoiceState } from 'discord.js';
-import type OpusScript from 'opusscript';
+import type { OpusDecoder } from './opus-decoder.js';
 import { synthesizeSpeech } from './tts.js';
 import { closeRealtime } from './realtime.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
@@ -16,7 +16,7 @@ export interface VoiceSession {
   connection: VoiceConnection;
   player: AudioPlayer;
   listening: boolean;
-  subscriptions: Map<string, { decoder: OpusScript; stream: Readable }>;
+  subscriptions: Map<string, { decoder: OpusDecoder; stream: Readable }>;
   /** Open conversation window: this speaker may follow up without the wake word until `until` (ms epoch). */
   followUp?: { userId: string; until: number };
   /** Focus lock: while active, only this speaker is answered — others are ignored until `until` (ms epoch). */
@@ -121,7 +121,7 @@ export function leaveGuildVoice(guildId: string): boolean {
   session?.removeBotMoveHandler?.();
   for (const { decoder, stream } of session?.subscriptions.values() ?? []) {
     stream.destroy();
-    decoder.delete();
+    decoder.delete?.();
   }
   const connection = session?.connection ?? getVoiceConnection(guildId);
   if (!connection) return false;

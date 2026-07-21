@@ -26,6 +26,9 @@
     "ws": "^8.21.1",
     "zod": "^3.24.0"
   },
+  "optionalDependencies": {
+    "@discordjs/opus": "^0.10.0"
+  },
   "devDependencies": {
     "@types/ws": "^8.18.1",
     "mongodb-memory-server": "^10.1.0",

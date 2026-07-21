@@ -283,6 +283,24 @@ describe('error recovery', () => {
     });
     expect(transcripts).toEqual([['user-b', 'item-2', 'ثاني']]);
   });
+
+  it('stops reconnecting on a fatal model_not_found error (no 1s hammer loop)', async () => {
+    vi.useFakeTimers();
+    try {
+      const { ws } = await openClient();
+      const before = FakeWS.instances.length;
+      ws.message({
+        type: 'error',
+        error: { code: 'model_not_found', message: 'The model `x` does not exist or you do not have access to it.' },
+      });
+      // The fatal handler closes the socket; advancing well past any backoff must
+      // NOT spawn a reconnect (a transient close would have).
+      vi.advanceTimersByTime(60_000);
+      expect(FakeWS.instances.length).toBe(before);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
 
 describe('deleteItem', () => {
