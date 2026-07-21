@@ -136,18 +136,19 @@ export async function handleTranscript(
     return;
   }
 
-  // Focus lock: once the bot commits to a speaker it ignores everyone else
-  // (even their wake word) until that speaker goes quiet for the focus window.
-  // The focused speaker's own talk refreshes the lock, so it lives as long as
-  // they stay active and decays on their silence — then the next person is free
-  // to engage. Established further down, only when the bot actually answers.
+  // Focus lock: the bot commits to one speaker and ignores everyone else (even
+  // their wake word) while that speaker still holds the floor — i.e. the bot is
+  // mid-reply to them, or their follow-up window is still open. The moment the
+  // floor frees, the next person who addresses the bot becomes the new focus,
+  // and so on. Established further down, only when the bot actually answers.
   if (config.voice.focus_active_speaker) {
     const now = Date.now();
-    if (isBlockedByFocus(session.focus, userId, now)) {
+    if (isBlockedByFocus(session.focus, userId, now, client?.isResponding() ?? false)) {
       console.log(`[Voice ${guild.id}] focus lock: ignoring ${userId} (focused on ${session.focus?.userId})`);
       client?.deleteItem(itemId);
       return;
     }
+    // The focused speaker talking again keeps their follow-up floor alive.
     if (shouldRefreshFocus(session.focus, userId, now) && session.focus) {
       session.focus.until = now + focusWindowMs(config.voice.follow_up_seconds);
     }

@@ -3,30 +3,38 @@ export interface FocusLock {
   until: number;
 }
 
-// When focus mode is on but the guild has no follow-up window, the lock still
-// needs a lifetime — long enough to span the gap between a speaker's wake-word
-// turns, short enough that a departed speaker frees the room quickly.
-export const MIN_FOCUS_SECONDS = 15;
-
-/** How long a focus lock should hold: the follow-up window if longer, else the floor. */
-export function focusWindowMs(followUpSeconds: number): number {
-  return Math.max(followUpSeconds, MIN_FOCUS_SECONDS) * 1000;
-}
-
 /**
- * Whether this speaker must be ignored because the bot is focused on someone
- * else. A lock that has expired (or belongs to this same speaker) never blocks.
- * Pure — the single decision point, exported for tests.
+ * How long the focused speaker keeps the floor AFTER an utterance, in ms: the
+ * follow-up window (0 = none). The "bot is replying" guard covers the reply
+ * itself, so with no follow-up window the floor frees the moment the reply ends
+ * — then whoever speaks next becomes the new focus.
  */
-export function isBlockedByFocus(focus: FocusLock | undefined, userId: string, now: number): boolean {
-  return focus !== undefined && now < focus.until && focus.userId !== userId;
+export function focusWindowMs(followUpSeconds: number): number {
+  return followUpSeconds * 1000;
 }
 
 /**
- * Whether the focused speaker's own lock is still live and should be refreshed
- * (they're the active speaker and just talked again). False once it has expired
- * or if it belongs to a different user.
+ * Whether a DIFFERENT speaker must be ignored right now: the focused speaker
+ * still holds the floor because the bot is mid-reply to them, or their
+ * follow-up window is still open. Once neither holds, the floor is free and the
+ * next speaker to address the bot takes focus. Pure — the single decision
+ * point, exported for tests.
+ */
+export function isBlockedByFocus(
+  focus: FocusLock | undefined,
+  userId: string,
+  now: number,
+  botResponding: boolean,
+): boolean {
+  if (focus === undefined || focus.userId === userId) return false;
+  return botResponding || now < focus.until;
+}
+
+/**
+ * Whether the focused speaker's own follow-up window is still live and should
+ * be pushed forward (they just talked again, so they keep the floor). False for
+ * a different user or once the window has lapsed.
  */
 export function shouldRefreshFocus(focus: FocusLock | undefined, userId: string, now: number): boolean {
-  return focus !== undefined && now < focus.until && focus.userId === userId;
+  return focus !== undefined && focus.userId === userId && now < focus.until;
 }
