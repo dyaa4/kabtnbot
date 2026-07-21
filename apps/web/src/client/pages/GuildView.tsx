@@ -41,39 +41,44 @@ export function GuildView() {
       >
         <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('nav.backToServers')}
       </Link>
-      <nav className="mb-6 flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <NavLink
-            key={tab.to}
-            to={tab.to}
-            end={tab.to === ''}
-            className={({ isActive }) =>
-              `rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                isActive
-                  ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`
-            }
-          >
-            {t(tab.key)}
-          </NavLink>
-        ))}
-      </nav>
-      <Routes>
-        <Route index element={<Overview guildId={guildId} />} />
-        <Route path="voice" element={<VoiceTab guildId={guildId} />} />
-        <Route path="channels" element={<ChannelsTab guildId={guildId} />} />
-        <Route path="settings" element={<SettingsTab guildId={guildId} />} />
-        <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
-        <Route path="commands" element={<CommandsTab guildId={guildId} />} />
-        <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
-        <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
-        <Route path="stats" element={<StatsTab guildId={guildId} />} />
-        <Route path="logs" element={<LogsTab guildId={guildId} />} />
-        {/* Redirect the old split-log paths so any saved links still land. */}
-        <Route path="voice-log" element={<Navigate to="../logs" replace />} />
-        <Route path="chat-log" element={<Navigate to="../logs" replace />} />
-      </Routes>
+      {/* Tabs as a sidebar on desktop; a horizontal scroll strip on mobile. */}
+      <div className="flex flex-col gap-6 md:flex-row">
+        <nav className="flex gap-2 overflow-x-auto pb-1 md:w-48 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0">
+          {tabs.map((tab) => (
+            <NavLink
+              key={tab.to}
+              to={tab.to}
+              end={tab.to === ''}
+              className={({ isActive }) =>
+                `shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition md:w-full md:text-start ${
+                  isActive
+                    ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                }`
+              }
+            >
+              {t(tab.key)}
+            </NavLink>
+          ))}
+        </nav>
+        <div className="min-w-0 flex-1">
+          <Routes>
+            <Route index element={<Overview guildId={guildId} />} />
+            <Route path="voice" element={<VoiceTab guildId={guildId} />} />
+            <Route path="channels" element={<ChannelsTab guildId={guildId} />} />
+            <Route path="settings" element={<SettingsTab guildId={guildId} />} />
+            <Route path="customize" element={<CustomizeTab guildId={guildId} />} />
+            <Route path="commands" element={<CommandsTab guildId={guildId} />} />
+            <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
+            <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
+            <Route path="stats" element={<StatsTab guildId={guildId} />} />
+            <Route path="logs" element={<LogsTab guildId={guildId} />} />
+            {/* Redirect the old split-log paths so any saved links still land. */}
+            <Route path="voice-log" element={<Navigate to="../logs" replace />} />
+            <Route path="chat-log" element={<Navigate to="../logs" replace />} />
+          </Routes>
+        </div>
+      </div>
     </Layout>
   );
 }
