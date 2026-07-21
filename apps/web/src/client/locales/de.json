@@ -141,6 +141,8 @@
   "settings.voice.ttsVoice.hint": "Die Stimme, mit der der Bot spricht (♂ männlich, ♀ weiblich).",
   "settings.voice.followUp": "Gespräch offen halten",
   "settings.voice.followUp.hint": "Nach der ersten Frage antwortet der Bot dir so lange auch ohne Wake-Word; jede Folgefrage verlängert das Fenster. Aus = Wake-Word jedes Mal nötig.",
+  "settings.voice.focus": "Auf aktiven Sprecher fokussieren",
+  "settings.voice.focus.hint": "Sobald jemand mit dem Bot spricht, konzentriert er sich auf diese Person und ignoriert andere (auch deren Wake-Word), bis sie kurz still ist — dann ist der Nächste dran.",
   "settings.voice.followUp.off": "Aus — Wake-Word jedes Mal",
   "settings.voice.allowedChannels": "Erlaubte Sprachkanäle",
   "settings.voice.allowedChannels.hint": "Sprachkanäle, die der Bot über /join betreten darf — nichts ankreuzen heißt: alle Kanäle erlaubt.",

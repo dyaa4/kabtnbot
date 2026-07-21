@@ -23,6 +23,7 @@ describe('GuildConfigSchema', () => {
     expect(c.voice.tts_voice).toBe('marin');
     expect(c.voice.personality_enabled).toBe(false);
     expect(c.voice.follow_up_seconds).toBe(0);
+    expect(c.voice.focus_active_speaker).toBe(true);
     expect(c.protection).toEqual({
       enabled: false,
       voice_moderation: true,

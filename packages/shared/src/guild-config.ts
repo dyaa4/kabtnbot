@@ -31,6 +31,11 @@ export const GuildConfigSchema = z.object({
       // deliberately don't, so a noise-hallucinated wake word can't start a
       // self-sustaining answer loop. 0 = off (wake word required every time).
       follow_up_seconds: z.number().int().min(0).max(120).default(0),
+      // Focus lock: once a speaker addresses the bot, it commits to THAT person
+      // and ignores everyone else (even their wake word) until the focused
+      // speaker goes quiet for the focus window — then the next person can
+      // engage. Keeps the bot from ping-ponging between people in a busy room.
+      focus_active_speaker: z.boolean().default(true),
     })
     .default({}),
   protection: z

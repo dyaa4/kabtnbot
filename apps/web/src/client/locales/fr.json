@@ -141,6 +141,8 @@
   "settings.voice.ttsVoice.hint": "La voix avec laquelle le bot parle (♂ homme, ♀ femme).",
   "settings.voice.followUp": "Garder la conversation ouverte",
   "settings.voice.followUp.hint": "Après votre première question, le bot continue à vous répondre sans le mot d'activation pendant cette durée ; chaque question la prolonge. Désactivé = mot d'activation à chaque fois.",
+  "settings.voice.focus": "Se concentrer sur l'interlocuteur actif",
+  "settings.voice.focus.hint": "Dès que quelqu'un parle au bot, il se concentre sur cette personne et ignore les autres (même leur mot d'activation) jusqu'à ce qu'elle se taise un instant — ensuite la personne suivante peut intervenir.",
   "settings.voice.followUp.off": "Désactivé — mot d'activation à chaque fois",
   "settings.voice.allowedChannels": "Salons vocaux autorisés",
   "settings.voice.allowedChannels.hint": "Les salons vocaux que le bot peut rejoindre via /join — ne rien cocher autorise tous les salons.",

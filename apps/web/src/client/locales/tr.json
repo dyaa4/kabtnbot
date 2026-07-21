@@ -141,6 +141,8 @@
   "settings.voice.ttsVoice.hint": "Botun konuştuğu ses (♂ erkek, ♀ kadın).",
   "settings.voice.followUp": "Konuşmayı açık tut",
   "settings.voice.followUp.hint": "İlk sorundan sonra bot bu süre boyunca uyandırma kelimesi olmadan yanıt vermeye devam eder; her soru süreyi uzatır. Kapalı = her seferinde uyandırma kelimesi gerekir.",
+  "settings.voice.focus": "Aktif konuşana odaklan",
+  "settings.voice.focus.hint": "Biri botla konuşmaya başladığında bot ona odaklanır ve diğerlerini (uyandırma kelimelerini bile) o kişi bir süre susana kadar yok sayar — sonra sıradaki kişi konuşabilir.",
   "settings.voice.followUp.off": "Kapalı — her seferinde uyandırma kelimesi",
   "settings.voice.allowedChannels": "İzinli ses kanalları",
   "settings.voice.allowedChannels.hint": "Botun /join ile girebileceği ses kanalları — hiçbirini işaretlemezsen tüm kanallara izin verilir.",

@@ -21,6 +21,7 @@ const VoiceForm = z.object({
   tts_voice: z.enum(TTS_VOICES),
   personality_enabled: z.boolean(),
   follow_up_seconds: z.number().int().min(0).max(120),
+  focus_active_speaker: z.boolean(),
 });
 
 type VoiceValues = z.infer<typeof VoiceForm>;
@@ -33,6 +34,7 @@ interface GuildConfigResp {
     allowed_channel_ids: string[];
     personality_enabled: boolean;
     follow_up_seconds: number;
+    focus_active_speaker: boolean;
   };
 }
 
@@ -162,6 +164,11 @@ export function VoiceTab({ guildId }: { guildId: string }) {
           </select>
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('settings.voice.followUp.hint')}</p>
+        <label className="mb-1 flex items-center gap-2">
+          <input type="checkbox" {...voice.register('focus_active_speaker')} />
+          <span>{t('settings.voice.focus')}</span>
+        </label>
+        <p className="mb-4 ms-6 text-xs text-slate-500">{t('settings.voice.focus.hint')}</p>
         <label className="mb-1 flex items-center gap-2">
           <input type="checkbox" {...voice.register('personality_enabled')} />
           <span>{t('settings.personality')}</span>

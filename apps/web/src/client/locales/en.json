@@ -141,6 +141,8 @@
   "settings.voice.ttsVoice.hint": "The voice the bot speaks with (♂ male, ♀ female).",
   "settings.voice.followUp": "Keep conversation open",
   "settings.voice.followUp.hint": "After your first question the bot keeps replying to you without the wake word for this long; every follow-up extends it. Off = wake word required every time.",
+  "settings.voice.focus": "Focus on the active speaker",
+  "settings.voice.focus.hint": "Once someone starts talking to the bot, it focuses on them and ignores others (even their wake word) until they go quiet for a moment — then the next person can engage.",
   "settings.voice.followUp.off": "Off — wake word every time",
   "settings.voice.allowedChannels": "Allowed voice channels",
   "settings.voice.allowedChannels.hint": "Voice channels the bot may join via /join — leave all unchecked to allow every channel.",

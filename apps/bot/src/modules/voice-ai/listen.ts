@@ -7,6 +7,7 @@ import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
 import { playSpeech, playPcmStream, type VoiceSession, getSession } from './sessions.js';
 import { ensureRealtime, getRealtime } from './realtime.js';
 import { downmixStereoToMono, downsample48to24, normalizeQuietAudio, pcmPeak } from './audio-util.js';
+import { focusWindowMs, isBlockedByFocus, shouldRefreshFocus } from './focus.js';
 import { t } from '../../lib/strings.js';
 
 const SAMPLE_RATE = 48000;
@@ -128,9 +129,28 @@ export async function handleTranscript(
 
   const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
   // moderated → no reply, and the profanity never enters the model context.
+  // NOTE: moderation runs for EVERYONE, before the focus lock — a focused
+  // conversation never lets someone else's profanity through unchecked.
   if (await handleTranscriptModeration(guild, session, userId, text)) {
     client?.deleteItem(itemId);
     return;
+  }
+
+  // Focus lock: once the bot commits to a speaker it ignores everyone else
+  // (even their wake word) until that speaker goes quiet for the focus window.
+  // The focused speaker's own talk refreshes the lock, so it lives as long as
+  // they stay active and decays on their silence — then the next person is free
+  // to engage. Established further down, only when the bot actually answers.
+  if (config.voice.focus_active_speaker) {
+    const now = Date.now();
+    if (isBlockedByFocus(session.focus, userId, now)) {
+      console.log(`[Voice ${guild.id}] focus lock: ignoring ${userId} (focused on ${session.focus?.userId})`);
+      client?.deleteItem(itemId);
+      return;
+    }
+    if (shouldRefreshFocus(session.focus, userId, now) && session.focus) {
+      session.focus.until = now + focusWindowMs(config.voice.follow_up_seconds);
+    }
   }
 
   let query = parseWakeWord(text, config.voice.wake_word);
@@ -158,6 +178,11 @@ export async function handleTranscript(
   if (query === null) {
     client?.deleteItem(itemId);
     return;
+  }
+  // This speaker is addressing the bot → commit to them under focus mode, so
+  // anyone else is ignored until they go quiet for the focus window.
+  if (config.voice.focus_active_speaker) {
+    session.focus = { userId, until: Date.now() + focusWindowMs(config.voice.follow_up_seconds) };
   }
   // Only a wake-word utterance opens/extends the window (bare wake word too —
   // "يا كابتن" … pause … question is the natural flow). Follow-ups must NOT

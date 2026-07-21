@@ -35,6 +35,7 @@ const ConfigPatch = z
         allowed_channel_ids: z.array(z.string()).max(50).optional(),
         personality_enabled: z.boolean().optional(),
         follow_up_seconds: z.number().int().min(0).max(120).optional(),
+        focus_active_speaker: z.boolean().optional(),
       })
       .strict()
       .optional(),

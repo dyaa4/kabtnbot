@@ -19,6 +19,8 @@ export interface VoiceSession {
   subscriptions: Map<string, { decoder: OpusScript; stream: Readable }>;
   /** Open conversation window: this speaker may follow up without the wake word until `until` (ms epoch). */
   followUp?: { userId: string; until: number };
+  /** Focus lock: while active, only this speaker is answered — others are ignored until `until` (ms epoch). */
+  focus?: { userId: string; until: number };
   /** Detaches this session's client-level voiceStateUpdate listener (set by startListening). */
   removeVoiceHandler?: () => void;
   /** Detaches the listener that tracks the bot being dragged to another channel. */
