@@ -1,5 +1,7 @@
 import { Link, NavLink, Navigate, Route, Routes, useParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft, LayoutDashboard, Mic, Sparkles, Zap, Shield, Hand, BarChart3, FileText, Palette, Settings,
+} from 'lucide-react';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
 import { Overview } from '../components/Overview.js';
@@ -19,16 +21,16 @@ export function GuildView() {
   if (!guildId) return null;
 
   const tabs = [
-    { to: '', key: 'tabs.overview' },
-    { to: 'voice', key: 'tabs.voice' },
-    { to: 'channels', key: 'tabs.channels' },
-    { to: 'commands', key: 'tabs.commands' },
-    { to: 'protection', key: 'tabs.protection' },
-    { to: 'welcome', key: 'tabs.welcome' },
-    { to: 'stats', key: 'tabs.stats' },
-    { to: 'logs', key: 'tabs.logs' },
-    { to: 'customize', key: 'tabs.customize' },
-    { to: 'settings', key: 'tabs.settings' },
+    { to: '', key: 'tabs.overview', Icon: LayoutDashboard },
+    { to: 'voice', key: 'tabs.voice', Icon: Mic },
+    { to: 'channels', key: 'tabs.channels', Icon: Sparkles },
+    { to: 'commands', key: 'tabs.commands', Icon: Zap },
+    { to: 'protection', key: 'tabs.protection', Icon: Shield },
+    { to: 'welcome', key: 'tabs.welcome', Icon: Hand },
+    { to: 'stats', key: 'tabs.stats', Icon: BarChart3 },
+    { to: 'logs', key: 'tabs.logs', Icon: FileText },
+    { to: 'customize', key: 'tabs.customize', Icon: Palette },
+    { to: 'settings', key: 'tabs.settings', Icon: Settings },
   ];
 
   return (
@@ -41,22 +43,26 @@ export function GuildView() {
       >
         <ArrowLeft className="h-4 w-4 rtl:rotate-180" /> {t('nav.backToServers')}
       </Link>
-      {/* Tabs as a sidebar on desktop; a horizontal scroll strip on mobile. */}
-      <div className="flex flex-col gap-6 md:flex-row">
-        <nav className="flex gap-2 overflow-x-auto pb-1 md:w-48 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0">
+      {/* Tabs as a sidebar on desktop; a horizontal scroll strip on mobile.
+          items-start so the sidebar keeps its natural height and isn't stretched
+          to a tall tab body (e.g. the full-viewport automation editor). */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-start">
+        {/* On desktop the sidebar sticks so it stays visible while a tab scrolls. */}
+        <nav className="flex gap-2 overflow-x-auto pb-1 md:sticky md:top-24 md:w-48 md:shrink-0 md:flex-col md:gap-1 md:overflow-visible md:pb-0">
           {tabs.map((tab) => (
             <NavLink
               key={tab.to}
               to={tab.to}
               end={tab.to === ''}
               className={({ isActive }) =>
-                `shrink-0 rounded-xl px-4 py-2 text-sm font-semibold transition md:w-full md:text-start ${
+                `flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition md:w-full ${
                   isActive
                     ? 'bg-gradient-to-r from-blue-500 via-blue-500 to-blue-400 text-slate-950 shadow-[0_0_20px_-6px_rgba(59,130,246,0.7)]'
                     : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                 }`
               }
             >
+              <tab.Icon className="h-4 w-4 shrink-0" />
               {t(tab.key)}
             </NavLink>
           ))}
