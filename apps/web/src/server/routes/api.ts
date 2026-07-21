@@ -416,6 +416,23 @@ export function apiRouter(rest: DiscordRest): Router {
           return;
         }
       }
+      // Channel ids route messages/logs — like roles, only accept ids that
+      // actually belong to THIS guild (defense in depth: never store a foreign
+      // channel id even if a consumer later resolves it globally).
+      const channelIdsToCheck = [
+        parsed.data.welcome?.channel_id,
+        parsed.data.welcome?.farewell_channel_id,
+        parsed.data.summary?.channel_id,
+        parsed.data.protection?.log_channel_id,
+        ...(parsed.data.voice?.allowed_channel_ids ?? []),
+      ].filter((id): id is string => typeof id === 'string' && id.length > 0);
+      if (channelIdsToCheck.length > 0) {
+        const channelIds = new Set((await rest.listAllChannels(req.params.guildId)).map((c) => c.id));
+        if (!channelIdsToCheck.every((id) => channelIds.has(id))) {
+          apiError(res, 400, 'VALIDATION', 'Unknown channel for this guild');
+          return;
+        }
+      }
       res.json(await updateGuildConfig(req.params.guildId, parsed.data));
     } catch (err) {
       next(err);
