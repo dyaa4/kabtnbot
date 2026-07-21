@@ -366,21 +366,15 @@ describe('api routes', () => {
     expect(okAutoRole.body.welcome.auto_role_id).toBe('r1');
   });
 
-  it('validates configured channel ids against the guild', async () => {
-    const { app, cookie, rest } = setup();
-    rest.allChannels.set('g1', [{ id: 'c1', name: 'general', type: 0, position: 0, parent_id: null }]);
-
-    const bad = await request(app)
+  it('accepts a configured channel id even if it no longer exists (stale ids must not block saves)', async () => {
+    const { app, cookie } = setup();
+    // A previously-set log channel that was since deleted must NOT fail the save
+    // — otherwise unrelated settings become un-saveable.
+    const res = await request(app)
       .patch('/api/guilds/g1/config')
       .set('Cookie', cookie)
-      .send({ protection: { log_channel_id: 'c-nope' } });
-    expect(bad.status).toBe(400);
-
-    const ok = await request(app)
-      .patch('/api/guilds/g1/config')
-      .set('Cookie', cookie)
-      .send({ protection: { log_channel_id: 'c1' } });
-    expect(ok.status).toBe(200);
+      .send({ protection: { log_channel_id: 'deleted-channel' } });
+    expect(res.status).toBe(200);
   });
 
   it('lists text channels by name; denies non-managed guild', async () => {
