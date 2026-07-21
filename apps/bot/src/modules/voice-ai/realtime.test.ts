@@ -203,6 +203,31 @@ describe('responses', () => {
     expect(client.requestResponse()).toBe(true); // free again
   });
 
+  it('injects the current-speaker context note as a system item BEFORE the response', async () => {
+    const { client, ws } = await openClient();
+    client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };
+
+    expect(client.requestResponse('You are now talking with Ali.')).toBe(true);
+
+    const created = ws.sent.find((m) => m.type === 'conversation.item.create') as never as {
+      item: { role: string; content: { type: string; text: string }[] };
+    };
+    expect(created).toBeDefined();
+    expect(created.item.role).toBe('system');
+    expect(created.item.content[0].text).toContain('Ali');
+    // Must precede response.create so the model has its audience before answering.
+    const idxItem = ws.sent.findIndex((m) => m.type === 'conversation.item.create');
+    const idxResp = ws.sent.findIndex((m) => m.type === 'response.create');
+    expect(idxItem).toBeLessThan(idxResp);
+  });
+
+  it('sends no context item when no note is given', async () => {
+    const { client, ws } = await openClient();
+    client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };
+    expect(client.requestResponse()).toBe(true);
+    expect(ws.sent.some((m) => m.type === 'conversation.item.create')).toBe(false);
+  });
+
   it('queues a request while a response is active and answers it after response.done', async () => {
     const { client, ws } = await openClient();
     client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };

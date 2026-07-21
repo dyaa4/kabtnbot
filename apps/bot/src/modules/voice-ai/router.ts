@@ -221,7 +221,14 @@ export async function routeVoiceCommand(
   // The realtime session answers with audio directly (the utterance is already
   // in its context; while an answer is playing the request queues instead of
   // speaking over it). Falls back to the text Groq/Gemini path only when WS down.
-  if (getRealtime(guild.id)?.requestResponse()) return { streamed: true };
+  const rt = getRealtime(guild.id);
+  if (rt) {
+    // Tell the model WHO is talking to it right now, so it knows who it's
+    // speaking with and can address them by name — it must NOT announce or list
+    // who is present, just naturally know its counterpart.
+    const speakerName = speaker?.displayName ?? 'a member';
+    if (rt.requestResponse(`You are now talking with ${speakerName}.`)) return { streamed: true };
+  }
   try {
     const ai = getAIProvider();
     return await ai.generateResponse(q, {

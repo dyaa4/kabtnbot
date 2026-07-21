@@ -152,10 +152,22 @@ export class RealtimeClient {
     this.pendingSpeakers.push(userId);
   }
 
-  /** Ask the model to answer the conversation so far. False = offline. */
-  requestResponse(): boolean {
+  /**
+   * Ask the model to answer the conversation so far. False = offline.
+   * `contextNote` (who is currently speaking) is injected as a short SYSTEM item
+   * first, so the model knows who it is talking with and can address them by
+   * name. Best-effort — a rejected item is non-fatal (the error handler recovers
+   * and the answer still generates).
+   */
+  requestResponse(contextNote?: string): boolean {
     if (this.ws?.readyState !== WebSocket.OPEN) return false;
     this.touchIdle();
+    if (contextNote) {
+      this.send({
+        type: 'conversation.item.create',
+        item: { type: 'message', role: 'system', content: [{ type: 'input_text', text: contextNote }] },
+      });
+    }
     if (this.activeResponse) {
       console.log(`[Realtime ${this.guildId}] response active — queueing request`);
       this.pendingResponse = true;
@@ -273,6 +285,7 @@ export class RealtimeClient {
         language: cfg.language,
       }),
       `You hear multiple speakers from a Discord voice channel. They address you with the wake word "${cfg.voice.wake_word}" — never repeat or mention the wake word in your answers.`,
+      'Before each reply you are told who is currently speaking, so you know who you are talking with — address them by their name naturally when it fits (e.g. "Yes, Ali, ..."), without overusing it. NEVER announce, list, or read out who is present in the channel.',
       'You can only answer with speech. You cannot play music or songs, and you cannot perform any action on the server yourself — never claim or promise to do such things.',
     ].join('\n');
 
