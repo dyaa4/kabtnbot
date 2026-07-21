@@ -31,8 +31,10 @@ const Env = z.object({
   OPENAI_REALTIME_VOICE: z.string().optional().default('marin'),
   // gpt-4o-*-transcribe supports a decode prompt (wake word + trigger phrases);
   // gpt-realtime-whisper/whisper-1 do NOT — realtime.ts omits it for those.
-  // Full gpt-4o-transcribe transcribes Arabic/German more accurately than mini.
-  OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-transcribe'),
+  // mini is the accessible default: the full gpt-4o-transcribe requires project
+  // access this OpenAI project doesn't have (transcription failed:
+  // does-not-have-access). Opt into it via env once the account is granted it.
+  OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-mini-transcribe'),
   OPENAI_TTS_MODEL: z.string().optional().default('gpt-4o-mini-tts'),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
