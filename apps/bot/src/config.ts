@@ -23,11 +23,15 @@ const Env = z.object({
   // STT + conversation + spoken answers, REST TTS for verbatim announcements
   // (/speak, warn/kick lines, scheduler) that must never be paraphrased.
   OPENAI_API_KEY: z.string().optional().default(''),
-  OPENAI_REALTIME_MODEL: z.string().optional().default('gpt-realtime-mini'),
+  // Full gpt-realtime (not -mini): the most natural, expressive speech and the
+  // smartest answers — the quality model for the conversation. Override via env
+  // for a cheaper/mini run.
+  OPENAI_REALTIME_MODEL: z.string().optional().default('gpt-realtime'),
   OPENAI_REALTIME_VOICE: z.string().optional().default('marin'),
   // gpt-4o-*-transcribe supports a decode prompt (wake word + trigger phrases);
   // gpt-realtime-whisper/whisper-1 do NOT — realtime.ts omits it for those.
-  OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-mini-transcribe'),
+  // Full gpt-4o-transcribe transcribes Arabic/German more accurately than mini.
+  OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-transcribe'),
   OPENAI_TTS_MODEL: z.string().optional().default('gpt-4o-mini-tts'),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
