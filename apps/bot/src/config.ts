@@ -23,10 +23,11 @@ const Env = z.object({
   // STT + conversation + spoken answers, REST TTS for verbatim announcements
   // (/speak, warn/kick lines, scheduler) that must never be paraphrased.
   OPENAI_API_KEY: z.string().optional().default(''),
-  // Full gpt-realtime (not -mini): the most natural, expressive speech and the
-  // smartest answers — the quality model for the conversation. Override via env
-  // for a cheaper/mini run.
-  OPENAI_REALTIME_MODEL: z.string().optional().default('gpt-realtime'),
+  // gpt-realtime-mini is the accessible default: the full GA `gpt-realtime`
+  // requires account access that not every OpenAI project has (a WS
+  // `model_not_found` there hard-loops the voice reconnect). Set
+  // OPENAI_REALTIME_MODEL=gpt-realtime via env once the account is granted it.
+  OPENAI_REALTIME_MODEL: z.string().optional().default('gpt-realtime-mini'),
   OPENAI_REALTIME_VOICE: z.string().optional().default('marin'),
   // gpt-4o-*-transcribe supports a decode prompt (wake word + trigger phrases);
   // gpt-realtime-whisper/whisper-1 do NOT — realtime.ts omits it for those.
