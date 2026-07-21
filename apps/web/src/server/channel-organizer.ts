@@ -29,7 +29,8 @@ export function isOrganizerConfigured(): boolean {
 
 // Defensive extraction: strip code fences, grab the first {...} block, JSON.parse.
 // Mirrors the bot's intent parser — never trust the model to return clean JSON.
-function extractJson(raw: string): unknown {
+// Exported for tests.
+export function extractJson(raw: string): unknown {
   const cleaned = raw.replace(/```(?:json)?/gi, '').trim();
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (!match) throw new AiPlanError();
