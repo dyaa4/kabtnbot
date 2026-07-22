@@ -129,8 +129,18 @@ export class Conversation {
     if (this.deadline !== null && this.timeoutMs > 0) this.deadline = now + this.timeoutMs;
   }
 
-  /** Advance time; ends the conversation (and promotes the next) once the idle timeout lapses. */
+  /** Advance time; ends the conversation (and promotes the next) either when a
+   * user is WAITING and the active user has been silent past the takeover grace
+   * (fast hand-off — don't make the queue wait the full window), or when the
+   * idle timeout lapses (nobody waiting, the active user just went quiet). */
   tick(now: number): HandoffResult {
+    if (
+      this.queue.length > 0 &&
+      this.activeSilentSince !== null &&
+      now - this.activeSilentSince >= this.takeoverMs
+    ) {
+      return this.end(now);
+    }
     if (this.deadline !== null && now >= this.deadline) return this.end(now);
     return { ended: null, promoted: null };
   }

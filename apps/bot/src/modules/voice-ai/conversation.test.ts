@@ -127,6 +127,25 @@ describe('Conversation — queue handoff', () => {
     expect(c.phase).toBe('listening');
   });
 
+  it('hands off to a WAITING user after the takeover grace, not the full idle window', () => {
+    const c = new Conversation(30_000, G); // long idle window (30s), 3s grace
+    c.onWakeWord('a', 0);
+    c.onWakeWord('b', 0); // b queued while a is active
+    c.onResponseEnd(1000); // a answered → silent from t=1000
+    expect(c.tick(1000 + G - 1)).toEqual({ ended: null, promoted: null }); // still inside the grace
+    expect(c.activeUser).toBe('a');
+    expect(c.tick(1000 + G)).toEqual({ ended: 'a', promoted: 'b' }); // grace passed → hand off now
+    expect(c.activeUser).toBe('b');
+  });
+
+  it('does NOT fast-hand-off while nobody is waiting (active user keeps the full window)', () => {
+    const c = new Conversation(30_000, G);
+    c.onWakeWord('a', 0);
+    c.onResponseEnd(1000); // no queue
+    expect(c.tick(1000 + G)).toEqual({ ended: null, promoted: null }); // grace irrelevant, still A's floor
+    expect(c.activeUser).toBe('a');
+  });
+
   it('a leaving active user hands off immediately; a leaving queued user is just removed', () => {
     const c = new Conversation(T, G);
     c.onWakeWord('a', 0);
