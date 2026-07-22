@@ -109,11 +109,13 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
   // can fire, ending an idle conversation and promoting the next queued user.
   const { voice } = await getCachedGuildConfig(guild.id);
   session.conversation.setTimeout(voice.follow_up_seconds * 1000);
+  // 500ms so a queued user is handed off within ~half a second of the grace
+  // elapsing (snappier switch after the bot stops).
   session.convoTimer = setInterval(() => {
     const live = getSession(guild.id);
     if (!live?.listening) return;
     applyHandoff(guild, live.conversation.tick(Date.now()));
-  }, 1000);
+  }, 500);
 
   const members = guild.members.cache.filter(
     (m) => m.voice.channelId === session.channelId && !m.user.bot,

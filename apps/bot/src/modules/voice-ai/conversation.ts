@@ -36,10 +36,12 @@ export class Conversation {
   /**
    * @param timeoutMs  dynamic idle timeout after an answer (spec §5)
    * @param takeoverMs how long the active user must be silent (measured from the
-   *   end of the bot's answer / their last turn) before another user's wake word
-   *   takes over the floor instead of queuing (default 2s)
+   *   end of the bot's answer / their last turn) before another user takes over
+   *   the floor — both a waiting user's fast hand-off and a fresh wake-word
+   *   takeover use this grace (default 1s, kept short so others are answered
+   *   quickly after the bot stops)
    */
-  constructor(private timeoutMs: number, private takeoverMs = 2000) {}
+  constructor(private timeoutMs: number, private takeoverMs = 1000) {}
 
   get phase(): VoicePhase {
     return this._phase;
