@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+# Private / non-indexable areas (dashboard, auth, API).
+Disallow: /app
+Disallow: /admin
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://kabtnbot.com/sitemap.xml
