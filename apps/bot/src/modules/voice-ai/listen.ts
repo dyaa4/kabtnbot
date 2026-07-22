@@ -183,13 +183,20 @@ export async function handleTranscript(
 
   let isFollowUp: boolean;
   if (wake !== null) {
-    const result = conv.onWakeWord(userId);
+    const result = conv.onWakeWord(userId, Date.now());
     if (result === 'queued') {
       console.log(`[Queue] ${speaker} is waiting — active user is ${conv.activeUser}`);
       client?.deleteItem(itemId); // never pollute the active user's context
       return;
     }
-    console.log(`[WakeWord] ${speaker} ${result === 'engaged' ? 'engaged' : 'stays active'} [State] ${conv.phase}`);
+    if (result === 'took-over') {
+      // The previous speaker fell silent past the grace → new active user;
+      // wipe the old conversation so nothing bleeds across (context isolation).
+      console.log(`[WakeWord] ${speaker} took over the floor (previous user went silent)`);
+      client?.clearContext();
+    } else {
+      console.log(`[WakeWord] ${speaker} ${result === 'engaged' ? 'engaged' : 'stays active'} [State] ${conv.phase}`);
+    }
     isFollowUp = false;
   } else {
     // Only the ACTIVE user, and only inside the open window, may continue.

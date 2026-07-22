@@ -92,7 +92,7 @@ function freshSession(setup?: (c: Conversation) => void) {
 /** Bring a user to "active with an open follow-up window" (i.e. just answered). */
 function engagedAndAnswered(userId: string) {
   return (c: Conversation) => {
-    c.onWakeWord(userId);
+    c.onWakeWord(userId, Date.now());
     c.onActiveUtterance();
     c.onResponseEnd(Date.now());
   };
@@ -136,14 +136,14 @@ describe('handleTranscript — multi-user conversation', () => {
   });
 
   it('ignores a non-active speaker who has no wake word', async () => {
-    freshSession((c) => c.onWakeWord('u1'));
+    freshSession((c) => c.onWakeWord('u1', Date.now()));
     await handleTranscript(guild, 'u2', 'i5', 'كلام جانبي');
     expect(routerMock.routeVoiceCommand).not.toHaveBeenCalled();
     expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i5');
   });
 
   it('QUEUES another speaker who says the wake word — no instant takeover', async () => {
-    const s = freshSession((c) => c.onWakeWord('u1'));
+    const s = freshSession((c) => c.onWakeWord('u1', Date.now()));
     await handleTranscript(guild, 'u2', 'i6', 'يا كابتن تعال');
     expect(routerMock.routeVoiceCommand).not.toHaveBeenCalled();
     expect(realtimeMock.deleteItem).toHaveBeenCalledWith('i6');

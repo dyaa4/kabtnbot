@@ -28,9 +28,17 @@ export class Conversation {
   // Epoch ms at which the idle timeout fires, or null when no timer is armed
   // (the user is speaking, the bot is answering, or the channel is idle).
   private deadline: number | null = null;
+  // Since when the ACTIVE user has been silent (last answer / wake word), or
+  // null while they're actively talking or the bot is answering. Once this
+  // exceeds `takeoverMs`, another user's wake word may take over the floor.
+  private activeSilentSince: number | null = null;
 
-  /** @param timeoutMs dynamic idle timeout after an answer (spec §5, default 6s) */
-  constructor(private timeoutMs: number) {}
+  /**
+   * @param timeoutMs  dynamic idle timeout after an answer (spec §5)
+   * @param takeoverMs how long the active user must be silent before another
+   *   user's wake word takes over the floor instead of queuing (default 3s)
+   */
+  constructor(private timeoutMs: number, private takeoverMs = 3000) {}
 
   get phase(): VoicePhase {
     return this._phase;
@@ -60,18 +68,31 @@ export class Conversation {
    * A user said the wake word (spec §3/§7).
    *  - No active user → they engage and become active.
    *  - Already the active user → treated as staying engaged (timer disarmed).
-   *  - Someone else is active → queued (once), NOT an instant switch.
+   *  - Someone else is active but has been SILENT past `takeoverMs` → the new
+   *    user takes over the floor (the previous one yielded by going quiet).
+   *  - Otherwise (active user still mid-turn / recently spoke) → queued.
    */
-  onWakeWord(userId: string): 'engaged' | 'already-active' | 'queued' {
+  onWakeWord(userId: string, now: number): 'engaged' | 'already-active' | 'queued' | 'took-over' {
     if (this._activeUser === null) {
       this._activeUser = userId;
       this._phase = 'listening';
       this.deadline = null;
+      this.activeSilentSince = now;
       return 'engaged';
     }
     if (this._activeUser === userId) {
       this.deadline = null;
+      this.activeSilentSince = now;
       return 'already-active';
+    }
+    if (this.activeSilentSince !== null && now - this.activeSilentSince >= this.takeoverMs) {
+      const qi = this.queue.indexOf(userId);
+      if (qi !== -1) this.queue.splice(qi, 1);
+      this._activeUser = userId;
+      this._phase = 'listening';
+      this.deadline = null;
+      this.activeSilentSince = now;
+      return 'took-over';
     }
     if (!this.queue.includes(userId)) this.queue.push(userId);
     return 'queued';
@@ -82,6 +103,7 @@ export class Conversation {
     if (this._activeUser === null) return;
     this._phase = 'thinking';
     this.deadline = null;
+    this.activeSilentSince = null; // actively talking → not silent
   }
 
   /** The model started producing the answer → Speaking. */
@@ -96,6 +118,7 @@ export class Conversation {
     if (this._activeUser === null) return;
     this._phase = 'listening';
     this.deadline = this.timeoutMs > 0 ? now + this.timeoutMs : now;
+    this.activeSilentSince = now; // the active user's silence clock starts here
   }
 
   /** Any speech from the active user while the timer is armed resets it (spec §5). */
@@ -114,6 +137,7 @@ export class Conversation {
     const ended = this._activeUser;
     this._activeUser = null;
     this.deadline = null;
+    this.activeSilentSince = null;
     this._phase = 'idle';
     const next = this.queue.shift() ?? null;
     if (next !== null) {
@@ -121,6 +145,7 @@ export class Conversation {
       this._phase = 'listening';
       // The promoted user gets the idle window to actually start talking.
       this.deadline = this.timeoutMs > 0 ? now + this.timeoutMs : now;
+      this.activeSilentSince = now;
     }
     return { ended, promoted: next };
   }
