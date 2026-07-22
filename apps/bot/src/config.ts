@@ -54,6 +54,12 @@ const Env = z.object({
   // the bot without the per-account monthly cap. Keep in sync with the web
   // service's SUPER_ADMIN_IDS.
   SUPER_ADMIN_IDS: z.string().optional().default(''),
+  // Opt-IN to the rearchitected voice pipeline (VOICE_V2): a REST transcription
+  // firehose for all speakers (moderation + wake word) + a separate server-VAD
+  // answer session for the active speaker only. Off = the current single-session
+  // pipeline (unchanged) stays the fallback — flip the flag to revert, no
+  // redeploy needed.
+  VOICE_V2: z.string().optional().default(''),
 });
 
 export const config = Env.parse(process.env);
@@ -62,6 +68,8 @@ export const textProtectionEnabled = config.ENABLE_TEXT_PROTECTION !== 'false';
 export const summaryEnabled = config.ENABLE_SUMMARY !== 'false';
 export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS !== 'false';
 export const chatLogEnabled = config.ENABLE_CHAT_LOG !== 'false';
+/** The rearchitected voice pipeline (opt-in). See VOICE_V2 above. */
+export const voiceV2Enabled = config.VOICE_V2 === 'true';
 
 const superAdminIds = new Set(
   config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean),

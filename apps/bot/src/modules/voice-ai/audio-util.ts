@@ -53,6 +53,33 @@ export function downsample48to24(mono48: Buffer): Buffer {
   return out;
 }
 
+/** `ms` of s16le silence at `rate` Hz, mono — a synthetic end-of-turn cue so
+ * OpenAI server VAD closes a replayed/seeded turn (Discord never sends silence). */
+export function silencePcm(ms: number, rate: number): Buffer {
+  return Buffer.alloc(Math.max(0, Math.round((rate * ms) / 1000)) * 2);
+}
+
+/** Wrap raw s16le PCM in a minimal RIFF/WAVE container for the REST
+ * transcription endpoint (which needs a real audio file, not bare PCM). */
+export function pcm16ToWav(pcm: Buffer, rate: number, channels = 1): Buffer {
+  const byteRate = rate * channels * 2;
+  const header = Buffer.alloc(44);
+  header.write('RIFF', 0);
+  header.writeUInt32LE(36 + pcm.length, 4);
+  header.write('WAVE', 8);
+  header.write('fmt ', 12);
+  header.writeUInt32LE(16, 16); // fmt chunk size
+  header.writeUInt16LE(1, 20); // PCM
+  header.writeUInt16LE(channels, 22);
+  header.writeUInt32LE(rate, 24);
+  header.writeUInt32LE(byteRate, 28);
+  header.writeUInt16LE(channels * 2, 32); // block align
+  header.writeUInt16LE(16, 34); // bits per sample
+  header.write('data', 36);
+  header.writeUInt32LE(pcm.length, 40);
+  return Buffer.concat([header, pcm]);
+}
+
 /**
  * 24kHz mono → 48kHz interleaved stereo (Discord StreamType.Raw format):
  * 2x linear interpolation, each sample duplicated into both channels.
