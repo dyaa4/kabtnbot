@@ -309,4 +309,16 @@ describe('deleteItem', () => {
     client.deleteItem('item-9');
     expect(ws.sent.at(-1)).toEqual({ type: 'conversation.item.delete', item_id: 'item-9' });
   });
+
+  it('defers deletes during an answer and flushes them on response.done (no mid-answer mutation)', async () => {
+    const { client, ws } = await openClient();
+    client.callbacks = { onTranscript: () => {}, onAnswerText: () => {}, openAudioSink: () => null };
+    client.requestResponse(); // answer in progress
+    const deletes = () => ws.sent.filter((m) => m.type === 'conversation.item.delete');
+    const before = deletes().length;
+    client.deleteItem('x1'); // must NOT be sent while the answer streams
+    expect(deletes().length).toBe(before);
+    ws.message({ type: 'response.done' });
+    expect(deletes().some((m) => m.item_id === 'x1')).toBe(true);
+  });
 });

@@ -72,6 +72,10 @@ export class RealtimeClient {
   // currently in the model's context — so clearContext() can wipe the lot when
   // the active speaker changes, keeping one user's history out of the next's.
   private convoItems = new Set<string>();
+  // Item deletes that arrived WHILE an answer was generating are held here and
+  // flushed on response.done — deleting an item mid-response can abort the
+  // server's answer (it cuts off and restarts).
+  private pendingDeletes = new Set<string>();
 
   private activeResponse = false;
   // One (and only one) response.create held back while a response is active.
@@ -194,6 +198,11 @@ export class RealtimeClient {
   deleteItem(itemId: string): void {
     this.convoItems.delete(itemId);
     if (this.ws?.readyState !== WebSocket.OPEN) return;
+    // Never mutate the conversation mid-answer — defer until the answer settles.
+    if (this.activeResponse) {
+      this.pendingDeletes.add(itemId);
+      return;
+    }
     this.send({ type: 'conversation.item.delete', item_id: itemId });
   }
 
@@ -208,6 +217,7 @@ export class RealtimeClient {
       for (const id of this.convoItems) this.send({ type: 'conversation.item.delete', item_id: id });
     }
     this.convoItems.clear();
+    this.pendingDeletes.clear();
     this.pendingSpeakers = [];
     this.itemSpeakers.clear();
   }
@@ -269,6 +279,11 @@ export class RealtimeClient {
         this.audioSink?.end();
         this.audioSink = null;
         this.activeResponse = false;
+        // Flush deletes that were held back during the answer.
+        if (this.pendingDeletes.size > 0) {
+          for (const id of this.pendingDeletes) this.send({ type: 'conversation.item.delete', item_id: id });
+          this.pendingDeletes.clear();
+        }
         if (this.pendingResponse) {
           this.pendingResponse = false;
           this.activeResponse = true;
@@ -370,6 +385,7 @@ export class RealtimeClient {
     this.pendingSpeakers = [];
     this.itemSpeakers.clear();
     this.convoItems.clear();
+    this.pendingDeletes.clear();
     this.activeResponse = false;
     this.pendingResponse = false;
     this.audioSink?.end();

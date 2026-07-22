@@ -327,6 +327,18 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     }
     normalizeQuietAudio(mono);
 
+    // While the bot is answering, do NOT feed ANY audio into the shared realtime
+    // session: committing a new utterance (or later deleting it) mid-response
+    // disrupts the server's answer — it cuts off and restarts a new sentence.
+    // Utterances during the bot's turn are dropped; the subscription renews and
+    // captures whatever is said once the answer finishes. (Others are ignored by
+    // the active-user lock anyway; the active user simply shouldn't talk over the
+    // bot — there is no barge-in.)
+    if (getRealtime(guild.id)?.isResponding()) {
+      console.log(`[Listen ${guild.id}] dropped ${userId} utterance (bot is speaking)`);
+      return;
+    }
+
     try {
       await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
       if (await isListenQuotaExceeded(guild.id)) {
