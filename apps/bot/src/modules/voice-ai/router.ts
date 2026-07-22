@@ -1,11 +1,11 @@
 import type { Guild } from 'discord.js';
-import { getGuildConfig } from '@gamebot/db';
 import {
   matchCustomFlows, matchBuiltinExtraTriggers, isSpeakerAllowed, normalizeText,
   type BuiltinCommandKey, type BuiltinOverrides, type CommandFlow, type GuildCommandFlows, type Language,
 } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
+import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { isGuildAdmin } from '../../lib/permissions.js';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { executeActions, type ExecContext } from '../custom-commands/executor.js';
@@ -123,7 +123,9 @@ export async function routeVoiceCommand(
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
   const q = normalizeText(query.trim());
-  const config = await getGuildConfig(guild.id);
+  // Cached: this runs on the hot answer path — an uncached read (+ upsert) here
+  // added a DB round-trip before every reply (part of the "gap").
+  const config = await getCachedGuildConfig(guild.id);
   const strings = t(config.language);
   const cmds = COMMANDS[config.language] ?? COMMANDS.ar;
   // No premium gate on EXECUTION: the flow editor (web) is premium-gated, and

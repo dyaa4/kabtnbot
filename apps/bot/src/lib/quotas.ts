@@ -32,6 +32,9 @@ async function quotaContext(guildId: string) {
 
 export async function tryConsumeAiQuestion(guildId: string): Promise<boolean> {
   const { limits, budgetKey } = await quotaContext(guildId);
+  // Unlimited (super-admin) accounts have nothing to count — skip the DB
+  // consume/refund round-trip on the hot answer path (lower reply latency).
+  if (limits.ai_questions_per_month === Infinity) return true;
   // Consume atomically, refund on overshoot — a check-then-increment would let
   // concurrent questions at the boundary all pass the check and bust the cap.
   const total = await consumeAiQuestion(budgetKey, monthKey());

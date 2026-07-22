@@ -271,10 +271,11 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
   let totalFrames = 0;
 
   const stream = session.connection.receiver.subscribe(userId, {
-    // Shorter silence window = the utterance reaches transcription sooner
-    // after the speaker stops, so moderation/kick reacts faster. Too low would
-    // split normal sentences mid-word; 500ms is a snappy-but-safe balance.
-    end: { behavior: EndBehaviorType.AfterSilence, duration: 500 },
+    // Shorter silence window = the utterance reaches the model sooner after the
+    // speaker stops, so the answer starts faster (the reported "gap"). 300ms is
+    // aggressive-but-usable; going much lower starts splitting sentences on
+    // natural mid-thought pauses.
+    end: { behavior: EndBehaviorType.AfterSilence, duration: 300 },
   });
   session.subscriptions.set(userId, { decoder, stream });
 
