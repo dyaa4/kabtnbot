@@ -2,10 +2,15 @@ import { EndBehaviorType } from '@discordjs/voice';
 import { createOpusDecoder } from './opus-decoder.js';
 import type { Guild, VoiceState } from 'discord.js';
 import { parseWakeWord } from '@gamebot/shared';
+import { voiceV2Enabled } from '../../config.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
-import { playSpeech, playPcmStream, type VoiceSession, getSession } from './sessions.js';
+import { playSpeech, playPcmStream, stopPlayback, type VoiceSession, getSession } from './sessions.js';
 import { ensureRealtime, getRealtime } from './realtime.js';
+import { ensureAnswerSession, getAnswerSession } from './answer-session.js';
+import { transcribeUtterance } from './transcribe.js';
+import { handleFirehoseTranscript } from './firehose.js';
 import { downmixStereoToMono, downsample48to24, normalizeQuietAudio, pcmPeak } from './audio-util.js';
 import { t } from '../../lib/strings.js';
 
@@ -33,6 +38,20 @@ function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
   } catch { /* connection already destroyed (leave path) */ }
 }
 
+/** Effect of a conversation handover (idle timeout / active user left): isolate
+ * the old conversation and point the backend at the promoted user (or idle).
+ * V2 re-points the answer session; V1 wipes the shared realtime context. */
+function applyHandoff(guild: Guild, h: { ended: string | null; promoted: string | null }): void {
+  if (!h.ended) return;
+  console.log(`[Conversation ${guild.id}] ${h.ended} released the floor${h.promoted ? ` → ${h.promoted}` : ''}`);
+  if (voiceV2Enabled) {
+    const name = h.promoted ? guild.members.cache.get(h.promoted)?.displayName : undefined;
+    getAnswerSession(guild.id)?.setActiveUser(h.promoted, name, null);
+  } else {
+    getRealtime(guild.id)?.clearContext();
+  }
+}
+
 export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
   if (session.listening) return true;
   if (await isListenQuotaExceeded(guild.id)) {
@@ -41,29 +60,47 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     return false;
   }
 
-  // The realtime session transcribes EVERY utterance — profanity moderation
-  // depends on it, so listening without it is not allowed.
-  let client;
-  try {
-    client = await ensureRealtime(guild.id, guild);
-  } catch (err) {
-    console.error(`[Listen ${guild.id}] realtime unavailable:`, (err as Error)?.message ?? err);
-    return false;
+  // Open the backend for the active pipeline. V2: the server-VAD answer session
+  // (active user only) + a REST firehose per utterance (all users) done in
+  // onUtteranceEnd. V1: the single realtime session (all users + answers).
+  if (voiceV2Enabled) {
+    try {
+      const answer = await ensureAnswerSession(guild.id, guild);
+      answer.callbacks = {
+        openAudioSink: () => playPcmStream(guild.id),
+        onAnswerText: (text) => { mirrorAnswer(guild, text).catch(() => {}); },
+        // Conversation TIMING is driven by the answer session's VAD events.
+        onResponseStart: () => getSession(guild.id)?.conversation.onResponseStart(),
+        onResponseDone: () => getSession(guild.id)?.conversation.onResponseEnd(Date.now()),
+        onSpeechStarted: () => {
+          stopPlayback(guild.id); // barge-in: cut the current answer/TTS
+          getSession(guild.id)?.conversation.onActiveSpeech(Date.now());
+        },
+      };
+    } catch (err) {
+      console.error(`[Listen ${guild.id}] answer session unavailable:`, (err as Error)?.message ?? err);
+      return false;
+    }
+  } else {
+    // The realtime session transcribes EVERY utterance — profanity moderation
+    // depends on it, so listening without it is not allowed.
+    let client;
+    try {
+      client = await ensureRealtime(guild.id, guild);
+    } catch (err) {
+      console.error(`[Listen ${guild.id}] realtime unavailable:`, (err as Error)?.message ?? err);
+      return false;
+    }
+    client.callbacks = {
+      onTranscript: (userId, itemId, text) => {
+        handleTranscript(guild, userId, itemId, text)
+          .catch((err) => console.error(`[Listen ${guild.id}]`, err));
+      },
+      onAnswerText: (text) => { mirrorAnswer(guild, text).catch(() => {}); },
+      openAudioSink: () => playPcmStream(guild.id),
+      onResponseDone: () => getSession(guild.id)?.conversation.onResponseEnd(Date.now()),
+    };
   }
-  client.callbacks = {
-    onTranscript: (userId, itemId, text) => {
-      handleTranscript(guild, userId, itemId, text)
-        .catch((err) => console.error(`[Listen ${guild.id}]`, err));
-    },
-    onAnswerText: (text) => {
-      mirrorAnswer(guild, text).catch(() => {});
-    },
-    openAudioSink: () => playPcmStream(guild.id),
-    onResponseDone: () => {
-      // Answer finished → arm the conversation's idle timeout (spec §5).
-      getSession(guild.id)?.conversation.onResponseEnd(Date.now());
-    },
-  };
 
   session.listening = true;
   setSelfDeaf(session, false);
@@ -75,12 +112,7 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
   session.convoTimer = setInterval(() => {
     const live = getSession(guild.id);
     if (!live?.listening) return;
-    const h = live.conversation.tick(Date.now());
-    if (h.ended) {
-      console.log(`[Timeout] conversation with ${h.ended} ended [State] idle`);
-      getRealtime(guild.id)?.clearContext(); // isolation: next user starts clean
-      if (h.promoted) console.log(`[Queue] ${h.promoted} promoted to active`);
-    }
+    applyHandoff(guild, live.conversation.tick(Date.now()));
   }, 1000);
 
   const members = guild.members.cache.filter(
@@ -94,12 +126,7 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     if (!live?.listening || next.member?.user.bot) return;
     // Left this channel → free their spot in the conversation (hand off if active).
     if (old.channelId === live.channelId && next.channelId !== live.channelId) {
-      const h = live.conversation.onUserLeft(next.id, Date.now());
-      if (h.ended) {
-        console.log(`[Session] ${next.id} left — conversation ended`);
-        getRealtime(guild.id)?.clearContext();
-        if (h.promoted) console.log(`[Queue] ${h.promoted} promoted to active`);
-      }
+      applyHandoff(guild, live.conversation.onUserLeft(next.id, Date.now()));
       return;
     }
     if (next.channelId !== live.channelId) return;
@@ -134,7 +161,8 @@ export function stopListening(session: VoiceSession): void {
   if (session.convoTimer) clearInterval(session.convoTimer);
   session.convoTimer = undefined;
   session.conversation.end(Date.now()); // drop the active user + queue
-  getRealtime(session.guildId)?.clearContext();
+  if (voiceV2Enabled) getAnswerSession(session.guildId)?.setActiveUser(null);
+  else getRealtime(session.guildId)?.clearContext();
   for (const { decoder, stream } of session.subscriptions.values()) {
     stream.destroy();
     decoder.delete?.();
@@ -312,7 +340,15 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     if (!session.listening) { stream.destroy(); return; }
     try {
       const pcm = decoder.decode(chunk);
-      if (pcm.length > 0) { pcmFrames.push(pcm); totalFrames++; }
+      if (pcm.length === 0) return;
+      pcmFrames.push(pcm);
+      totalFrames++;
+      // V2: stream the ACTIVE user's live audio straight to the answer session
+      // (server VAD answers directly). Others only reach the firehose below.
+      if (voiceV2Enabled) {
+        const answer = getAnswerSession(guild.id);
+        if (answer?.activeUser === userId) answer.pushAudio(downsample48to24(downmixStereoToMono(pcm)));
+      }
     } catch { /* skip broken frame */ }
   });
 
@@ -334,6 +370,35 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       return;
     }
     normalizeQuietAudio(mono);
+
+    if (voiceV2Enabled) {
+      // V2: transcribe EVERY utterance (firehose = moderation + wake word). The
+      // active user's audio has already been streamed live to the answer session
+      // via the 'data' tap — this is the supervisor, run in parallel. Listen
+      // minutes are accrued only when the bot isn't speaking (checklist #3).
+      try {
+        const responding = getAnswerSession(guild.id)?.isResponding() ?? false;
+        if (!responding) {
+          await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
+          if (await isListenQuotaExceeded(guild.id)) {
+            stopListening(session);
+            const { language } = await getCachedGuildConfig(guild.id);
+            await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
+            return;
+          }
+        }
+        const pcm24 = downsample48to24(mono);
+        const cfg = await getCachedGuildConfig(guild.id);
+        const flows = await getCachedCommandFlows(guild.id).catch(() => null);
+        const text = await transcribeUtterance(pcm24, {
+          language: cfg.language, wakeWord: cfg.voice.wake_word, flows,
+        });
+        if (text) await handleFirehoseTranscript(guild, userId, text, pcm24);
+      } catch (err) {
+        console.error(`[Listen ${guild.id}]`, err);
+      }
+      return;
+    }
 
     // While the bot is answering, do NOT feed ANY audio into the shared realtime
     // session: committing a new utterance (or later deleting it) mid-response

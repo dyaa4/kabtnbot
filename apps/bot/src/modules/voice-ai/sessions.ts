@@ -9,6 +9,7 @@ import type { OpusDecoder } from './opus-decoder.js';
 import { Conversation } from './conversation.js';
 import { synthesizeSpeech } from './tts.js';
 import { closeRealtime } from './realtime.js';
+import { closeAnswerSession } from './answer-session.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
 export interface VoiceSession {
@@ -114,8 +115,17 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
   return session;
 }
 
+/** Hard-cut whatever the player is currently outputting (barge-in / command
+ * veto / moderation) — stops streamed answer audio or a verbatim TTS line. */
+export function stopPlayback(guildId: string): void {
+  try { sessions.get(guildId)?.player.stop(true); } catch { /* nothing playing */ }
+}
+
 export function leaveGuildVoice(guildId: string): boolean {
+  // Close BOTH backends (each a no-op if that one isn't in use) so teardown is
+  // correct regardless of the VOICE_V2 flag.
   closeRealtime(guildId);
+  closeAnswerSession(guildId);
   const session = sessions.get(guildId);
   sessions.delete(guildId);
   // The flag must drop BEFORE the connection dies: an in-flight utterance
