@@ -116,10 +116,12 @@ function matchBuiltin(
  * automations are NOT matched there — an automation fires only from an explicit
  * wake-word utterance + its exact trigger phrase, never from casual chat.
  */
+export type RouteResult = string | { streamed: true } | { kind: 'model' };
+
 export async function routeVoiceCommand(
   guild: Guild, session: VoiceSession, query: string, speakerId: string,
-  opts: { followUp?: boolean } = {},
-): Promise<string | { streamed: true }> {
+  opts: { followUp?: boolean; mode?: 'legacy' | 'v2' } = {},
+): Promise<RouteResult> {
   // parseWakeWord already normalizes in the voice path; normalizing again here
   // is idempotent and keeps the built-in patterns matching for any caller.
   const q = normalizeText(query.trim());
@@ -216,6 +218,13 @@ export async function routeVoiceCommand(
   // repeats the request. Placed after the matchers so '' can never run a flow.
   // Cooldown: transcription can hallucinate the wake word out of noise; an
   // un-throttled ack turns that into the bot chattering at nobody.
+  // V2: no phrase/built-in matched → the live server-VAD answer session already
+  // owns the reply (it heard the audio directly). Router only had to check for
+  // commands/flows. Signal "the model handles it"; the firehose charges quota
+  // once and aborts the live answer if exhausted. Bare wake too — the seeded
+  // audio makes the model greet (no canned ack in v2).
+  if (opts.mode === 'v2') return { kind: 'model' };
+
   if (!q) return checkCooldown(`${guild.id}:wake-ack:${speakerId}`, 8) ? strings.wakeAck : '';
 
   // No exact phrase (step 1) or built-in (step 2) matched → treat it as a

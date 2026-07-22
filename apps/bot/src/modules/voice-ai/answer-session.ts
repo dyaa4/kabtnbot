@@ -24,9 +24,11 @@ export interface AnswerCallbacks {
   openAudioSink(): NodeJS.WritableStream | null;
   /** Text of a spoken answer (mirrored to the log channel). */
   onAnswerText(text: string): void;
+  /** An answer started (server VAD created a response) — mark the turn Speaking. */
+  onResponseStart(): void;
   /** An answer fully finished — arms the conversation idle timeout. */
   onResponseDone(): void;
-  /** The active user started talking over the bot (barge-in) — stop playback. */
+  /** The active user started talking (turn start / barge-in) — stop playback + reset the idle timer. */
   onSpeechStarted(): void;
 }
 
@@ -226,6 +228,7 @@ export class AnswerSession {
         break;
       case 'response.created':
         this.activeResponse = true;
+        this.callbacks?.onResponseStart();
         break;
       case 'response.output_audio.delta':
         if (!ev.delta) break;

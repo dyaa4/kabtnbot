@@ -54,6 +54,15 @@ describe('Conversation — takeover after silence', () => {
     expect(c.onWakeWord('b', 1_000_000)).toBe('queued'); // even far in the future
     expect(c.activeUser).toBe('a');
   });
+
+  it('active-user speech clears the silence clock (no takeover while they talk)', () => {
+    const c = new Conversation(T, G);
+    c.onWakeWord('a', 0);
+    c.onResponseEnd(1000); // a silent from 1000
+    c.onActiveSpeech(2000); // a talks again → silence clock cleared
+    expect(c.onWakeWord('b', 1_000_000)).toBe('queued'); // no takeover despite the gap
+    expect(c.activeUser).toBe('a');
+  });
 });
 
 describe('Conversation — phases', () => {

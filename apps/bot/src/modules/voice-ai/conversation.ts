@@ -122,8 +122,10 @@ export class Conversation {
     this.activeSilentSince = now; // the active user's silence clock starts here
   }
 
-  /** Any speech from the active user while the timer is armed resets it (spec §5). */
+  /** The active user is talking: they're no longer "silent" (so another user
+   * can't take over), and the idle timer — if armed — resets (spec §5). */
   onActiveSpeech(now: number): void {
+    this.activeSilentSince = null;
     if (this.deadline !== null && this.timeoutMs > 0) this.deadline = now + this.timeoutMs;
   }
 

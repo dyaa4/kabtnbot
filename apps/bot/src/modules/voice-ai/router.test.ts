@@ -184,6 +184,19 @@ describe('routeVoiceCommand', () => {
     expect((reply as string).length).toBeGreaterThan(0);
   });
 
+  it('v2 mode: a free-form question is owned by the live answer session ({kind:model}), no quota/realtime call', async () => {
+    const requestResponse = vi.fn(() => true);
+    realtimeMock.client = { requestResponse };
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'وش أفضل لعبة', 'u-speaker', { mode: 'v2' });
+    expect(reply).toEqual({ kind: 'model' });
+    expect(requestResponse).not.toHaveBeenCalled(); // the router never triggers the answer in v2
+  });
+
+  it('v2 mode: built-in commands still resolve to their string reply', async () => {
+    const reply = await routeVoiceCommand(fakeGuild([]), fakeSession(), 'السرعة', 'u-speaker', { mode: 'v2' });
+    expect(typeof reply).toBe('string'); // ping built-in, not { kind: 'model' }
+  });
+
   it('denies kick command from a non-admin speaker', async () => {
     const guild = fakeGuild(['u2'], {
       'u-speaker': {

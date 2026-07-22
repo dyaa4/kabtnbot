@@ -94,7 +94,7 @@ describe('AnswerSession', () => {
   it('barge-in (speech_started) fires onSpeechStarted and stops playback', async () => {
     const { s, ws } = await openSession();
     let barged = false;
-    s.callbacks = { openAudioSink: () => null, onAnswerText: () => {}, onResponseDone: () => {}, onSpeechStarted: () => { barged = true; } };
+    s.callbacks = { openAudioSink: () => null, onAnswerText: () => {}, onResponseStart: () => {}, onResponseDone: () => {}, onSpeechStarted: () => { barged = true; } };
     ws.message({ type: 'response.created' });
     ws.message({ type: 'input_audio_buffer.speech_started' });
     expect(barged).toBe(true);
@@ -103,7 +103,7 @@ describe('AnswerSession', () => {
   it('response.done arms the idle timeout via onResponseDone', async () => {
     const { s, ws } = await openSession();
     let done = false;
-    s.callbacks = { openAudioSink: () => null, onAnswerText: () => {}, onResponseDone: () => { done = true; }, onSpeechStarted: () => {} };
+    s.callbacks = { openAudioSink: () => null, onAnswerText: () => {}, onResponseStart: () => {}, onResponseDone: () => { done = true; }, onSpeechStarted: () => {} };
     ws.message({ type: 'response.created' });
     ws.message({ type: 'response.done' });
     expect(done).toBe(true);
