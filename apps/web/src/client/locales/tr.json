@@ -147,7 +147,6 @@
   "settings.voice.dialect.gulf": "Körfez (Khaliji)",
   "settings.voice.dialect.egyptian": "Mısır",
   "settings.voice.dialect.levantine": "Levanten (Şam)",
-  "settings.voice.dialect.saudi": "Suudi",
   "settings.voice.followUp": "Konuşmayı açık tut",
   "settings.voice.followUp.hint": "İlk sorundan sonra bot bu süre boyunca uyandırma kelimesi olmadan yanıt vermeye devam eder; her soru süreyi uzatır. Kapalı = her seferinde uyandırma kelimesi gerekir.",
   "settings.voice.focus": "Aktif konuşana odaklan",

@@ -17,7 +17,7 @@ export type Language = (typeof LANGUAGES)[number];
 // the answer session speaks that dialect via ElevenLabs instead of the
 // OpenAI Realtime audio voice (see apps/bot elevenlabs-tts). msa = Modern
 // Standard Arabic (the safe default when no dialect voice is set up).
-export const DIALECTS = ['msa', 'gulf', 'egyptian', 'levantine', 'saudi'] as const;
+export const DIALECTS = ['msa', 'gulf', 'egyptian', 'levantine'] as const;
 export type Dialect = (typeof DIALECTS)[number];
 
 export const GuildConfigSchema = z.object({

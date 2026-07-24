@@ -147,7 +147,6 @@
   "settings.voice.dialect.gulf": "Golf (Khaliji)",
   "settings.voice.dialect.egyptian": "Ägyptisch",
   "settings.voice.dialect.levantine": "Levantinisch (Sham)",
-  "settings.voice.dialect.saudi": "Saudisch",
   "settings.voice.followUp": "Gespräch offen halten",
   "settings.voice.followUp.hint": "Nach der ersten Frage antwortet der Bot dir so lange auch ohne Wake-Word; jede Folgefrage verlängert das Fenster. Aus = Wake-Word jedes Mal nötig.",
   "settings.voice.focus": "Auf aktiven Sprecher fokussieren",

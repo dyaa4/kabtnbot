@@ -66,16 +66,18 @@ Throws `ELEVENLABS_NOT_CONFIGURED` / `ELEVENLABS_VOICE_NOT_CONFIGURED` when
 the key or the dialect's voice id is missing, so the caller can decide
 fallback vs. skip.
 
-**Dialects & config:** five dialects — `gulf` (Khaliji), `egyptian`,
-`levantine` (Sham), `saudi`, `msa` (default) — as a `Dialect` enum in
-`packages/shared` alongside `TTS_VOICES`/`LANGUAGES`. New guild-config field
+**Dialects & config:** four dialects — `gulf` (Khaliji), `egyptian`,
+`levantine` (Sham), `msa` (default) — as a `Dialect` enum in
+`packages/shared` alongside `TTS_VOICES`/`LANGUAGES`. (Saudi was dropped: it
+is part of the Khaliji/Gulf family, so a separate option was redundant —
+owner decision.) New guild-config field
 `voice.dialect: z.enum(DIALECTS).default('msa').catch('msa')`, same
 self-healing pattern as `tts_voice`. New env vars in `apps/bot/src/config.ts`:
 `ELEVENLABS_API_KEY`, `ELEVENLABS_MODEL` (default `eleven_turbo_v2_5` —
 lower latency than the multilingual model, relevant since this path already
 pays a full-response round trip before synthesis starts), and one voice id
 var per dialect: `ELEVENLABS_VOICE_GULF`, `ELEVENLABS_VOICE_EGYPTIAN`,
-`ELEVENLABS_VOICE_LEVANTINE`, `ELEVENLABS_VOICE_SAUDI`, `ELEVENLABS_VOICE_MSA`.
+`ELEVENLABS_VOICE_LEVANTINE`, `ELEVENLABS_VOICE_MSA`.
 Real voice ids are filled in on Railway by the owner after this ships — the
 feature fails open (falls back to OpenAI audio) until they are.
 

@@ -48,7 +48,6 @@ const Env = z.object({
   ELEVENLABS_VOICE_GULF: z.string().optional().default(''),
   ELEVENLABS_VOICE_EGYPTIAN: z.string().optional().default(''),
   ELEVENLABS_VOICE_LEVANTINE: z.string().optional().default(''),
-  ELEVENLABS_VOICE_SAUDI: z.string().optional().default(''),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
   // They need the privileged Message Content Intent; if the intent is missing
@@ -94,7 +93,6 @@ export function dialectVoiceId(dialect: Dialect): string {
     case 'gulf': return config.ELEVENLABS_VOICE_GULF;
     case 'egyptian': return config.ELEVENLABS_VOICE_EGYPTIAN;
     case 'levantine': return config.ELEVENLABS_VOICE_LEVANTINE;
-    case 'saudi': return config.ELEVENLABS_VOICE_SAUDI;
     case 'msa': return config.ELEVENLABS_VOICE_MSA;
   }
 }

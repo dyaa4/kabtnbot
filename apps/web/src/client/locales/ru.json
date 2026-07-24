@@ -147,7 +147,6 @@
   "settings.voice.dialect.gulf": "Залив (Халиджи)",
   "settings.voice.dialect.egyptian": "Египетский",
   "settings.voice.dialect.levantine": "Левантийский (Шам)",
-  "settings.voice.dialect.saudi": "Саудовский",
   "settings.voice.followUp": "Держать разговор открытым",
   "settings.voice.followUp.hint": "После первого вопроса бот продолжает отвечать вам без ключевого слова в течение этого времени; каждый вопрос продлевает окно. Выкл = ключевое слово каждый раз.",
   "settings.voice.focus": "Фокус на активном собеседнике",

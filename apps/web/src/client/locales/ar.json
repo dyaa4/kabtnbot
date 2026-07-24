@@ -147,7 +147,6 @@
   "settings.voice.dialect.gulf": "الخليجية",
   "settings.voice.dialect.egyptian": "المصرية",
   "settings.voice.dialect.levantine": "الشامية",
-  "settings.voice.dialect.saudi": "السعودية",
   "settings.voice.followUp": "متابعة الحديث بعد كلمة التنبيه",
   "settings.voice.followUp.hint": "بعد سؤالك الأول يواصل البوت الرد عليك بدون كلمة التنبيه طوال هذه المدة، وكل سؤال يمدّدها. «معطّل» = كلمة التنبيه مطلوبة كل مرة.",
   "settings.voice.focus": "التركيز على المتحدث النشط",

@@ -147,7 +147,6 @@
   "settings.voice.dialect.gulf": "Golfe (Khaliji)",
   "settings.voice.dialect.egyptian": "Égyptien",
   "settings.voice.dialect.levantine": "Levantin (Cham)",
-  "settings.voice.dialect.saudi": "Saoudien",
   "settings.voice.followUp": "Garder la conversation ouverte",
   "settings.voice.followUp.hint": "Après votre première question, le bot continue à vous répondre sans le mot d'activation pendant cette durée ; chaque question la prolonge. Désactivé = mot d'activation à chaque fois.",
   "settings.voice.focus": "Se concentrer sur l'interlocuteur actif",

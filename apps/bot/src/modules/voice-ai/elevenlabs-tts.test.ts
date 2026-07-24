@@ -7,7 +7,6 @@ const mockConfig = vi.hoisted(() => ({
   ELEVENLABS_VOICE_GULF: 'voice-gulf',
   ELEVENLABS_VOICE_EGYPTIAN: '',
   ELEVENLABS_VOICE_LEVANTINE: '',
-  ELEVENLABS_VOICE_SAUDI: '',
 }));
 
 vi.mock('../../config.js', () => ({
@@ -17,7 +16,6 @@ vi.mock('../../config.js', () => ({
       case 'gulf': return mockConfig.ELEVENLABS_VOICE_GULF;
       case 'egyptian': return mockConfig.ELEVENLABS_VOICE_EGYPTIAN;
       case 'levantine': return mockConfig.ELEVENLABS_VOICE_LEVANTINE;
-      case 'saudi': return mockConfig.ELEVENLABS_VOICE_SAUDI;
       case 'msa': return mockConfig.ELEVENLABS_VOICE_MSA;
       default: return '';
     }
