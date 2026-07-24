@@ -19,6 +19,9 @@ const Env = z.object({
   // 8b-instant produces broken, incoherent Arabic (esp. colloquial dialects);
   // 70b-versatile is far stronger at Arabic and still fast on Groq. See voice-ai.
   GROQ_MODEL: z.string().optional().default('llama-3.3-70b-versatile'),
+  // Groq Whisper for the firehose STT when VOICE_ENGINE=groq. Turbo is the
+  // cheapest/fastest Whisper on Groq and handles Arabic well.
+  GROQ_STT_MODEL: z.string().optional().default('whisper-large-v3-turbo'),
   GEMINI_API_KEY: z.string().optional().default(''),
   // OpenAI powers the whole voice path: one Realtime session per guild for
   // STT + conversation + spoken answers, REST TTS for verbatim announcements
@@ -44,10 +47,17 @@ const Env = z.object({
   // which matters because synthesis only starts after the full answer text.
   ELEVENLABS_API_KEY: z.string().optional().default(''),
   ELEVENLABS_MODEL: z.string().optional().default('eleven_turbo_v2_5'),
+  // Fallback voice for non-Arabic languages and for Arabic dialects with no
+  // dedicated voice id. Multilingual (eleven_turbo_v2_5 speaks all langs).
+  ELEVENLABS_VOICE_DEFAULT: z.string().optional().default(''),
   ELEVENLABS_VOICE_MSA: z.string().optional().default(''),
   ELEVENLABS_VOICE_GULF: z.string().optional().default(''),
   ELEVENLABS_VOICE_EGYPTIAN: z.string().optional().default(''),
   ELEVENLABS_VOICE_LEVANTINE: z.string().optional().default(''),
+  // Voice engine for the assistant. 'groq' (default): Groq Whisper STT + Groq
+  // Llama answer + ElevenLabs voice — NO OpenAI. 'openai': the Realtime
+  // AnswerSession (needs OpenAI credit). Groq mode runs inside the V2 firehose.
+  VOICE_ENGINE: z.string().optional().default('groq'),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
   // They need the privileged Message Content Intent; if the intent is missing
@@ -83,6 +93,9 @@ export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS !== 'false';
 export const chatLogEnabled = config.ENABLE_CHAT_LOG !== 'false';
 /** The rearchitected voice pipeline — ON unless VOICE_V2=false. See above. */
 export const voiceV2Enabled = config.VOICE_V2 !== 'false';
+/** Groq voice engine (Whisper + Llama + ElevenLabs, no OpenAI) — the default;
+ * set VOICE_ENGINE=openai to use the OpenAI Realtime answer session instead. */
+export const voiceEngineGroq = config.VOICE_ENGINE !== 'openai';
 
 /**
  * The ElevenLabs voice id configured for an Arabic dialect, or '' if none is

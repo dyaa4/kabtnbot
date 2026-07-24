@@ -17,4 +17,18 @@ describe('buildSystemPrompt', () => {
     expect(funny).not.toBe(base);
     expect(funny).toMatch(/كوميدي|مضحك|نكت/);
   });
+  it('an Arabic dialect instructs the model to write in that dialect', () => {
+    expect(buildSystemPrompt('X', { dialect: 'egyptian' })).toContain('اللهجة المصرية');
+    expect(buildSystemPrompt('X', { dialect: 'levantine' })).toContain('اللهجة الشامية');
+    expect(buildSystemPrompt('X', { dialect: 'gulf' })).toContain('اللهجة الخليجية');
+  });
+  it('msa keeps the neutral Arabic rule (no dialect line)', () => {
+    const p = buildSystemPrompt('X', { dialect: 'msa' });
+    expect(p).not.toContain('اللهجة');
+  });
+  it('dialect is ignored for non-Arabic guilds', () => {
+    const p = buildSystemPrompt('X', { language: 'de', dialect: 'egyptian' });
+    expect(p).not.toContain('اللهجة');
+    expect(p).toContain('German');
+  });
 });

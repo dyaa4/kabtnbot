@@ -2,7 +2,7 @@ import { EndBehaviorType } from '@discordjs/voice';
 import { createOpusDecoder } from './opus-decoder.js';
 import type { Guild, VoiceState } from 'discord.js';
 import { parseWakeWord } from '@gamebot/shared';
-import { voiceV2Enabled } from '../../config.js';
+import { voiceV2Enabled, voiceEngineGroq } from '../../config.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { addListenSeconds, isListenQuotaExceeded } from '../../lib/quotas.js';
@@ -44,7 +44,13 @@ function setSelfDeaf(session: VoiceSession, deaf: boolean): void {
 function applyHandoff(guild: Guild, h: { ended: string | null; promoted: string | null }): void {
   if (!h.ended) return;
   console.log(`[Conversation ${guild.id}] ${h.ended} released the floor${h.promoted ? ` → ${h.promoted}` : ''}`);
-  if (voiceV2Enabled) {
+  if (voiceEngineGroq) {
+    // Groq engine: no backend session to re-point — just isolate the next
+    // conversation (drop history) and cut any audio still playing.
+    const session = getSession(guild.id);
+    if (session) session.voiceHistory.length = 0;
+    stopPlayback(guild.id);
+  } else if (voiceV2Enabled) {
     const name = h.promoted ? guild.members.cache.get(h.promoted)?.displayName : undefined;
     getAnswerSession(guild.id)?.setActiveUser(h.promoted, name, null);
   } else {
@@ -60,10 +66,14 @@ export async function startListening(session: VoiceSession, guild: Guild): Promi
     return false;
   }
 
-  // Open the backend for the active pipeline. V2: the server-VAD answer session
-  // (active user only) + a REST firehose per utterance (all users) done in
-  // onUtteranceEnd. V1: the single realtime session (all users + answers).
-  if (voiceV2Enabled) {
+  // Open the backend for the active pipeline.
+  //  - groq engine (default): NOTHING to open — Groq Whisper STT + Groq Llama
+  //    + ElevenLabs all run per-utterance in the firehose. No OpenAI WS.
+  //  - openai engine (V2): the server-VAD answer session (active user only).
+  //  - V1: the single realtime session (all users + answers).
+  if (voiceV2Enabled && voiceEngineGroq) {
+    // No backend session; the firehose owns transcription + answers.
+  } else if (voiceV2Enabled) {
     try {
       const answer = await ensureAnswerSession(guild.id, guild);
       answer.callbacks = {
@@ -345,9 +355,10 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       if (pcm.length === 0) return;
       pcmFrames.push(pcm);
       totalFrames++;
-      // V2: stream the ACTIVE user's live audio straight to the answer session
-      // (server VAD answers directly). Others only reach the firehose below.
-      if (voiceV2Enabled) {
+      // openai engine (V2): stream the ACTIVE user's live audio straight to the
+      // answer session (server VAD answers directly). groq engine has no live
+      // session — the firehose transcribes + answers per utterance instead.
+      if (voiceV2Enabled && !voiceEngineGroq) {
         const answer = getAnswerSession(guild.id);
         if (answer?.activeUser === userId) answer.pushAudio(downsample48to24(downmixStereoToMono(pcm)));
       }

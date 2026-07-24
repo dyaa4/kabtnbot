@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 const mockConfig = vi.hoisted(() => ({
   ELEVENLABS_API_KEY: 'k',
   ELEVENLABS_MODEL: 'eleven_turbo_v2_5',
+  ELEVENLABS_VOICE_DEFAULT: 'voice-default',
   ELEVENLABS_VOICE_MSA: 'voice-msa',
   ELEVENLABS_VOICE_GULF: 'voice-gulf',
   ELEVENLABS_VOICE_EGYPTIAN: '',
@@ -22,7 +23,7 @@ vi.mock('../../config.js', () => ({
   },
 }));
 
-import { synthesizeDialectSpeech, useDialectVoice } from './elevenlabs-tts.js';
+import { synthesizeDialectSpeech, useDialectVoice, resolveVoiceId, synthesizeVoice, elevenLabsReady } from './elevenlabs-tts.js';
 
 // 24kHz mono pcm response: 2 samples → upsampled to 8 (2x rate, stereo).
 const PCM_BODY = Buffer.from([100, 0, 44, 1]);
@@ -60,6 +61,61 @@ describe('synthesizeDialectSpeech (ElevenLabs)', () => {
   it('throws on a non-ok response', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 401 })));
     await expect(synthesizeDialectSpeech('مرحبا', 'gulf')).rejects.toThrow(/ElevenLabs TTS 401/);
+  });
+});
+
+describe('resolveVoiceId', () => {
+  beforeEach(() => { mockConfig.ELEVENLABS_VOICE_DEFAULT = 'voice-default'; mockConfig.ELEVENLABS_VOICE_MSA = 'voice-msa'; });
+
+  it('Arabic → the dialect voice id', () => {
+    expect(resolveVoiceId('ar', 'gulf')).toBe('voice-gulf');
+  });
+  it('Arabic with no dialect voice → the default', () => {
+    expect(resolveVoiceId('ar', 'egyptian')).toBe('voice-default');
+  });
+  it('non-Arabic → the default', () => {
+    expect(resolveVoiceId('de', 'msa')).toBe('voice-default');
+  });
+  it('empty when nothing resolves', () => {
+    mockConfig.ELEVENLABS_VOICE_DEFAULT = '';
+    expect(resolveVoiceId('de', 'msa')).toBe('');
+  });
+});
+
+describe('synthesizeVoice', () => {
+  beforeEach(() => {
+    mockConfig.ELEVENLABS_API_KEY = 'k';
+    mockConfig.ELEVENLABS_VOICE_DEFAULT = 'voice-default';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(new Uint8Array(PCM_BODY), { status: 200 })));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('speaks a non-Arabic guild with the default voice', async () => {
+    await synthesizeVoice('hallo', 'de', 'msa');
+    const [url] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(url).toContain('/text-to-speech/voice-default');
+  });
+
+  it('throws ELEVENLABS_VOICE_NOT_CONFIGURED when no voice id resolves', async () => {
+    mockConfig.ELEVENLABS_VOICE_DEFAULT = '';
+    await expect(synthesizeVoice('hi', 'en', 'msa')).rejects.toThrow('ELEVENLABS_VOICE_NOT_CONFIGURED');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('elevenLabsReady', () => {
+  beforeEach(() => { mockConfig.ELEVENLABS_API_KEY = 'k'; mockConfig.ELEVENLABS_VOICE_DEFAULT = 'voice-default'; });
+  it('true with a key and a resolvable voice', () => {
+    expect(elevenLabsReady('de', 'msa')).toBe(true);
+    expect(elevenLabsReady('ar', 'gulf')).toBe(true);
+  });
+  it('false without a key', () => {
+    mockConfig.ELEVENLABS_API_KEY = '';
+    expect(elevenLabsReady('ar', 'gulf')).toBe(false);
+  });
+  it('false when no voice id resolves', () => {
+    mockConfig.ELEVENLABS_VOICE_DEFAULT = '';
+    expect(elevenLabsReady('en', 'msa')).toBe(false);
   });
 });
 

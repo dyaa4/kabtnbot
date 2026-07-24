@@ -8,8 +8,10 @@ import type { VoiceBasedChannel, VoiceState } from 'discord.js';
 import type { OpusDecoder } from './opus-decoder.js';
 import { Conversation } from './conversation.js';
 import { synthesizeSpeech } from './tts.js';
+import { synthesizeVoice, elevenLabsReady } from './elevenlabs-tts.js';
 import { closeRealtime } from './realtime.js';
 import { closeAnswerSession } from './answer-session.js';
+import { voiceEngineGroq } from '../../config.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
 export interface VoiceSession {
@@ -22,6 +24,9 @@ export interface VoiceSession {
   /** Multi-user conversation brain: active-user lock, wake-word queue, dynamic
    * idle timeout, phase machine. Drives who the bot is talking with. */
   conversation: Conversation;
+  /** Groq engine only: rolling chat history for the ACTIVE conversation, so
+   * follow-ups have continuity. Cleared on handover / takeover. */
+  voiceHistory: import('./groq-answer.js').ChatTurn[];
   /** Interval that ticks the conversation so the idle timeout can fire. */
   convoTimer?: NodeJS.Timeout;
   /** Detaches this session's client-level voiceStateUpdate listener (set by startListening). */
@@ -98,6 +103,7 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
     // Timeout is synced from guild config once listening starts; 6s is the
     // spec default until then.
     conversation: new Conversation(6000),
+    voiceHistory: [],
   };
 
   // Keep channelId in sync when an admin drags the bot to another channel —
@@ -149,8 +155,13 @@ export async function playSpeech(guildId: string, text: string): Promise<void> {
   const session = sessions.get(guildId);
   if (!session) throw new Error('NOT_CONNECTED');
   const config = await getCachedGuildConfig(guildId);
-  // synthesizeSpeech returns 48kHz s16le stereo — exactly StreamType.Raw.
-  const buffer = await synthesizeSpeech(text, { language: config.language, voice: config.voice.tts_voice });
+  // Both synthesizers return 48kHz s16le stereo — exactly StreamType.Raw. Groq
+  // engine speaks via ElevenLabs (no OpenAI); if ElevenLabs isn't configured
+  // it falls back to OpenAI TTS so a half-set-up guild still gets a voice.
+  const useElevenLabs = voiceEngineGroq && elevenLabsReady(config.language, config.voice.dialect);
+  const buffer = useElevenLabs
+    ? await synthesizeVoice(text, config.language, config.voice.dialect)
+    : await synthesizeSpeech(text, { language: config.language, voice: config.voice.tts_voice });
   const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Raw });
   session.player.play(resource);
 }

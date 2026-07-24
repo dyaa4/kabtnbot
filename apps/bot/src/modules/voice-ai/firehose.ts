@@ -1,7 +1,9 @@
 import type { Guild } from 'discord.js';
 import { parseWakeWord } from '@gamebot/shared';
-import { getSession, playSpeech } from './sessions.js';
+import { voiceEngineGroq } from '../../config.js';
+import { getSession, playSpeech, stopPlayback } from './sessions.js';
 import { getAnswerSession } from './answer-session.js';
+import { generateAnswer, pushHistory } from './groq-answer.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { tryConsumeAiQuestion } from '../../lib/quotas.js';
 import { t } from '../../lib/strings.js';
@@ -17,14 +19,15 @@ async function mirror(guild: Guild, text: string): Promise<void> {
 
 /**
  * V2 orchestration on a REST firehose transcript (the speaker is known per call
- * — no FIFO attribution). The ACTIVE user's live audio is already streaming to
- * the answer session, where server VAD answers directly; this path owns only
- * MODERATION, the active-user LOCK, and built-in/flow commands — never the
- * free-form answer. Conversation TIMING (phase / idle timeout / takeover clock)
- * is driven by the answer session's VAD events, not here.
+ * — no FIFO attribution). Owns MODERATION, the active-user LOCK, and
+ * built-in/flow commands.
  *
- * `seedPcm24` is THIS utterance's own audio; on a fresh engage/takeover it is
- * replayed into the answer session so the first (wake) question gets answered.
+ * The free-form answer is fulfilled by the active engine:
+ *  - groq (default): Groq Llama writes the reply text, ElevenLabs speaks it —
+ *    all here, no OpenAI. Conversation timing is driven directly.
+ *  - openai: the live server-VAD answer session speaks; timing comes from its
+ *    VAD events. `seedPcm24` (this utterance's audio) is replayed so the first
+ *    wake question gets answered.
  */
 export async function handleFirehoseTranscript(
   guild: Guild,
@@ -35,18 +38,17 @@ export async function handleFirehoseTranscript(
   const session = getSession(guild.id);
   if (!session) return;
   const config = await getCachedGuildConfig(guild.id);
-  const answer = getAnswerSession(guild.id);
+  const answer = getAnswerSession(guild.id); // undefined in groq mode
   const speaker = guild.members.cache.get(userId)?.displayName ?? userId;
   console.log(`[Firehose ${guild.id}] STT[${speaker}]="${text}"`);
 
-  // 1. Moderation FIRST, for everyone (checklist #1). If the ACTIVE user is
-  //    flagged, cancel the in-flight answer + wipe context (warn/kick already
-  //    ran verbatim inside the moderation call).
+  // 1. Moderation FIRST, for everyone. If the ACTIVE user is flagged, kill the
+  //    in-flight answer (warn/kick already ran verbatim inside moderation).
   const { handleTranscriptModeration } = await import('../protection/voice-mod.js');
   if (await handleTranscriptModeration(guild, session, userId, text)) {
-    if (answer?.activeUser === userId) {
-      answer.abort();
-      answer.clearContext();
+    if (session.conversation.isActive(userId)) {
+      if (voiceEngineGroq) { stopPlayback(guild.id); session.voiceHistory.length = 0; }
+      else if (answer?.activeUser === userId) { answer.abort(); answer.clearContext(); }
     }
     return;
   }
@@ -65,6 +67,9 @@ export async function handleFirehoseTranscript(
       return; // never reached the answer session (not active)
     }
     engaged = r === 'engaged' || r === 'took-over';
+    // A takeover replaces the speaker → wipe the previous conversation's history
+    // so nothing bleeds across users (context isolation).
+    if (r === 'took-over') session.voiceHistory.length = 0;
     if (engaged) console.log(`[WakeWord] ${speaker} ${r} the floor`);
     isFollowUp = false;
   } else {
@@ -74,14 +79,15 @@ export async function handleFirehoseTranscript(
   }
 
   // 3. Route: built-ins/flows still fire mid-conversation; a free-form question
-  //    is owned by the live answer session ({ kind: 'model' }).
+  //    is owned by the active engine ({ kind: 'model' }).
   const query = wake ?? text;
   const { routeVoiceCommand } = await import('./router.js');
   const result = await routeVoiceCommand(guild, session, query, userId, { followUp: isFollowUp, mode: 'v2' });
 
   if (typeof result === 'string') {
     // A built-in/flow reply — a command wins over any live answer.
-    answer?.abort();
+    if (voiceEngineGroq) stopPlayback(guild.id);
+    else answer?.abort();
     if (result) {
       await playSpeech(guild.id, result).catch((e) => console.error('[Firehose] speak:', e));
       await mirror(guild, result);
@@ -90,15 +96,30 @@ export async function handleFirehoseTranscript(
     return;
   }
 
-  // result.kind === 'model' — the live server-VAD answer owns the reply. Charge
-  // the AI quota exactly once here (the router does not, in v2).
+  // result.kind === 'model' — a free-form question. Charge the AI quota once.
   if (!(await tryConsumeAiQuestion(guild.id))) {
-    answer?.abort();
+    if (voiceEngineGroq) stopPlayback(guild.id);
+    else answer?.abort();
     await playSpeech(guild.id, t(config.language).aiQuotaExhausted).catch(() => {});
     conv.onResponseEnd(Date.now());
     return;
   }
-  // A fresh engage/takeover: replay THIS wake utterance so the model answers the
-  // first question. A follow-up is already streaming live — nothing to seed.
+
+  if (voiceEngineGroq) {
+    // Groq Llama → ElevenLabs, all here. Barge-in: cut any current playback.
+    stopPlayback(guild.id);
+    conv.onActiveUtterance(); // → Thinking
+    const reply = await generateAnswer(guild, config, query, userId, session.voiceHistory);
+    if (!reply) { conv.onResponseEnd(Date.now()); return; }
+    pushHistory(session.voiceHistory, query, reply);
+    conv.onResponseStart(); // → Speaking
+    await playSpeech(guild.id, reply).catch((e) => console.error('[Firehose] speak:', e));
+    await mirror(guild, reply);
+    conv.onResponseEnd(Date.now());
+    return;
+  }
+
+  // openai engine: a fresh engage/takeover replays THIS wake utterance so the
+  // model answers the first question. A follow-up is already streaming live.
   if (engaged) answer?.setActiveUser(userId, speaker, seedPcm24);
 }

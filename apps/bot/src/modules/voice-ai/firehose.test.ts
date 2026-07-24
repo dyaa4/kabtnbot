@@ -1,16 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Conversation } from './conversation.js';
 
+const flags = vi.hoisted(() => ({ groq: false }));
+vi.mock('../../config.js', () => ({ get voiceEngineGroq() { return flags.groq; } }));
+
 const cfgMock = vi.hoisted(() => ({
   language: 'ar',
-  voice: { wake_word: 'يا كابتن', follow_up_seconds: 10 },
+  voice: { wake_word: 'يا كابتن', follow_up_seconds: 10, dialect: 'msa' },
   protection: { log_channel_id: null },
 }));
 vi.mock('../../lib/config-cache.js', () => ({ getCachedGuildConfig: vi.fn(async () => cfgMock) }));
 
 const sessionMock = vi.hoisted(() => ({ current: undefined as undefined | Record<string, unknown> }));
 const playSpeech = vi.hoisted(() => vi.fn(async () => {}));
-vi.mock('./sessions.js', () => ({ getSession: () => sessionMock.current, playSpeech }));
+const stopPlayback = vi.hoisted(() => vi.fn());
+vi.mock('./sessions.js', () => ({ getSession: () => sessionMock.current, playSpeech, stopPlayback }));
 
 const answerMock = vi.hoisted(() => ({
   activeUser: null as string | null,
@@ -19,6 +23,9 @@ const answerMock = vi.hoisted(() => ({
   setActiveUser: vi.fn(),
 }));
 vi.mock('./answer-session.js', () => ({ getAnswerSession: () => answerMock }));
+
+const groqAnswer = vi.hoisted(() => ({ generateAnswer: vi.fn(async () => 'جواب'), pushHistory: vi.fn() }));
+vi.mock('./groq-answer.js', () => groqAnswer);
 
 const quotaMock = vi.hoisted(() => ({ ok: true }));
 vi.mock('../../lib/quotas.js', () => ({ tryConsumeAiQuestion: vi.fn(async () => quotaMock.ok) }));
@@ -42,11 +49,12 @@ const optsOf = (call: number) => vi.mocked(routeVoiceCommand).mock.calls[call][4
 function freshSession(setup?: (c: Conversation) => void) {
   const conversation = new Conversation(10_000);
   setup?.(conversation);
-  sessionMock.current = { guildId: 'g1', channelId: 'vc1', listening: true, conversation };
-  return sessionMock.current as { conversation: Conversation };
+  sessionMock.current = { guildId: 'g1', channelId: 'vc1', listening: true, conversation, voiceHistory: [] };
+  return sessionMock.current as { conversation: Conversation; voiceHistory: unknown[] };
 }
 
 beforeEach(() => {
+  flags.groq = false;
   modMock.flagged = false;
   quotaMock.ok = true;
   routerMock.result = { kind: 'model' };
@@ -55,10 +63,14 @@ beforeEach(() => {
   answerMock.clearContext.mockClear();
   answerMock.setActiveUser.mockClear();
   playSpeech.mockClear();
+  stopPlayback.mockClear();
+  groqAnswer.generateAnswer.mockClear();
+  groqAnswer.generateAnswer.mockResolvedValue('جواب');
+  groqAnswer.pushHistory.mockClear();
   vi.mocked(routeVoiceCommand).mockClear();
 });
 
-describe('handleFirehoseTranscript', () => {
+describe('handleFirehoseTranscript (openai engine)', () => {
   it('a wake word from idle engages, routes in v2 mode, and seeds the answer session', async () => {
     const s = freshSession();
     await handleFirehoseTranscript(guild, 'u1', 'يا كابتن كم الساعة', seed);
@@ -123,5 +135,55 @@ describe('handleFirehoseTranscript', () => {
     await handleFirehoseTranscript(guild, 'u1', 'وش رايك', seed);
     expect(optsOf(0)).toEqual({ followUp: true, mode: 'v2' });
     expect(answerMock.setActiveUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('handleFirehoseTranscript (groq engine)', () => {
+  beforeEach(() => { flags.groq = true; });
+
+  it('generates the reply via Groq, speaks it via ElevenLabs, mirrors, and records history', async () => {
+    const s = freshSession();
+    await handleFirehoseTranscript(guild, 'u1', 'يا كابتن كم الساعة', seed);
+    expect(s.conversation.activeUser).toBe('u1');
+    expect(groqAnswer.generateAnswer).toHaveBeenCalled();
+    expect(playSpeech).toHaveBeenCalledWith('g1', 'جواب');
+    // query is the normalized post-wake text (parseWakeWord folds ة→ه etc.).
+    expect(groqAnswer.pushHistory).toHaveBeenCalledWith(s.voiceHistory, expect.any(String), 'جواب');
+    expect(answerMock.setActiveUser).not.toHaveBeenCalled(); // no OpenAI session in groq mode
+    expect(s.conversation.phase).toBe('listening'); // onResponseEnd ran
+  });
+
+  it('barge-in: stops current playback before answering', async () => {
+    freshSession();
+    await handleFirehoseTranscript(guild, 'u1', 'يا كابتن سؤال', seed);
+    expect(stopPlayback).toHaveBeenCalledWith('g1');
+  });
+
+  it('an empty Groq reply speaks nothing and just ends the turn', async () => {
+    const s = freshSession();
+    groqAnswer.generateAnswer.mockResolvedValueOnce('');
+    await handleFirehoseTranscript(guild, 'u1', 'يا كابتن سؤال', seed);
+    expect(playSpeech).not.toHaveBeenCalled();
+    expect(groqAnswer.pushHistory).not.toHaveBeenCalled();
+    expect(s.conversation.phase).toBe('listening');
+  });
+
+  it('flagged moderation on the ACTIVE user stops playback + wipes history', async () => {
+    const s = freshSession((c) => c.onWakeWord('u1', Date.now()));
+    s.voiceHistory.push({ role: 'user', content: 'x' });
+    modMock.flagged = true;
+    await handleFirehoseTranscript(guild, 'u1', 'شتيمة', seed);
+    expect(stopPlayback).toHaveBeenCalledWith('g1');
+    expect(s.voiceHistory).toHaveLength(0);
+    expect(routeVoiceCommand).not.toHaveBeenCalled();
+  });
+
+  it('a takeover wipes the previous conversation history', async () => {
+    // u1 active but silent past the 1s takeover grace; u2 wakes → takes over.
+    const s = freshSession((c) => c.onWakeWord('u1', Date.now() - 5000));
+    s.voiceHistory.push({ role: 'user', content: 'old' });
+    await handleFirehoseTranscript(guild, 'u2', 'يا كابتن ساعدني', seed);
+    expect(s.conversation.activeUser).toBe('u2');
+    expect(s.voiceHistory.some((h) => (h as { content: string }).content === 'old')).toBe(false);
   });
 });
