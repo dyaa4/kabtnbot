@@ -9,7 +9,7 @@ import {
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
   countActiveInvitedGuilds, hasOrganizeSnapshot,
 } from '@gamebot/db';
-import { LANGUAGES, TTS_VOICES, effectiveQuotas, monthKey, ORGANIZABLE_TYPES } from '@gamebot/shared';
+import { LANGUAGES, TTS_VOICES, DIALECTS, effectiveQuotas, monthKey, ORGANIZABLE_TYPES } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
 import type { DiscordRest, DiscordMember } from '../discord-rest.js';
 import type { Session } from '../session.js';
@@ -32,6 +32,7 @@ const ConfigPatch = z
         enabled: z.boolean().optional(),
         wake_word: z.string().min(2).max(30).optional(),
         tts_voice: z.enum(TTS_VOICES).optional(),
+        dialect: z.enum(DIALECTS).optional(),
         allowed_channel_ids: z.array(z.string()).max(50).optional(),
         personality_enabled: z.boolean().optional(),
         follow_up_seconds: z.number().int().min(0).max(120).optional(),

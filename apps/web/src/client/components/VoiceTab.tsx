@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { TTS_VOICES } from '@gamebot/shared';
+import { TTS_VOICES, DIALECTS } from '@gamebot/shared';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { usePremiumStatus } from '../premium.js';
@@ -19,6 +19,7 @@ const VoiceForm = z.object({
   enabled: z.boolean(),
   wake_word: z.string().min(2).max(30),
   tts_voice: z.enum(TTS_VOICES),
+  dialect: z.enum(DIALECTS),
   personality_enabled: z.boolean(),
   follow_up_seconds: z.number().int().min(0).max(120),
   focus_active_speaker: z.boolean(),
@@ -27,10 +28,12 @@ const VoiceForm = z.object({
 type VoiceValues = z.infer<typeof VoiceForm>;
 
 interface GuildConfigResp {
+  language: string;
   voice: {
     enabled: boolean;
     wake_word: string;
     tts_voice: (typeof TTS_VOICES)[number];
+    dialect: (typeof DIALECTS)[number];
     allowed_channel_ids: string[];
     personality_enabled: boolean;
     follow_up_seconds: number;
@@ -150,6 +153,24 @@ export function VoiceTab({ guildId }: { guildId: string }) {
           </select>
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('settings.voice.ttsVoice.hint')}</p>
+        {base?.language === 'ar' && (
+          <>
+            <label className="mb-1 block">
+              <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.dialect')}</span>
+              <select
+                className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
+                {...voice.register('dialect')}
+              >
+                {DIALECTS.map((d) => (
+                  <option key={d} value={d}>
+                    {t(`settings.voice.dialect.${d}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <p className="mb-4 text-xs text-slate-500">{t('settings.voice.dialect.hint')}</p>
+          </>
+        )}
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.followUp')}</span>
           <select

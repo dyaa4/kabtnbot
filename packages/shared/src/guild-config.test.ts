@@ -24,6 +24,7 @@ describe('GuildConfigSchema', () => {
     expect(c.voice.personality_enabled).toBe(false);
     expect(c.voice.follow_up_seconds).toBe(0);
     expect(c.voice.focus_active_speaker).toBe(true);
+    expect(c.voice.dialect).toBe('msa');
     expect(c.protection).toEqual({
       enabled: false,
       voice_moderation: true,
@@ -57,6 +58,11 @@ describe('GuildConfigSchema', () => {
     // reading their config must self-heal, not crash.
     expect(GuildConfigSchema.parse({ voice: { tts_voice: 'fahad' } }).voice.tts_voice).toBe('marin');
     expect(GuildConfigSchema.parse({ voice: { tts_voice: 'cedar' } }).voice.tts_voice).toBe('cedar');
+  });
+
+  it('coerces an unknown dialect to msa and keeps a valid one', () => {
+    expect(GuildConfigSchema.parse({ voice: { dialect: 'klingon' } }).voice.dialect).toBe('msa');
+    expect(GuildConfigSchema.parse({ voice: { dialect: 'egyptian' } }).voice.dialect).toBe('egyptian');
   });
 
 });

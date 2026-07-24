@@ -12,6 +12,14 @@ export type TtsVoice = (typeof TTS_VOICES)[number];
 export const LANGUAGES = ['ar', 'en', 'de', 'tr', 'fr', 'ru'] as const;
 export type Language = (typeof LANGUAGES)[number];
 
+// Arabic voice dialects for the live assistant. When the guild language is
+// Arabic AND ElevenLabs is configured with a voice id for the chosen dialect,
+// the answer session speaks that dialect via ElevenLabs instead of the
+// OpenAI Realtime audio voice (see apps/bot elevenlabs-tts). msa = Modern
+// Standard Arabic (the safe default when no dialect voice is set up).
+export const DIALECTS = ['msa', 'gulf', 'egyptian', 'levantine', 'saudi'] as const;
+export type Dialect = (typeof DIALECTS)[number];
+
 export const GuildConfigSchema = z.object({
   language: z.enum(LANGUAGES).default('ar'),
   admin_role_id: z.string().nullable().default(null),
@@ -23,6 +31,11 @@ export const GuildConfigSchema = z.object({
       // voice id ("fahad" etc.) — they coerce to the default on read; the web
       // PATCH route still validates strictly against the current enum.
       tts_voice: z.enum(TTS_VOICES).default('marin').catch('marin'),
+      // Arabic-only spoken dialect. Applies solely to guilds with language
+      // 'ar' and only when ElevenLabs has a voice id for the choice; otherwise
+      // ignored and the OpenAI Realtime voice is used. .catch self-heals any
+      // stale/unknown value to MSA on read.
+      dialect: z.enum(DIALECTS).default('msa').catch('msa'),
       allowed_channel_ids: z.array(z.string()).default([]),
       personality_enabled: z.boolean().default(false),
       // Conversation window: after a wake-word question, the SAME speaker can

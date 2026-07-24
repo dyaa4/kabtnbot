@@ -5,6 +5,8 @@ import { getCachedGuildConfig } from '../../lib/config-cache.js';
 import { buildSystemPrompt } from './prompts.js';
 import { silencePcm, upsample24to48Stereo } from './audio-util.js';
 import { OPENAI_VOICES } from './tts.js';
+import { synthesizeDialectSpeech, useDialectVoice } from './elevenlabs-tts.js';
+import type { Dialect } from '@gamebot/shared';
 
 // The V2 answer session: ONE speech-to-speech Realtime WS per guild that serves
 // ONLY the currently active user. Server-side VAD drives turn-taking (low
@@ -53,6 +55,16 @@ export class AnswerSession {
   private convoItems = new Set<string>(); // for clearContext on handover
   private activeResponse = false;
   private audioSink: NodeJS.WritableStream | null = null;
+
+  // Dialect mode (Arabic guilds w/ ElevenLabs): the session emits TEXT, which
+  // we synthesize with the dialect voice after the answer completes. `textBuffer`
+  // assembles the streamed deltas; `responseGen` is bumped whenever the current
+  // answer is invalidated (barge-in, abort, handover) so a slow ElevenLabs
+  // response that lands after the user moved on is dropped instead of played.
+  private dialectMode = false;
+  private dialect: Dialect = 'msa';
+  private textBuffer = '';
+  private responseGen = 0;
 
   callbacks: AnswerCallbacks | null = null;
 
@@ -106,6 +118,10 @@ export class AnswerSession {
   async sendSessionUpdate(): Promise<void> {
     const cfg = await getCachedGuildConfig(this.guildId);
     const voice = OPENAI_VOICES.has(cfg.voice.tts_voice) ? cfg.voice.tts_voice : config.OPENAI_REALTIME_VOICE;
+    // Arabic guild w/ a configured ElevenLabs dialect voice → the model emits
+    // TEXT (we speak it via ElevenLabs). Otherwise it speaks natively (audio).
+    this.dialect = cfg.voice.dialect ?? 'msa';
+    this.dialectMode = useDialectVoice(cfg.language, this.dialect);
     const instructions = [
       buildSystemPrompt(this.guildName, { comedic: cfg.voice.personality_enabled, language: cfg.language }),
       `You are talking with ${this.activeName}. Address them by name naturally when it fits — never announce, list, or read out who is present.`,
@@ -117,7 +133,8 @@ export class AnswerSession {
       type: 'session.update',
       session: {
         type: 'realtime',
-        output_modalities: ['audio'],
+        // Dialect mode: text out (ElevenLabs synthesizes). Native: audio out.
+        output_modalities: this.dialectMode ? ['text'] : ['audio'],
         instructions,
         audio: {
           input: {
@@ -184,9 +201,40 @@ export class AnswerSession {
     if (this.ws?.readyState === WebSocket.OPEN && this.activeResponse) {
       this.send({ type: 'response.cancel' });
     }
+    this.responseGen++; // invalidate any in-flight ElevenLabs synthesis
     this.audioSink?.end();
     this.audioSink = null;
     this.activeResponse = false;
+  }
+
+  /**
+   * Dialect mode: the model finished emitting TEXT — synthesize it with the
+   * ElevenLabs dialect voice and play it. The generation captured here is
+   * re-checked after the (async) synthesis so a barge-in / handover / abort
+   * that happened meanwhile drops the stale audio instead of talking over the
+   * next turn. onResponseDone (idle-timeout arming) fires once speaking is
+   * done, mirroring the audio-native path's response.done timing. On synthesis
+   * failure the turn still completes silently — never a hard failure.
+   */
+  private finishDialectAnswer(): void {
+    const gen = this.responseGen;
+    const text = this.textBuffer.trim();
+    this.textBuffer = '';
+    this.activeResponse = false;
+    if (text) this.callbacks?.onAnswerText(text);
+    if (!text) { this.callbacks?.onResponseDone(); return; }
+    void synthesizeDialectSpeech(text, this.dialect)
+      .then((pcm) => {
+        if (this.responseGen !== gen || this.closed) return; // superseded / closed
+        const sink = this.callbacks?.openAudioSink() ?? null;
+        if (sink) { sink.write(pcm); sink.end(); }
+      })
+      .catch((err) => {
+        console.error(`[Answer ${this.guildId}] ElevenLabs synth failed:`, (err as Error)?.message ?? err);
+      })
+      .finally(() => {
+        if (this.responseGen === gen) this.callbacks?.onResponseDone();
+      });
   }
 
   /** Wipe the whole conversation + any buffered input so the next user starts clean. */
@@ -221,12 +269,16 @@ export class AnswerSession {
         break;
       case 'input_audio_buffer.speech_started':
         // Barge-in: the active user talked over the bot. interrupt_response makes
-        // the server cancel the answer; stop local playback immediately.
+        // the server cancel the answer; stop local playback immediately. Bumping
+        // the generation also drops any ElevenLabs synthesis still in flight.
+        this.responseGen++;
         this.audioSink?.end();
         this.audioSink = null;
         this.callbacks?.onSpeechStarted();
         break;
       case 'response.created':
+        this.responseGen++;
+        this.textBuffer = '';
         this.activeResponse = true;
         this.callbacks?.onResponseStart();
         break;
@@ -235,16 +287,22 @@ export class AnswerSession {
         if (!this.audioSink) this.audioSink = this.callbacks?.openAudioSink() ?? null;
         this.audioSink?.write(upsample24to48Stereo(Buffer.from(ev.delta, 'base64')));
         break;
+      case 'response.output_text.delta':
+        // Dialect mode only: assemble the answer text for ElevenLabs.
+        if (ev.delta) this.textBuffer += ev.delta;
+        break;
       case 'response.output_audio_transcript.done':
         if (ev.transcript) this.callbacks?.onAnswerText(ev.transcript);
         break;
       case 'response.done':
+        if (this.dialectMode) { this.finishDialectAnswer(); break; }
         this.audioSink?.end();
         this.audioSink = null;
         this.activeResponse = false;
         this.callbacks?.onResponseDone();
         break;
       case 'response.cancelled':
+        this.responseGen++;
         this.audioSink?.end();
         this.audioSink = null;
         this.activeResponse = false;

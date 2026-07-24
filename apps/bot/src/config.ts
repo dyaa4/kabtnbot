@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { z } from 'zod';
+import type { Dialect } from '@gamebot/shared';
 
 // pnpm --filter runs package scripts with CWD=apps/bot, so the repo-root .env
 // must be resolved relative to this file (same depth from src/ and dist/),
@@ -35,6 +36,19 @@ const Env = z.object({
   // does-not-have-access). Opt into it via env once the account is granted it.
   OPENAI_TRANSCRIBE_MODEL: z.string().optional().default('gpt-4o-mini-transcribe'),
   OPENAI_TTS_MODEL: z.string().optional().default('gpt-4o-mini-tts'),
+  // ElevenLabs powers per-dialect Arabic voices for the LIVE assistant only
+  // (Arabic guilds). OpenAI Realtime stays the STT/LLM/VAD brain but emits
+  // TEXT; ElevenLabs synthesizes that text with the dialect's voice id. Unset
+  // key or unset dialect voice id → the guild silently falls back to the
+  // OpenAI Realtime audio voice. Turbo v2.5 is multilingual + low-latency,
+  // which matters because synthesis only starts after the full answer text.
+  ELEVENLABS_API_KEY: z.string().optional().default(''),
+  ELEVENLABS_MODEL: z.string().optional().default('eleven_turbo_v2_5'),
+  ELEVENLABS_VOICE_MSA: z.string().optional().default(''),
+  ELEVENLABS_VOICE_GULF: z.string().optional().default(''),
+  ELEVENLABS_VOICE_EGYPTIAN: z.string().optional().default(''),
+  ELEVENLABS_VOICE_LEVANTINE: z.string().optional().default(''),
+  ELEVENLABS_VOICE_SAUDI: z.string().optional().default(''),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
   // They need the privileged Message Content Intent; if the intent is missing
@@ -70,6 +84,20 @@ export const textCommandsEnabled = config.ENABLE_TEXT_COMMANDS !== 'false';
 export const chatLogEnabled = config.ENABLE_CHAT_LOG !== 'false';
 /** The rearchitected voice pipeline — ON unless VOICE_V2=false. See above. */
 export const voiceV2Enabled = config.VOICE_V2 !== 'false';
+
+/**
+ * The ElevenLabs voice id configured for an Arabic dialect, or '' if none is
+ * set up. Empty means the guild keeps the OpenAI Realtime voice (fail-open).
+ */
+export function dialectVoiceId(dialect: Dialect): string {
+  switch (dialect) {
+    case 'gulf': return config.ELEVENLABS_VOICE_GULF;
+    case 'egyptian': return config.ELEVENLABS_VOICE_EGYPTIAN;
+    case 'levantine': return config.ELEVENLABS_VOICE_LEVANTINE;
+    case 'saudi': return config.ELEVENLABS_VOICE_SAUDI;
+    case 'msa': return config.ELEVENLABS_VOICE_MSA;
+  }
+}
 
 const superAdminIds = new Set(
   config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean),
