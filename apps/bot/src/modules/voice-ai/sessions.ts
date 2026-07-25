@@ -14,6 +14,12 @@ import { closeAnswerSession } from './answer-session.js';
 import { voiceEngineGroq } from '../../config.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
+// Discord playback format (StreamType.Raw): 48kHz s16le stereo.
+const SAMPLE_RATE = 48_000;
+const BYTES_PER_SAMPLE = 2;
+const CHANNELS = 2;
+const PLAYBACK_SLACK_MS = 5_000;
+
 export interface VoiceSession {
   guildId: string;
   channelId: string;
@@ -164,6 +170,26 @@ export async function playSpeech(guildId: string, text: string): Promise<void> {
     : await synthesizeSpeech(text, { language: config.language, voice: config.voice.tts_voice });
   const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Raw });
   session.player.play(resource);
+  await playbackDone(session.player, buffer.length);
+}
+
+/**
+ * Resolve when the player has actually finished (or was cut by stopPlayback),
+ * NOT when playback starts. Callers end the conversation turn on this promise:
+ * returning early puts the machine back into `listening` while the bot is
+ * still talking, so the speaker's very next sound counts as a follow-up and
+ * hard-cuts the answer mid-sentence.
+ *
+ * The timeout is the audio's own duration plus slack — a player wedged in
+ * AutoPaused (nobody subscribed) must not block the turn forever.
+ */
+async function playbackDone(player: AudioPlayer, byteLength: number): Promise<void> {
+  const seconds = byteLength / (SAMPLE_RATE * BYTES_PER_SAMPLE * CHANNELS);
+  try {
+    await entersState(player, AudioPlayerStatus.Idle, Math.ceil(seconds * 1000) + PLAYBACK_SLACK_MS);
+  } catch {
+    console.warn('[Voice] playback did not finish within its own duration — ending the turn anyway');
+  }
 }
 
 /**
