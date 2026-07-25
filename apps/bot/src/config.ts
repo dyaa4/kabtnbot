@@ -47,6 +47,10 @@ const Env = z.object({
   // which matters because synthesis only starts after the full answer text.
   ELEVENLABS_API_KEY: z.string().optional().default(''),
   ELEVENLABS_MODEL: z.string().optional().default('eleven_turbo_v2_5'),
+  // ElevenLabs Scribe is also the default STT (see VOICE_STT): stronger Arabic
+  // than Whisper and it takes the trigger terms as real `keyterms` biasing
+  // instead of a decode prompt. $0.22/h vs Groq turbo's $0.04/h.
+  ELEVENLABS_STT_MODEL: z.string().optional().default('scribe_v2'),
   // Fallback voice for non-Arabic languages and for Arabic dialects with no
   // dedicated voice id. Multilingual (eleven_turbo_v2_5 speaks all langs).
   ELEVENLABS_VOICE_DEFAULT: z.string().optional().default(''),
@@ -58,6 +62,12 @@ const Env = z.object({
   // Llama answer + ElevenLabs voice — NO OpenAI. 'openai': the Realtime
   // AnswerSession (needs OpenAI credit). Groq mode runs inside the V2 firehose.
   VOICE_ENGINE: z.string().optional().default('groq'),
+  // Transcription provider, independent of VOICE_ENGINE: 'elevenlabs' | 'groq'
+  // | 'openai'. Empty follows the engine (groq → elevenlabs, openai → openai).
+  // Exists because a provider can revoke model access without warning — Groq
+  // blocked whisper-large-v3-turbo at the project level and the whole voice
+  // path went deaf; this flips STT in one env change, no redeploy.
+  VOICE_STT: z.string().optional().default(''),
   // Deploy-level guard for the privileged MessageContent gateway intent — set to 'true'
   // Text features are ON by default (opt-OUT: set 'false' to disable one).
   // They need the privileged Message Content Intent; if the intent is missing
@@ -96,6 +106,18 @@ export const voiceV2Enabled = config.VOICE_V2 !== 'false';
 /** Groq voice engine (Whisper + Llama + ElevenLabs, no OpenAI) — the default;
  * set VOICE_ENGINE=openai to use the OpenAI Realtime answer session instead. */
 export const voiceEngineGroq = config.VOICE_ENGINE !== 'openai';
+
+export type SttProvider = 'elevenlabs' | 'groq' | 'openai';
+/**
+ * Which provider transcribes utterances. VOICE_STT wins when it names a known
+ * provider; otherwise the voice engine decides (groq engine → ElevenLabs
+ * Scribe, which needs no OpenAI and no Groq model access).
+ */
+export const sttProvider: SttProvider = (() => {
+  const want = config.VOICE_STT.trim().toLowerCase();
+  if (want === 'elevenlabs' || want === 'groq' || want === 'openai') return want;
+  return voiceEngineGroq ? 'elevenlabs' : 'openai';
+})();
 
 /**
  * The ElevenLabs voice id configured for an Arabic dialect, or '' if none is

@@ -22,16 +22,24 @@ const MIN_UTTERANCE_BYTES = 4_800; // commit rejects <100ms of audio
 const MAX_QUEUED_UTTERANCES = 5; // utterances buffered while the WS (re)connects
 
 /**
- * Whisper biases decoding toward its prompt, so seed it with the EXACT words
- * it must recognize: the wake word plus the guild's enabled voice trigger
- * phrases. Only the gpt-4o-*-transcribe family accepts a prompt.
+ * The EXACT words STT must recognize: the wake word plus the guild's enabled
+ * voice trigger phrases. Whisper takes them as a decode prompt (see sttHint);
+ * ElevenLabs Scribe takes the list itself as `keyterms` biasing.
  */
-export function sttHint(wakeWord: string, flows: GuildCommandFlows | null): string {
+export function sttTerms(wakeWord: string, flows: GuildCommandFlows | null): string[] {
   const phrases = (flows?.flows ?? [])
     .filter((f) => f.enabled && f.sources.voice)
     .flatMap((f) => f.triggers)
     .slice(0, 12);
-  return [wakeWord, ...phrases].join('، ').slice(0, 300);
+  return [wakeWord, ...phrases].map((t) => t.trim()).filter(Boolean);
+}
+
+/**
+ * Whisper biases decoding toward its prompt, so seed it with the trigger terms.
+ * Only the gpt-4o-*-transcribe family and Groq Whisper accept a prompt.
+ */
+export function sttHint(wakeWord: string, flows: GuildCommandFlows | null): string {
+  return sttTerms(wakeWord, flows).join('، ').slice(0, 300);
 }
 
 export interface RealtimeCallbacks {
