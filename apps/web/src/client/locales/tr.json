@@ -139,8 +139,6 @@
   "settings.voice.enabled.hint": "Sesli asistanı bu sunucu için tamamen açar veya kapatır.",
   "settings.voice.wakeWord": "Uyandırma kelimesi",
   "settings.voice.wakeWord.hint": "Botun seste isteğinden önce dinlediği kelime — örn. \"يا كابتن السرعة\".",
-  "settings.voice.ttsVoice": "Bot sesi",
-  "settings.voice.ttsVoice.hint": "Botun konuştuğu ses (♂ erkek, ♀ kadın).",
   "settings.voice.dialect": "Arapça lehçe",
   "settings.voice.dialect.hint": "Sesli yanıtlar için konuşulan lehçe (yalnızca Arapça). Lehçe için ayarlanmış bir ElevenLabs sesi gerekir; yoksa yukarıdaki bot sesi kullanılır.",
   "settings.voice.dialect.msa": "Modern Standart Arapça",

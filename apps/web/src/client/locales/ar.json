@@ -139,8 +139,6 @@
   "settings.voice.enabled.hint": "تشغيل أو إيقاف المساعد الصوتي بالكامل لهذا السيرفر.",
   "settings.voice.wakeWord": "كلمة التنبيه",
   "settings.voice.wakeWord.hint": "الكلمة التي ينتبه لها البوت في الفويس قبل طلبك — مثال: «يا كابتن السرعة».",
-  "settings.voice.ttsVoice": "صوت البوت",
-  "settings.voice.ttsVoice.hint": "الصوت الذي ينطق به البوت (♂ رجل، ♀ امرأة).",
   "settings.voice.dialect": "اللهجة العربية",
   "settings.voice.dialect.hint": "اللهجة المنطوقة في الردود الصوتية (للعربية فقط). تحتاج صوت ElevenLabs مُعدّاً لهذه اللهجة، وإلا يُستخدم صوت البوت أعلاه.",
   "settings.voice.dialect.msa": "العربية الفصحى",

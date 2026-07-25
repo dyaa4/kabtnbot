@@ -139,8 +139,6 @@
   "settings.voice.enabled.hint": "Active ou désactive entièrement l'assistant vocal pour ce serveur.",
   "settings.voice.wakeWord": "Mot d'activation",
   "settings.voice.wakeWord.hint": "Le mot que le bot écoute en vocal avant ta demande — p. ex. \"يا كابتن السرعة\".",
-  "settings.voice.ttsVoice": "Voix du bot",
-  "settings.voice.ttsVoice.hint": "La voix avec laquelle le bot parle (♂ homme, ♀ femme).",
   "settings.voice.dialect": "Dialecte arabe",
   "settings.voice.dialect.hint": "Dialecte parlé pour les réponses vocales (arabe uniquement). Nécessite une voix ElevenLabs configurée pour le dialecte ; sinon la voix du bot ci-dessus est utilisée.",
   "settings.voice.dialect.msa": "Arabe standard moderne",

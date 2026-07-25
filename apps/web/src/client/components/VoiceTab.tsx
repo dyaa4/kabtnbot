@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { TTS_VOICES, DIALECTS } from '@gamebot/shared';
+import { DIALECTS } from '@gamebot/shared';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
 import { usePremiumStatus } from '../premium.js';
@@ -18,7 +18,6 @@ const FOLLOW_UP_CHOICES = [0, 15, 30, 60] as const;
 const VoiceForm = z.object({
   enabled: z.boolean(),
   wake_word: z.string().min(2).max(30),
-  tts_voice: z.enum(TTS_VOICES),
   dialect: z.enum(DIALECTS),
   personality_enabled: z.boolean(),
   follow_up_seconds: z.number().int().min(0).max(120),
@@ -32,7 +31,6 @@ interface GuildConfigResp {
   voice: {
     enabled: boolean;
     wake_word: string;
-    tts_voice: (typeof TTS_VOICES)[number];
     dialect: (typeof DIALECTS)[number];
     allowed_channel_ids: string[];
     personality_enabled: boolean;
@@ -44,20 +42,6 @@ interface GuildConfigResp {
 function sameIds(a: string[], b: string[]): boolean {
   return a.length === b.length && [...a].sort().join(',') === [...b].sort().join(',');
 }
-
-// OpenAI voice ids, capitalized — language-neutral, no per-voice translation needed.
-const TTS_VOICE_LABELS: Record<(typeof TTS_VOICES)[number], string> = {
-  marin: 'Marin',
-  cedar: 'Cedar',
-  alloy: 'Alloy',
-  ash: 'Ash',
-  ballad: 'Ballad',
-  coral: 'Coral',
-  echo: 'Echo',
-  sage: 'Sage',
-  shimmer: 'Shimmer',
-  verse: 'Verse',
-};
 
 /** Voice assistant settings — premium: the PATCH is server-gated, this tab
  * shows the upsell panel instead of a form that could never save. */
@@ -139,20 +123,6 @@ export function VoiceTab({ guildId }: { guildId: string }) {
           />
         </label>
         <p className="mb-3 text-xs text-slate-500">{t('settings.voice.wakeWord.hint')}</p>
-        <label className="mb-1 block">
-          <span className="mb-1 block text-sm text-slate-400">{t('settings.voice.ttsVoice')}</span>
-          <select
-            className="w-full rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 focus:border-blue-400/50 focus:outline-none"
-            {...voice.register('tts_voice')}
-          >
-            {TTS_VOICES.map((v) => (
-              <option key={v} value={v}>
-                {TTS_VOICE_LABELS[v]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="mb-4 text-xs text-slate-500">{t('settings.voice.ttsVoice.hint')}</p>
         {base?.language === 'ar' && (
           <>
             <label className="mb-1 block">
