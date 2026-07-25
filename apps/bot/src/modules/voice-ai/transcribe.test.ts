@@ -10,10 +10,11 @@ vi.mock('../../config.js', () => ({
   config: mockConfig,
   get sttProvider() { return flags.stt; },
 }));
+const terms = vi.hoisted(() => ({ extra: [] as string[] }));
 // Keep the test off the heavy realtime.ts import graph; both helpers are pure.
 vi.mock('./realtime.js', () => ({
   sttHint: (wake: string) => `HINT:${wake}`,
-  sttTerms: (wake: string) => [wake, 'شغل اغنية'],
+  sttTerms: (wake: string) => [wake, 'شغل اغنية', ...terms.extra],
 }));
 
 import { transcribeUtterance } from './transcribe.js';
@@ -23,6 +24,7 @@ const opts = { language: 'ar', wakeWord: 'يا كابتن', flows: null };
 
 beforeEach(() => {
   flags.stt = 'openai';
+  terms.extra = [];
   mockConfig.OPENAI_API_KEY = 'k';
   mockConfig.OPENAI_TRANSCRIBE_MODEL = 'gpt-4o-mini-transcribe';
   mockConfig.GROQ_API_KEY = 'g';
@@ -131,27 +133,43 @@ describe('transcribeUtterance (elevenlabs provider)', () => {
     expect(body.get('model_id')).toBe('scribe_v2');
     expect(body.get('language_code')).toBe('ar');
     expect(body.get('tag_audio_events')).toBe('false');
-    expect(JSON.parse(body.get('keyterms') as string)).toEqual(['يا كابتن', 'شغل اغنية']);
+    // One field per term — a JSON array would land as a single keyterm whose
+    // brackets trip Scribe's invalid-character check and 400 the request.
+    expect(body.getAll('keyterms')).toEqual(['يا كابتن', 'شغل اغنية']);
     expect(body.get('file')).toBeInstanceOf(Blob);
   });
 
-  it('retries once without keyterms when Scribe rejects them (422)', async () => {
-    const bodies: FormData[] = [];
+  it('strips characters Scribe rejects and drops terms left empty', async () => {
+    terms.extra = ['شغل 🎵 اغنية!', '???', 'a'.repeat(60), 'one two three four five six'];
+    let body: FormData | undefined;
     global.fetch = vi.fn(async (_u: string, i: RequestInit) => {
-      bodies.push(i.body as FormData);
-      return bodies.length === 1
-        ? ({ ok: false, status: 422, text: async () => 'invalid keyterms' } as Response)
-        : ({ ok: true, status: 200, json: async () => ({ text: 'أهلا' }) } as Response);
+      body = i.body as FormData;
+      return { ok: true, status: 200, json: async () => ({ text: 'x' }) } as Response;
     }) as never;
-    expect(await transcribeUtterance(pcm, opts)).toBe('أهلا');
-    expect(bodies).toHaveLength(2);
-    expect(bodies[0].get('keyterms')).not.toBeNull();
-    expect(bodies[1].get('keyterms')).toBeNull();
-    expect(bodies[1].get('model_id')).toBe('scribe_v2');
+    await transcribeUtterance(pcm, opts);
+    // Symbols → dropped, over-long and over-5-words terms → dropped entirely.
+    expect(body?.getAll('keyterms')).toEqual(['يا كابتن', 'شغل اغنية', 'شغل اغنية']);
   });
 
-  it('does not retry a 422 twice', async () => {
-    const spy = vi.fn(async () => ({ ok: false, status: 422, text: async () => 'nope' }) as Response);
+  for (const status of [400, 422]) {
+    it(`retries once without keyterms when Scribe rejects them (${status})`, async () => {
+      const bodies: FormData[] = [];
+      global.fetch = vi.fn(async (_u: string, i: RequestInit) => {
+        bodies.push(i.body as FormData);
+        return bodies.length === 1
+          ? ({ ok: false, status, text: async () => 'invalid keyterms' } as Response)
+          : ({ ok: true, status: 200, json: async () => ({ text: 'أهلا' }) } as Response);
+      }) as never;
+      expect(await transcribeUtterance(pcm, opts)).toBe('أهلا');
+      expect(bodies).toHaveLength(2);
+      expect(bodies[0].getAll('keyterms')).not.toHaveLength(0);
+      expect(bodies[1].getAll('keyterms')).toHaveLength(0);
+      expect(bodies[1].get('model_id')).toBe('scribe_v2');
+    });
+  }
+
+  it('does not retry a rejection twice', async () => {
+    const spy = vi.fn(async () => ({ ok: false, status: 400, text: async () => 'nope' }) as Response);
     global.fetch = spy as never;
     expect(await transcribeUtterance(pcm, opts)).toBe('');
     expect(spy).toHaveBeenCalledTimes(2);

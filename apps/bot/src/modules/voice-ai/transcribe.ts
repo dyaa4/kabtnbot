@@ -17,6 +17,10 @@ const MIN_UTTERANCE_BYTES = 4_800; // 100ms @ 24k mono s16 — every provider re
 // ElevenLabs keyterm limits: ≤1000 terms, <50 chars, ≤5 words each.
 const MAX_KEYTERM_CHARS = 49;
 const MAX_KEYTERM_WORDS = 5;
+// Scribe rejects the whole request ("Some keyword contains invalid characters")
+// over punctuation and symbols, so keyterms are reduced to letters, marks,
+// digits and separators — Arabic included, wake words are usually plain words.
+const KEYTERM_INVALID = /[^\p{L}\p{M}\p{N}\s'-]/gu;
 
 /**
  * The provider that will actually be called, plus its key. A configured
@@ -37,7 +41,8 @@ function resolveProvider(): { provider: SttProvider; apiKey: string } | null {
 /** Terms that satisfy ElevenLabs' keyterm limits (over-long ones are dropped). */
 function keyterms(opts: TranscribeOpts): string[] {
   return sttTerms(opts.wakeWord, opts.flows)
-    .filter((t) => t.length <= MAX_KEYTERM_CHARS && t.split(/\s+/).length <= MAX_KEYTERM_WORDS)
+    .map((t) => t.replace(KEYTERM_INVALID, ' ').replace(/\s+/g, ' ').trim())
+    .filter((t) => t && t.length <= MAX_KEYTERM_CHARS && t.split(' ').length <= MAX_KEYTERM_WORDS)
     .slice(0, 1000);
 }
 
@@ -64,7 +69,10 @@ function scribeForm(file: Blob, opts: TranscribeOpts, terms: string[]): FormData
   // Scribe tags "(laughter)" and friends by default — noise that would reach
   // both the profanity matcher and the wake-word parser as if it were speech.
   form.append('tag_audio_events', 'false');
-  if (terms.length) form.append('keyterms', JSON.stringify(terms));
+  // One field per term. A JSON-encoded array lands as a SINGLE keyterm whose
+  // brackets and quotes then trip the invalid-character check, failing the
+  // whole request — that 400 cost us every transcript until it was caught.
+  for (const term of terms) form.append('keyterms', term);
   return form;
 }
 
@@ -108,9 +116,10 @@ export async function transcribeUtterance(pcm24kMono: Buffer, opts: TranscribeOp
   try {
     let res = await post(true);
     // Keyterms are a bias, not a requirement: a rejected term list must not
-    // cost us the transcript, so retry once without it.
-    if (res.status === 422 && terms.length) {
-      console.warn('[Transcribe] elevenlabs rejected keyterms — retrying without biasing');
+    // cost us the transcript, so retry once without it. Scribe answers a bad
+    // term list with 400 (invalid characters) or 422 — never assume one code.
+    if ((res.status === 400 || res.status === 422) && terms.length) {
+      console.warn(`[Transcribe] elevenlabs rejected keyterms [${terms.join(' | ')}] — retrying without biasing`);
       res = await post(false);
     }
     if (!res.ok) {
