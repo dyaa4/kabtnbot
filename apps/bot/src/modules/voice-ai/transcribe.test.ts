@@ -61,7 +61,7 @@ describe('transcribeUtterance (openai engine)', () => {
   });
 
   it('returns empty on a non-OK response', async () => {
-    global.fetch = vi.fn(async () => ({ ok: false, status: 429, json: async () => ({}) }) as Response) as never;
+    global.fetch = vi.fn(async () => ({ ok: false, status: 429, text: async () => '' }) as Response) as never;
     expect(await transcribeUtterance(pcm, opts)).toBe('');
   });
 

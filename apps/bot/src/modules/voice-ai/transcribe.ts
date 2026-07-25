@@ -47,7 +47,10 @@ export async function transcribeUtterance(pcm24kMono: Buffer, opts: TranscribeOp
       body: form,
     });
     if (!res.ok) {
-      console.error(`[Transcribe] HTTP ${res.status}`);
+      // Surface the provider's error body — a bare status can't distinguish a
+      // revoked key, missing model access, or an org restriction (all 403).
+      const detail = await res.text().catch(() => '');
+      console.error(`[Transcribe] HTTP ${res.status} ${(groq ? 'groq' : 'openai')} ${detail.slice(0, 300)}`);
       return '';
     }
     const data = (await res.json()) as { text?: string };
