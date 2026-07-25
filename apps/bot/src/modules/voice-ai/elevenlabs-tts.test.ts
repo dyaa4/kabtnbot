@@ -23,10 +23,17 @@ vi.mock('../../config.js', () => ({
   },
 }));
 
-import { synthesizeDialectSpeech, useDialectVoice, resolveVoiceId, synthesizeVoice, elevenLabsReady } from './elevenlabs-tts.js';
+import {
+  synthesizeDialectSpeech, useDialectVoice, resolveVoiceId, synthesizeVoice, elevenLabsReady,
+  clearSpeechCache,
+} from './elevenlabs-tts.js';
 
 // 24kHz mono pcm response: 2 samples → upsampled to 8 (2x rate, stereo).
 const PCM_BODY = Buffer.from([100, 0, 44, 1]);
+
+// Synthesis is cached by voice+model+text, so identical lines across tests
+// would otherwise reuse the previous test's audio and skip fetch entirely.
+beforeEach(() => clearSpeechCache());
 
 describe('synthesizeDialectSpeech (ElevenLabs)', () => {
   beforeEach(() => {
@@ -61,6 +68,43 @@ describe('synthesizeDialectSpeech (ElevenLabs)', () => {
   it('throws on a non-ok response', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 401 })));
     await expect(synthesizeDialectSpeech('مرحبا', 'gulf')).rejects.toThrow(/ElevenLabs TTS 401/);
+  });
+});
+
+describe('speech cache', () => {
+  beforeEach(() => {
+    mockConfig.ELEVENLABS_API_KEY = 'k';
+    mockConfig.ELEVENLABS_VOICE_GULF = 'voice-gulf';
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(new Uint8Array(PCM_BODY), { status: 200 })));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('serves a repeated line from cache — the bot says warn/kick lines verbatim every time', async () => {
+    const first = await synthesizeDialectSpeech('تم تحذيرك', 'gulf');
+    const second = await synthesizeDialectSpeech('تم تحذيرك', 'gulf');
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(second).toEqual(first);
+  });
+
+  it('keys on the voice id — the same text in another voice is synthesized again', async () => {
+    await synthesizeDialectSpeech('تم تحذيرك', 'gulf');
+    await synthesizeDialectSpeech('تم تحذيرك', 'msa');
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('keys on the model — a model switch must not replay the old voice', async () => {
+    await synthesizeDialectSpeech('تم تحذيرك', 'gulf');
+    mockConfig.ELEVENLABS_MODEL = 'eleven_flash_v2_5';
+    await synthesizeDialectSpeech('تم تحذيرك', 'gulf');
+    mockConfig.ELEVENLABS_MODEL = 'eleven_turbo_v2_5';
+    expect(fetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not cache a failed synthesis', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('nope', { status: 500 })));
+    await expect(synthesizeDialectSpeech('تم تحذيرك', 'gulf')).rejects.toThrow();
+    await expect(synthesizeDialectSpeech('تم تحذيرك', 'gulf')).rejects.toThrow();
+    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });
 

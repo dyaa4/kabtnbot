@@ -78,7 +78,7 @@
   "pricing.premium.chat": "AI chat — /ask and /chat answer any question",
   "pricing.premium.moderation": "AI voice moderation catches offensive language live",
   "pricing.premium.voices": "All 6 voices and the comedic personality",
-  "pricing.premium.limits": "600 voice-listening minutes and 600 AI questions per month",
+  "pricing.premium.limits": "300 voice-listening minutes and 200 AI questions per month",
   "pricing.premium.voicelog": "Voice & chat logs — who was in voice and recent messages (last 7 days)",
   "pricing.premium.noCheckin": "Runs 24/7 — no check-in, and ad-free",
   "nav.logout": "Logout",

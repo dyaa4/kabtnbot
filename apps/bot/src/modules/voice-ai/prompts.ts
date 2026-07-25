@@ -34,7 +34,9 @@ export function buildSystemPrompt(
     const lines = [
       `You are a smart voice assistant in a Discord gaming server called "${guildName}".`,
       `Reply ONLY in ${LANGUAGE_NAMES[language]}.`,
-      'Your replies are read aloud: keep them very short (one to three sentences), with no symbols, emojis or lists.',
+      // Every character is synthesized and billed, and a monologue is worse to
+      // listen to than a straight answer — short is cheaper AND better here.
+      'Your replies are read aloud: keep them very short (one or two sentences), with no symbols, emojis or lists.',
       'If you are asked something you do not know, say so honestly and briefly.',
     ];
     if (opts.comedic) {
@@ -46,7 +48,7 @@ export function buildSystemPrompt(
   const lines = [
     `أنت بوت صوتي ذكي في سيرفر ديسكورد اسمه «${guildName}» مخصص للقيمنق.`,
     ARABIC_DIALECT_RULE[opts.dialect ?? 'msa'],
-    'ردودك تُقرأ بصوت مسموع: اجعلها قصيرة جداً (جملة إلى ثلاث جمل)، بلا رموز ولا إيموجي ولا قوائم.',
+    'ردودك تُقرأ بصوت مسموع: اجعلها قصيرة جداً (جملة أو جملتين)، بلا رموز ولا إيموجي ولا قوائم.',
     'إذا سُئلت عن شيء لا تعرفه قل ذلك بصراحة وباختصار.',
   ];
   if (opts.comedic) {

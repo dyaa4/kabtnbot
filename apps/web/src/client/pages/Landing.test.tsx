@@ -44,7 +44,7 @@ describe('Landing', () => {
     expect(screen.getByRole('heading', { name: /مجاني|Free/ })).toBeTruthy();
     expect(screen.getByRole('heading', { name: /^(برو|Pro)$/ })).toBeTruthy();
     expect(screen.getAllByText(/قريباً|Coming soon/).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText(/600 دقيقة|600 voice-listening/)).toBeTruthy(); // Pro monthly limits spelled out
+    expect(screen.getByText(/300 دقيقة|300 voice-listening/)).toBeTruthy(); // Pro monthly limits spelled out
     expect(screen.getByText(/كل مزايا الخطة المجانية|Everything in the free plan/)).toBeTruthy();
   });
 

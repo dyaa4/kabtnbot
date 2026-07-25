@@ -10,11 +10,17 @@ export function monthKey(): string {
 }
 
 // MONTHLY limits on guilds linked by a PREMIUM account (per-user premium
-// model). Chosen for a ~$7/month/guild cost ceiling (owner decision
-// 2026-07-19) — the old per-day quotas ceilinged at ~$160/month.
+// model). Sized so ONE fully-exhausting account costs ~$2.60/month at the
+// 2026-07-26 provider prices (owner decision: a $15 subscription was too much
+// for the market, so the ceiling had to come down, not the price up):
+//   STT  300 min  = 5h x $0.22/h (ElevenLabs Scribe)      ~$1.10
+//   TTS  200 answers x ~80 chars (two-sentence replies)   ~$1.36
+//   LLM  200 answers + intent calls (Groq llama-3.3-70b)  ~$0.17
+// The earlier 600/600 ceilinged at ~$10-21 — sustainable only above a $15
+// price point. Raising these numbers again means re-running that arithmetic.
 export const PREMIUM_QUOTAS = {
-  listen_minutes_per_month: 600,
-  ai_questions_per_month: 600,
+  listen_minutes_per_month: 300,
+  ai_questions_per_month: 200,
 } as const;
 
 /** AI channel-organizer generations allowed per month, pooled per premium
