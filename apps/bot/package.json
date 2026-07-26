@@ -15,7 +15,6 @@
     "@discordjs/voice": "^0.19.2",
     "@gamebot/db": "workspace:*",
     "@gamebot/shared": "workspace:*",
-    "@google/generative-ai": "^0.21.0",
     "@napi-rs/canvas": "^0.1",
     "discord.js": "^14.18.0",
     "dotenv": "^16.4.7",

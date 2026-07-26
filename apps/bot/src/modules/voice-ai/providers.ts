@@ -1,5 +1,4 @@
 import Groq from 'groq-sdk';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../../config.js';
 
 export interface AIProvider {
@@ -41,67 +40,18 @@ function createGroqProvider(): AIProvider {
   };
 }
 
-function createGeminiProvider(): AIProvider {
-  const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: config.GEMINI_MODEL });
-  return {
-    name: 'gemini',
-    async generateResponse(prompt, opts) {
-      const chat = model.startChat({
-        // Pass sampling overrides through — the intent classifier relies on
-        // temperature 0 staying deterministic even on the Gemini fallback.
-        generationConfig: {
-          maxOutputTokens: opts.maxTokens ?? 1024,
-          temperature: opts.temperature ?? 0.6,
-        },
-        history: [
-          { role: 'user', parts: [{ text: `System: ${opts.systemPrompt}` }] },
-          { role: 'model', parts: [{ text: 'Understood.' }] },
-          ...(opts.history ?? []).map((m) => ({
-            role: m.role === 'assistant' ? ('model' as const) : ('user' as const),
-            parts: [{ text: m.content }],
-          })),
-        ],
-      });
-      const result = await chat.sendMessage(prompt);
-      return result.response.text();
-    },
-  };
-}
-
-function withFallback(primary: AIProvider, secondary: AIProvider | null): AIProvider {
-  return {
-    name: primary.name,
-    async generateResponse(prompt, opts) {
-      try {
-        return await primary.generateResponse(prompt, opts);
-      } catch (err) {
-        if (!secondary) throw err;
-        console.warn(`[AI] ${primary.name} failed, falling back to ${secondary.name}`);
-        return secondary.generateResponse(prompt, opts);
-      }
-    },
-  };
-}
-
 let provider: AIProvider | null = null;
 
 /**
- * The LLM behind every answer. AI_PROVIDER picks the primary; whichever other
- * provider has a key becomes the automatic fallback, so choosing a primary
- * never costs you the safety net. Unset AI_PROVIDER keeps the historical
- * behaviour (Groq first).
+ * The LLM behind every answer. Groq is the only provider (owner decision
+ * 2026-07-26: Gemini removed). There is therefore NO fallback — a Groq outage
+ * means no answers at all, and callers must keep tolerating a thrown/empty
+ * response rather than assuming another provider will cover.
  */
 export function getAIProvider(): AIProvider {
   if (provider) return provider;
-  const groq = config.GROQ_API_KEY ? createGroqProvider() : null;
-  const gemini = config.GEMINI_API_KEY ? createGeminiProvider() : null;
-  const wantGemini = config.AI_PROVIDER.trim().toLowerCase() === 'gemini';
-
-  const [primary, secondary] = wantGemini ? [gemini, groq] : [groq, gemini];
-  if (primary) provider = withFallback(primary, secondary);
-  else if (secondary) provider = secondary;
-  else throw new Error('NO_AI_PROVIDER: set GROQ_API_KEY or GEMINI_API_KEY');
+  if (!config.GROQ_API_KEY) throw new Error('NO_AI_PROVIDER: set GROQ_API_KEY');
+  provider = createGroqProvider();
   return provider;
 }
 

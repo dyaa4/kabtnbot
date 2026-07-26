@@ -2,25 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockConfig = vi.hoisted(() => ({
   GROQ_API_KEY: 'g', GROQ_MODEL: 'llama-3.3-70b-versatile',
-  GEMINI_API_KEY: 'gem', GEMINI_MODEL: 'gemini-2.0-flash',
-  AI_PROVIDER: '',
 }));
 vi.mock('../../config.js', () => ({ config: mockConfig }));
 
 const groqCall = vi.hoisted(() => vi.fn(async () => ({ choices: [{ message: { content: 'groq-answer' } }] })));
 vi.mock('groq-sdk', () => ({
   default: class { chat = { completions: { create: groqCall } }; },
-}));
-
-const geminiSend = vi.hoisted(() => vi.fn(async () => ({ response: { text: () => 'gemini-answer' } })));
-const geminiModel = vi.hoisted(() => vi.fn());
-vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: class {
-    getGenerativeModel(opts: { model: string }) {
-      geminiModel(opts.model);
-      return { startChat: () => ({ sendMessage: geminiSend }) };
-    }
-  },
 }));
 
 import { getAIProvider, resetAIProvider } from './providers.js';
@@ -30,53 +17,44 @@ const opts = { systemPrompt: 'sys', username: 'u' };
 beforeEach(() => {
   resetAIProvider();
   mockConfig.GROQ_API_KEY = 'g';
-  mockConfig.GEMINI_API_KEY = 'gem';
-  mockConfig.GEMINI_MODEL = 'gemini-2.0-flash';
-  mockConfig.AI_PROVIDER = '';
   groqCall.mockClear().mockResolvedValue({ choices: [{ message: { content: 'groq-answer' } }] });
-  geminiSend.mockClear();
-  geminiModel.mockClear();
 });
 
 describe('getAIProvider', () => {
-  it('defaults to Groq when AI_PROVIDER is unset', async () => {
-    expect(await getAIProvider().generateResponse('q', opts)).toBe('groq-answer');
-    expect(geminiSend).not.toHaveBeenCalled();
+  it('answers through Groq', async () => {
+    const p = getAIProvider();
+    expect(p.name).toBe('groq');
+    expect(await p.generateResponse('q', opts)).toBe('groq-answer');
+    expect(groqCall).toHaveBeenCalledWith(expect.objectContaining({ model: 'llama-3.3-70b-versatile' }));
   });
 
-  it('AI_PROVIDER=gemini makes Gemini the primary', async () => {
-    mockConfig.AI_PROVIDER = 'gemini';
-    expect(await getAIProvider().generateResponse('q', opts)).toBe('gemini-answer');
-    expect(groqCall).not.toHaveBeenCalled();
+  it('sends system prompt, history and question in order', async () => {
+    await getAIProvider().generateResponse('q', {
+      ...opts,
+      history: [{ role: 'user', content: 'q0' }, { role: 'assistant', content: 'a0' }],
+    });
+    expect(groqCall.mock.calls[0][0].messages).toEqual([
+      { role: 'system', content: 'sys' },
+      { role: 'user', content: 'q0' },
+      { role: 'assistant', content: 'a0' },
+      { role: 'user', content: 'q' },
+    ]);
   });
 
-  it('keeps the other provider as fallback when the primary fails', async () => {
-    mockConfig.AI_PROVIDER = 'gemini';
-    geminiSend.mockRejectedValueOnce(new Error('gemini down'));
-    expect(await getAIProvider().generateResponse('q', opts)).toBe('groq-answer');
+  it('returns empty rather than undefined when the model sends no content', async () => {
+    groqCall.mockResolvedValue({ choices: [{ message: { content: null } }] });
+    expect(await getAIProvider().generateResponse('q', opts)).toBe('');
   });
 
-  it('falls back to Gemini when Groq fails (historical default)', async () => {
-    groqCall.mockRejectedValueOnce(new Error('groq down'));
-    geminiSend.mockResolvedValueOnce({ response: { text: () => 'gemini-answer' } });
-    expect(await getAIProvider().generateResponse('q', opts)).toBe('gemini-answer');
+  // There is no second provider: a Groq failure propagates, and every caller
+  // is expected to handle it (generateAnswer returns '', the router stays quiet).
+  it('propagates a Groq failure — no fallback exists', async () => {
+    groqCall.mockRejectedValue(new Error('groq down'));
+    await expect(getAIProvider().generateResponse('q', opts)).rejects.toThrow('groq down');
   });
 
-  it('uses Gemini alone when only its key is set, whatever AI_PROVIDER says', async () => {
+  it('throws without a key', () => {
     mockConfig.GROQ_API_KEY = '';
-    expect(await getAIProvider().generateResponse('q', opts)).toBe('gemini-answer');
-  });
-
-  it('honours GEMINI_MODEL', async () => {
-    mockConfig.AI_PROVIDER = 'gemini';
-    mockConfig.GEMINI_MODEL = 'gemini-2.5-flash';
-    await getAIProvider().generateResponse('q', opts);
-    expect(geminiModel).toHaveBeenCalledWith('gemini-2.5-flash');
-  });
-
-  it('throws when no provider has a key', () => {
-    mockConfig.GROQ_API_KEY = '';
-    mockConfig.GEMINI_API_KEY = '';
     expect(() => getAIProvider()).toThrow('NO_AI_PROVIDER');
   });
 });

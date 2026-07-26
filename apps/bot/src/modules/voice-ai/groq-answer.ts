@@ -10,8 +10,8 @@ export type ChatTurn = { role: 'user' | 'assistant'; content: string };
 export const MAX_HISTORY_TURNS = 6;
 
 /**
- * Generate a spoken-style answer via the text AI provider (Groq Llama, Gemini
- * fallback). The system prompt carries the guild language + Arabic dialect so
+ * Generate a spoken-style answer via the text AI provider (Groq Llama).
+ * The system prompt carries the guild language + Arabic dialect so
  * the WORDING matches the ElevenLabs dialect voice. `history` gives follow-ups
  * continuity; it is the caller's per-conversation buffer (cleared on handover).
  * Returns '' on provider failure — the caller stays silent rather than crash.
