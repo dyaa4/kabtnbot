@@ -15,13 +15,13 @@ const ar: LegalContent = {
       heading: '2. وصف الخدمة',
       paragraphs: [
         'كابتن بوت Discord يوفر مساعداً صوتياً بالذكاء الاصطناعي، وحماية تلقائية للصوت والنص، ورسائل ترحيب بصور مخصصة، وإحصائيات نشاط، مع لوحة تحكم ويب لإدارة الإعدادات.',
-        'تُقدَّم الخدمة كما هي، وقد تتغير المزايا أو الحصص اليومية أو تتوقف الخدمة مؤقتاً للصيانة دون إشعار مسبق.',
+        'تُقدَّم الخدمة كما هي، وقد تتغير المزايا أو الحصص الشهرية أو تتوقف الخدمة مؤقتاً للصيانة دون إشعار مسبق.',
       ],
     },
     {
       heading: '3. الاستخدام المقبول',
       paragraphs: [
-        'يُمنع استخدام البوت لأي نشاط مخالف للقانون أو لشروط Discord، ويُمنع محاولة تجاوز أنظمة الحماية أو الحصص اليومية أو إساءة استخدام واجهات الخدمة.',
+        'يُمنع استخدام البوت لأي نشاط مخالف للقانون أو لشروط Discord، ويُمنع محاولة تجاوز أنظمة الحماية أو الحصص الشهرية أو إساءة استخدام واجهات الخدمة.',
         'مدير السيرفر مسؤول عن إعدادات البوت في سيرفره، بما في ذلك قوائم الكلمات المحظورة وقناة السجل ومن يحمل الرول الإداري.',
       ],
     },
@@ -72,13 +72,13 @@ const en: LegalContent = {
       heading: '2. The service',
       paragraphs: [
         'Kabtn is a Discord bot providing an AI voice assistant, automatic voice and text protection, welcome messages with generated images, activity statistics, and a web dashboard for configuration.',
-        'The service is provided as-is; features and daily quotas may change, and the service may be temporarily unavailable for maintenance without prior notice.',
+        'The service is provided as-is; features and monthly quotas may change, and the service may be temporarily unavailable for maintenance without prior notice.',
       ],
     },
     {
       heading: '3. Acceptable use',
       paragraphs: [
-        'You may not use the bot for anything unlawful or against Discord’s terms, attempt to bypass protection systems or daily quotas, or abuse the service’s interfaces.',
+        'You may not use the bot for anything unlawful or against Discord’s terms, attempt to bypass protection systems or monthly quotas, or abuse the service’s interfaces.',
         'Server administrators are responsible for the bot’s configuration in their server, including blocked-word lists, the log channel, and who holds the admin role.',
       ],
     },
