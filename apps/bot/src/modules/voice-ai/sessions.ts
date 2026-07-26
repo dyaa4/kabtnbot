@@ -80,7 +80,12 @@ export async function joinGuildVoice(channel: VoiceBasedChannel): Promise<VoiceS
     channelId: channel.id,
     guildId: channel.guildId,
     adapterCreator: channel.guild.voiceAdapterCreator,
+    // Both flags must be explicit: @discordjs/voice defaults selfDeaf AND
+    // selfMute to true. Deaf would leave the bot unable to hear anything;
+    // mute only paints a mute icon on a bot that plainly does speak, which
+    // reads as "broken" to everyone in the channel.
     selfDeaf: false,
+    selfMute: false,
   });
 
   // Diagnostic: log every state transition so a failed connect tells us WHICH
