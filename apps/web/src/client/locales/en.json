@@ -286,6 +286,7 @@
   "commands.system": "System",
   "commands.enabled": "Enabled",
   "commands.deleteCommand": "Delete automation",
+  "commands.deleteConfirm": "Delete this automation for good? This cannot be undone.",
   "commands.deleteFolder": "Delete folder",
   "commands.slashExpose": "Show as / command in Discord",
   "commands.start.title": "Create an automation in one click",

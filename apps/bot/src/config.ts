@@ -138,3 +138,9 @@ const superAdminIds = new Set(
 export function isSuperAdmin(uid: string | null | undefined): boolean {
   return uid != null && superAdminIds.has(uid);
 }
+
+/** How many super-admin ids this SERVICE knows — logged at boot. Setting
+ * SUPER_ADMIN_IDS on the web service only (the bot is a separate Railway
+ * service with its own variables) left the bot refusing the owner with
+ * "the AI questions ran out" and no hint why. */
+export const superAdminCount = superAdminIds.size;

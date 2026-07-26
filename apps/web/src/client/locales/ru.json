@@ -286,6 +286,7 @@
   "commands.system": "Система",
   "commands.enabled": "Включена",
   "commands.deleteCommand": "Удалить автоматизацию",
+  "commands.deleteConfirm": "Удалить эту автоматизацию навсегда? Отменить будет нельзя.",
   "commands.deleteFolder": "Удалить папку",
   "commands.slashExpose": "Показать как /-команду в Discord",
   "commands.start.title": "Создайте автоматизацию в один клик",

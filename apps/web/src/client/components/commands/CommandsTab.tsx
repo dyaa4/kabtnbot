@@ -105,6 +105,31 @@ export function CommandsTab({ guildId }: { guildId: string }) {
     },
   });
 
+  // Deleting is the ONE edit that must not sit in the draft waiting for a Save:
+  // the automation disappears from the sidebar the moment you click, which reads
+  // as "deleted" — and a page refresh brought it right back. It is persisted on
+  // the spot, built from the SERVER's last saved document minus this flow, so
+  // unsaved edits to OTHER automations are never published as a side effect.
+  const remove = useMutation({
+    mutationFn: (id: string) => {
+      const base = flowsQuery.data!;
+      const body = { ...base, flows: base.flows.filter((f) => f.id !== id) };
+      return api<GuildCommandFlows>(`/api/guilds/${guildId}/command-flows`, { method: 'PUT', body: JSON.stringify(body) });
+    },
+    // The draft is pruned only once the server confirms — a failed delete must
+    // not leave the automation gone from the screen but alive in the database.
+    onSuccess: (saved, id) => {
+      toast.success(t('settings.saved'));
+      qc.setQueryData(['command-flows', guildId], saved);
+      setDraft((prev) => (prev ? { ...prev, flows: prev.flows.filter((f) => f.id !== id) } : prev));
+      setSelection(null);
+    },
+    onError: (err) => {
+      const detail = err instanceof ApiError && err.message ? ` (${err.message})` : '';
+      toast.error(`${t('error.generic')}${detail}`);
+    },
+  });
+
   if (flowsQuery.error instanceof ApiError && flowsQuery.error.code === 'PREMIUM_REQUIRED') {
     return (
       <div className="flex flex-col items-center gap-3 rounded-2xl border border-blue-400/20 bg-blue-400/5 p-12 text-center backdrop-blur-md">
@@ -233,8 +258,15 @@ export function CommandsTab({ guildId }: { guildId: string }) {
   const updateOverride = (key: BuiltinCommandKey, next: BuiltinOverride) =>
     setDraft({ ...draft, builtin_overrides: { ...draft.builtin_overrides, [key]: next } });
   const deleteFlow = (id: string) => {
-    setDraft({ ...draft, flows: draft.flows.filter((f) => f.id !== id) });
-    setSelection(null);
+    if (!window.confirm(t('commands.deleteConfirm'))) return;
+    // Never saved (created in this session) → it exists only in the draft;
+    // there is nothing on the server to delete.
+    if (!flowsQuery.data?.flows.some((f) => f.id === id)) {
+      setDraft({ ...draft, flows: draft.flows.filter((f) => f.id !== id) });
+      setSelection(null);
+      return;
+    }
+    remove.mutate(id);
   };
 
   return (
@@ -307,7 +339,8 @@ export function CommandsTab({ guildId }: { guildId: string }) {
               )}
               <button
                 type="button"
-                className="ms-auto rounded-lg border border-blue-400/30 px-3 py-1.5 text-sm text-blue-300 hover:bg-blue-400/10"
+                disabled={remove.isPending}
+                className="ms-auto rounded-lg border border-blue-400/30 px-3 py-1.5 text-sm text-blue-300 hover:bg-blue-400/10 disabled:opacity-40"
                 onClick={() => deleteFlow(selectedFlow.id)}
               >
                 <Trash2 className="inline h-3.5 w-3.5 align-[-2px]" /> {t('commands.deleteCommand')}

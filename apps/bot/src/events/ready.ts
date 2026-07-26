@@ -2,7 +2,9 @@ import type { Client } from 'discord.js';
 import { recordBotHeartbeat } from '@gamebot/db';
 import { recordSnapshots } from '../lib/snapshots.js';
 import { syncCommandsIfChanged } from '../lib/command-sync.js';
-import { chatLogEnabled, textCommandsEnabled, textProtectionEnabled, summaryEnabled } from '../config.js';
+import {
+  chatLogEnabled, textCommandsEnabled, textProtectionEnabled, summaryEnabled, superAdminCount,
+} from '../config.js';
 import { contentIntentActive } from '../client.js';
 
 // Reported with every heartbeat so the dashboard can explain WHY a feature
@@ -24,6 +26,13 @@ export function onReady(client: Client): void {
       `[Features] chat_log=${f.chat_log} text_commands=${f.text_commands} ` +
         `text_protection=${f.text_protection} summary=${f.summary}`,
     );
+    // Loud at boot: an empty list here means nobody bypasses the monthly
+    // quotas on THIS service, however the web dashboard is configured.
+    if (superAdminCount === 0) {
+      console.warn('[Config] SUPER_ADMIN_IDS is empty on the bot service — no super-admin quota bypass');
+    } else {
+      console.log(`[Config] super-admins: ${superAdminCount}`);
+    }
     // Keep Discord's registered slash commands in step with the code.
     void syncCommandsIfChanged()
       .then((result) => {

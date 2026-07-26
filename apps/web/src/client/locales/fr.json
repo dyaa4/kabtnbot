@@ -286,6 +286,7 @@
   "commands.system": "Système",
   "commands.enabled": "Activée",
   "commands.deleteCommand": "Supprimer l'automatisation",
+  "commands.deleteConfirm": "Supprimer définitivement cette automatisation ? Action irréversible.",
   "commands.deleteFolder": "Supprimer le dossier",
   "commands.slashExpose": "Afficher comme commande / dans Discord",
   "commands.start.title": "Créez une automatisation en un clic",

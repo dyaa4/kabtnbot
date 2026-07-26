@@ -286,6 +286,7 @@
   "commands.system": "النظام",
   "commands.enabled": "مفعّل",
   "commands.deleteCommand": "حذف الأتمتة",
+  "commands.deleteConfirm": "حذف هذه الأتمتة نهائياً؟ لا يمكن التراجع.",
   "commands.deleteFolder": "حذف المجلد",
   "commands.slashExpose": "أظهره كأمر / في ديسكورد",
   "commands.start.title": "أنشئ أتمتة بضغطة واحدة",

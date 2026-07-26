@@ -286,6 +286,7 @@
   "commands.system": "Sistem",
   "commands.enabled": "Etkin",
   "commands.deleteCommand": "Otomasyonu sil",
+  "commands.deleteConfirm": "Bu otomasyon kalıcı olarak silinsin mi? Geri alınamaz.",
   "commands.deleteFolder": "Klasörü sil",
   "commands.slashExpose": "Discord'da / komutu olarak göster",
   "commands.start.title": "Tek tıkla otomasyon oluştur",

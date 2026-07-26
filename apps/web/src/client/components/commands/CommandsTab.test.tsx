@@ -211,6 +211,41 @@ describe('CommandsTab', () => {
     await waitFor(() => expect(screen.getAllByDisplayValue('hours')).toHaveLength(2));
   });
 
+  // Deleting used to live in the draft until you pressed Save — the automation
+  // vanished from the sidebar and came back on the next page load.
+  it('deleting a saved automation PUTs the deletion immediately', async () => {
+    mockFetch(FLOWS);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Audio raus'));
+    await user.click(await screen.findByRole('button', { name: /Delete automation/ }));
+
+    await waitFor(() => {
+      const put = (fetch as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c) => (c[1] as RequestInit)?.method === 'PUT',
+      );
+      expect(put).toBeTruthy();
+      expect(JSON.parse((put![1] as RequestInit).body as string).flows).toEqual([]);
+    });
+    await waitFor(() => expect(screen.queryByText('Audio raus')).toBeNull());
+  });
+
+  it('a cancelled confirm deletes nothing', async () => {
+    mockFetch(FLOWS);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    const user = userEvent.setup();
+    renderTab();
+
+    await user.click(await screen.findByText('Audio raus'));
+    await user.click(await screen.findByRole('button', { name: /Delete automation/ }));
+    expect(
+      (fetch as ReturnType<typeof vi.fn>).mock.calls.filter((c) => (c[1] as RequestInit)?.method === 'PUT'),
+    ).toHaveLength(0);
+    expect(screen.getByText('Audio raus')).toBeTruthy();
+  });
+
   it('the scheduled template creates a schedule-enabled flow with the interval editor', async () => {
     mockFetch(EMPTY_FLOWS);
     const user = userEvent.setup();

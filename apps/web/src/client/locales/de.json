@@ -286,6 +286,7 @@
   "commands.system": "System",
   "commands.enabled": "Aktiv",
   "commands.deleteCommand": "Automatisierung löschen",
+  "commands.deleteConfirm": "Diese Automatisierung endgültig löschen? Das lässt sich nicht rückgängig machen.",
   "commands.deleteFolder": "Ordner löschen",
   "commands.slashExpose": "Als /-Befehl in Discord anzeigen",
   "commands.start.title": "Automatisierung mit einem Klick erstellen",
