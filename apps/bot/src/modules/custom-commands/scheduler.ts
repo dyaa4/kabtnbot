@@ -3,6 +3,7 @@ import { getScheduleRuns, setScheduleRun, type ScheduleRun } from '@gamebot/db';
 import type { CommandFlow, FlowAction, FlowSchedule } from '@gamebot/shared';
 import { getCachedCommandFlows } from '../../lib/flows-cache.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { isAiQuotaExhausted } from '../../lib/quotas.js';
 import { getSession, playSpeech } from '../voice-ai/sessions.js';
 import { executeActions, type ExecContext } from './executor.js';
 
@@ -134,7 +135,12 @@ async function runUnit(guild: Guild, unit: ScheduledUnit): Promise<void> {
   }
   // Re-resolve instead of reusing the pre-run snapshot: a voice_join action
   // may have just created the session, and its reply should be spoken too.
-  if (getSession(guild.id)) await playSpeech(guild.id, reply).catch(() => {});
+  // A schedule fires on a timer with nobody asking for it, so once the guild's
+  // monthly allowance is gone it must stop spending on speech — the text reply
+  // above still goes out, only the synthesis is skipped.
+  if (getSession(guild.id) && !(await isAiQuotaExhausted(guild.id))) {
+    await playSpeech(guild.id, reply).catch(() => {});
+  }
 }
 
 export async function runScheduleSweep(client: Client, now: Date = new Date()): Promise<void> {

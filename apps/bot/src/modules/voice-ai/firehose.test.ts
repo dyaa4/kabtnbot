@@ -28,7 +28,11 @@ const groqAnswer = vi.hoisted(() => ({ generateAnswer: vi.fn(async () => 'جوا
 vi.mock('./groq-answer.js', () => groqAnswer);
 
 const quotaMock = vi.hoisted(() => ({ ok: true }));
-vi.mock('../../lib/quotas.js', () => ({ tryConsumeAiQuestion: vi.fn(async () => quotaMock.ok) }));
+vi.mock('../../lib/quotas.js', () => ({
+  tryConsumeAiQuestion: vi.fn(async () => quotaMock.ok),
+  // Exhausted is the inverse of "a consume would succeed".
+  isAiQuotaExhausted: vi.fn(async () => !quotaMock.ok),
+}));
 
 const modMock = vi.hoisted(() => ({ flagged: false }));
 vi.mock('../protection/voice-mod.js', () => ({
@@ -119,6 +123,14 @@ describe('handleFirehoseTranscript (openai engine)', () => {
     expect(answerMock.abort).toHaveBeenCalled();
     expect(playSpeech).toHaveBeenCalledWith('g1', 'تم الإيقاف');
     expect(answerMock.setActiveUser).not.toHaveBeenCalled(); // a command, not a model answer
+  });
+
+  it('a flow/built-in reply goes SILENT once the allowance is spent — the action still ran', async () => {
+    freshSession();
+    routerMock.result = 'تم الإيقاف';
+    quotaMock.ok = false;
+    await handleFirehoseTranscript(guild, 'u1', 'يا كابتن اسكتي', seed);
+    expect(playSpeech).not.toHaveBeenCalled();
   });
 
   it('aborts and announces when the AI quota is exhausted', async () => {

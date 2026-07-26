@@ -49,6 +49,24 @@ export async function addListenSeconds(guildId: string, seconds: number): Promis
   await incrementListenSeconds(budgetKey, Math.ceil(seconds), monthKey());
 }
 
+/**
+ * Whether the monthly AI allowance is spent, WITHOUT consuming a unit.
+ *
+ * Speech costs money per character no matter who asked for it, so the paths
+ * that speak on their own — scheduled flows, command confirmations — check
+ * this before synthesizing. They can't consume a unit: a repeated line is
+ * served from the TTS cache for free, and charging for free output would be
+ * dishonest. Moderation announcements deliberately do NOT check it; going
+ * silent on a kick is a safety regression, and those lines are fixed text
+ * that the cache makes free after the first use.
+ */
+export async function isAiQuotaExhausted(guildId: string): Promise<boolean> {
+  const { limits, budgetKey } = await quotaContext(guildId);
+  if (limits.ai_questions_per_month === Infinity) return false;
+  const usage = await getUsage(budgetKey, monthKey());
+  return usage.ai_questions >= limits.ai_questions_per_month;
+}
+
 export async function isListenQuotaExceeded(guildId: string): Promise<boolean> {
   const { limits, budgetKey } = await quotaContext(guildId);
   const usage = await getUsage(budgetKey, monthKey());

@@ -5,7 +5,7 @@ import { getSession, playSpeech, stopPlayback } from './sessions.js';
 import { getAnswerSession } from './answer-session.js';
 import { generateAnswer, pushHistory } from './groq-answer.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
-import { tryConsumeAiQuestion } from '../../lib/quotas.js';
+import { tryConsumeAiQuestion, isAiQuotaExhausted } from '../../lib/quotas.js';
 import { t } from '../../lib/strings.js';
 
 /** Mirror a spoken command/quota reply to the moderation/log channel. */
@@ -89,7 +89,12 @@ export async function handleFirehoseTranscript(
     if (voiceEngineGroq) stopPlayback(guild.id);
     else answer?.abort();
     if (result) {
-      await playSpeech(guild.id, result).catch((e) => console.error('[Firehose] speak:', e));
+      // Flow and built-in confirmations are spoken output like any other, so
+      // they stop once the monthly allowance is gone. The action itself has
+      // already run and the mirror still records it — only the voice is cut.
+      if (!(await isAiQuotaExhausted(guild.id))) {
+        await playSpeech(guild.id, result).catch((e) => console.error('[Firehose] speak:', e));
+      }
       await mirror(guild, result);
     }
     conv.onResponseEnd(Date.now());
