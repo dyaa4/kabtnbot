@@ -15,7 +15,7 @@ export function monthKey(): string {
 // for the market, so the ceiling had to come down, not the price up):
 //   STT  300 min  = 5h x $0.22/h (ElevenLabs Scribe)      ~$1.10
 //   TTS  200 answers x ~80 chars (two-sentence replies)   ~$1.36
-//   LLM  200 answers + intent calls (Groq llama-3.3-70b)  ~$0.17
+//   LLM  200 answers (Groq llama-3.3-70b, one call each)  ~$0.13
 // The earlier 600/600 ceilinged at ~$10-21 — sustainable only above a $15
 // price point. Raising these numbers again means re-running that arithmetic.
 export const PREMIUM_QUOTAS = {
