@@ -19,9 +19,25 @@ import { getCachedGuildConfig } from '../../lib/config-cache.js';
 // carry a ⏳, and /speak and flow text are written by hand.
 const NON_SPEECH = /[\p{Extended_Pictographic}️]/gu;
 
-/** Text as it should be SPOKEN: symbols that have no pronunciation removed. */
+// Synthesis is billed per character, so the LENGTH of a line is a cost lever
+// that nothing else bounds: the model is asked for two sentences but can
+// ignore that ("tell me a long story"), and 1024 output tokens of Arabic is
+// ~4000 characters — fifty times what one answer is budgeted for. This is the
+// last gate before money is spent, so it caps every path at once: model
+// answers, /ask, flow text, scheduled lines.
+const MAX_SPOKEN_CHARS = 600;
+
+/**
+ * Text as it should be SPOKEN: unpronounceable symbols removed, length capped.
+ * Truncation falls back to the last word boundary so a cut line still ends on
+ * a whole word rather than mid-syllable.
+ */
 export function spokenText(text: string): string {
-  return text.replace(NON_SPEECH, ' ').replace(/\s+/g, ' ').trim();
+  const clean = text.replace(NON_SPEECH, ' ').replace(/\s+/g, ' ').trim();
+  if (clean.length <= MAX_SPOKEN_CHARS) return clean;
+  const cut = clean.slice(0, MAX_SPOKEN_CHARS);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > MAX_SPOKEN_CHARS / 2 ? cut.slice(0, lastSpace) : cut).trim();
 }
 
 // Discord playback format (StreamType.Raw): 48kHz s16le stereo.
@@ -175,6 +191,9 @@ export async function playSpeech(guildId: string, text: string): Promise<void> {
   // and without decoration is one entry.
   const speech = spokenText(text);
   if (!speech) return;
+  if (speech.length < text.trim().length) {
+    console.warn(`[Voice ${guildId}] spoken line trimmed ${text.trim().length} → ${speech.length} chars`);
+  }
   const config = await getCachedGuildConfig(guildId);
   // Both synthesizers return 48kHz s16le stereo — exactly StreamType.Raw. Groq
   // engine speaks via ElevenLabs (no OpenAI); if ElevenLabs isn't configured

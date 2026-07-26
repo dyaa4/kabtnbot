@@ -9,6 +9,13 @@ export type ChatTurn = { role: 'user' | 'assistant'; content: string };
  * Short on purpose: voice answers are brief and the model context is small. */
 export const MAX_HISTORY_TURNS = 6;
 
+// A spoken answer is one or two sentences. The provider default (1024) let a
+// drifting model produce paragraphs that were then synthesized in full — the
+// single largest uncapped cost multiplier in the voice path. Capping at the
+// source also cuts output tokens; playSpeech still enforces a character cap
+// for every other path.
+const MAX_ANSWER_TOKENS = 200;
+
 /**
  * Generate a spoken-style answer via the text AI provider (Groq Llama).
  * The system prompt carries the guild language + Arabic dialect so
@@ -34,6 +41,7 @@ export async function generateAnswer(
       systemPrompt,
       username: guild.members.cache.get(speakerId)?.displayName ?? 'a member',
       history: history.slice(-MAX_HISTORY_TURNS),
+      maxTokens: MAX_ANSWER_TOKENS,
     });
     return answer.trim();
   } catch (err) {

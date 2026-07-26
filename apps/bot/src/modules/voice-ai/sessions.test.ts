@@ -79,6 +79,23 @@ describe('spokenText', () => {
   it('empties a line that was only decoration', () => {
     expect(spokenText('🔊 🎧')).toBe('');
   });
+
+  // Length is a cost lever: the model can ignore "two sentences" and 1024
+  // tokens of Arabic would be synthesized in full.
+  it('caps an over-long line at 600 characters', () => {
+    expect(spokenText('ا'.repeat(5000)).length).toBe(600);
+  });
+
+  it('cuts back to a word boundary instead of mid-word', () => {
+    const out = spokenText(`${'كلمة '.repeat(200)}نهاية`);
+    expect(out.length).toBeLessThanOrEqual(600);
+    expect(out.endsWith('كلمة')).toBe(true);
+  });
+
+  it('leaves a line just under the cap untouched', () => {
+    const line = 'ا'.repeat(600);
+    expect(spokenText(line)).toBe(line);
+  });
 });
 
 describe('playSpeech', () => {
