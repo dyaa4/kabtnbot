@@ -14,6 +14,16 @@ import { closeAnswerSession } from './answer-session.js';
 import { voiceEngineGroq } from '../../config.js';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
 
+// Emoji reach the synthesizer as garbage — some voices verbalize them, others
+// emit artifacts. The answer prompt forbids them, but the canned quota lines
+// carry a ⏳, and /speak and flow text are written by hand.
+const NON_SPEECH = /[\p{Extended_Pictographic}️]/gu;
+
+/** Text as it should be SPOKEN: symbols that have no pronunciation removed. */
+export function spokenText(text: string): string {
+  return text.replace(NON_SPEECH, ' ').replace(/\s+/g, ' ').trim();
+}
+
 // Discord playback format (StreamType.Raw): 48kHz s16le stereo.
 const SAMPLE_RATE = 48_000;
 const BYTES_PER_SAMPLE = 2;
@@ -160,14 +170,19 @@ export function leaveGuildVoice(guildId: string): boolean {
 export async function playSpeech(guildId: string, text: string): Promise<void> {
   const session = sessions.get(guildId);
   if (!session) throw new Error('NOT_CONNECTED');
+  // Nothing pronounceable left (an emoji-only line) → don't pay to synthesize
+  // silence. Sanitizing here also tightens the cache: the same sentence with
+  // and without decoration is one entry.
+  const speech = spokenText(text);
+  if (!speech) return;
   const config = await getCachedGuildConfig(guildId);
   // Both synthesizers return 48kHz s16le stereo — exactly StreamType.Raw. Groq
   // engine speaks via ElevenLabs (no OpenAI); if ElevenLabs isn't configured
   // it falls back to OpenAI TTS so a half-set-up guild still gets a voice.
   const useElevenLabs = voiceEngineGroq && elevenLabsReady(config.language, config.voice.dialect);
   const buffer = useElevenLabs
-    ? await synthesizeVoice(text, config.language, config.voice.dialect)
-    : await synthesizeSpeech(text, { language: config.language, voice: config.voice.tts_voice });
+    ? await synthesizeVoice(speech, config.language, config.voice.dialect)
+    : await synthesizeSpeech(speech, { language: config.language, voice: config.voice.tts_voice });
   const resource = createAudioResource(Readable.from(buffer), { inputType: StreamType.Raw });
   session.player.play(resource);
   await playbackDone(session.player, buffer.length);

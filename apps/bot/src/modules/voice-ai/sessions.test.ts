@@ -49,7 +49,8 @@ vi.mock('../../lib/config-cache.js', () => ({
   }),
 }));
 
-import { joinGuildVoice, playSpeech, stopPlayback, leaveGuildVoice } from './sessions.js';
+import { joinGuildVoice, playSpeech, stopPlayback, leaveGuildVoice, spokenText } from './sessions.js';
+import { synthesizeVoice } from './elevenlabs-tts.js';
 
 function fakeChannel() {
   return {
@@ -63,8 +64,21 @@ beforeEach(async () => {
   voice.pending = [];
   synth.bytes = 48_000 * 2 * 2;
   voice.player = Object.assign(new EventEmitter(), { play: vi.fn(), stop: vi.fn() }) as never;
+  vi.mocked(synthesizeVoice).mockClear();
   leaveGuildVoice('g1');
   await joinGuildVoice(fakeChannel());
+});
+
+describe('spokenText', () => {
+  it('keeps Arabic, punctuation and digits intact', () => {
+    expect(spokenText('يا كابتن، عندك 3 رسائل.')).toBe('يا كابتن، عندك 3 رسائل.');
+  });
+  it('removes emoji and collapses the gap they leave', () => {
+    expect(spokenText('⏳ خلصت  الأسئلة 🎵')).toBe('خلصت الأسئلة');
+  });
+  it('empties a line that was only decoration', () => {
+    expect(spokenText('🔊 🎧')).toBe('');
+  });
 });
 
 describe('playSpeech', () => {
@@ -97,6 +111,20 @@ describe('playSpeech', () => {
     await vi.waitFor(() => expect(voice.pending).toHaveLength(1));
     voice.pending[0].reject(new Error('timeout'));
     await expect(p).resolves.toBeUndefined();
+  });
+
+  it('strips emoji before synthesis — the canned quota lines carry a ⏳', async () => {
+    const p = playSpeech('g1', '⏳ خلصت أسئلة الذكاء الاصطناعي.');
+    await vi.waitFor(() => expect(voice.pending).toHaveLength(1));
+    expect(synthesizeVoice).toHaveBeenCalledWith('خلصت أسئلة الذكاء الاصطناعي.', 'ar', 'gulf');
+    voice.pending[0].resolve();
+    await p;
+  });
+
+  it('synthesizes nothing when only emoji are left', async () => {
+    await playSpeech('g1', '🔊🎵');
+    expect(synthesizeVoice).not.toHaveBeenCalled();
+    expect(voice.player.play).not.toHaveBeenCalled();
   });
 
   it('resolves when stopPlayback cuts the answer (barge-in ends the turn)', async () => {
