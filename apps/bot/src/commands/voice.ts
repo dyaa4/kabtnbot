@@ -3,6 +3,7 @@ import { getGuildConfig } from '@gamebot/db';
 import type { Command } from './index.js';
 import { S, t, fmt } from '../lib/strings.js';
 import { isGuildPremiumCached } from '../lib/premium-cache.js';
+import { tryConsumeAiQuestion } from '../lib/quotas.js';
 import { joinGuildVoice, leaveGuildVoice, playSpeech, getSession } from '../modules/voice-ai/sessions.js';
 
 async function requireVoiceContext(interaction: Parameters<Command['execute']>[0]) {
@@ -96,6 +97,16 @@ export const speakCommand: Command = {
     const strings = t(config.language);
     if (!getSession(interaction.guildId!)) {
       await interaction.reply({ content: strings.notConnected, flags: MessageFlags.Ephemeral });
+      return;
+    }
+    // Synthesis is billed per character and /speak takes ARBITRARY text from
+    // ANY member of a premium guild — uncharged, it was an unbounded hole in
+    // the monthly cost ceiling (300 chars a call, repeatable at will). It
+    // draws on the same pool as an AI question because it costs the same to
+    // say. Unlike the AI path there is nothing to refund: the charge happens
+    // before synthesis, and a failed synthesis is the rare case.
+    if (!(await tryConsumeAiQuestion(interaction.guildId!))) {
+      await interaction.reply({ content: strings.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
       return;
     }
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });

@@ -22,7 +22,10 @@ vi.mock('../modules/voice-ai/sessions.js', () => sessions);
 const listen = vi.hoisted(() => ({ startListening: vi.fn(async () => true) }));
 vi.mock('../modules/voice-ai/listen.js', () => listen);
 
-import { joinCommand } from './voice.js';
+const quotas = vi.hoisted(() => ({ tryConsumeAiQuestion: vi.fn(async () => true) }));
+vi.mock('../lib/quotas.js', () => quotas);
+
+import { joinCommand, speakCommand } from './voice.js';
 import { clearPremiumCache } from '../lib/premium-cache.js';
 
 function fakeInteraction() {
@@ -30,6 +33,7 @@ function fakeInteraction() {
     guildId: 'g1',
     guild: { id: 'g1' },
     member: { voice: { channel: { id: 'vc1' } } },
+    options: { getString: vi.fn(() => 'اقرأ هذا') },
     replies: [] as unknown[],
     reply: vi.fn(async function (this: void, msg: unknown) { return msg; }),
     deferReply: vi.fn(async () => {}),
@@ -42,6 +46,9 @@ beforeEach(() => {
   db.isGuildLinked.mockClear().mockResolvedValue(false);
   db.isGuildPremium.mockClear().mockResolvedValue(false);
   sessions.joinGuildVoice.mockClear();
+  sessions.playSpeech.mockClear();
+  sessions.getSession.mockReturnValue({ guildId: 'g1' } as never);
+  quotas.tryConsumeAiQuestion.mockClear().mockResolvedValue(true);
 });
 
 describe('/join premium gate', () => {
@@ -67,5 +74,35 @@ describe('/join premium gate', () => {
     await joinCommand.execute(i as never);
     expect(sessions.joinGuildVoice).toHaveBeenCalled();
     expect(i.editReply).toHaveBeenCalled();
+  });
+});
+
+// /speak takes arbitrary text from any member and is billed per character, so
+// it must draw on the monthly pool like any other spoken output.
+describe('/speak quota', () => {
+  beforeEach(() => { db.isGuildPremium.mockResolvedValue(true); });
+
+  it('charges one AI question before synthesizing', async () => {
+    const i = fakeInteraction();
+    await speakCommand.execute(i as never);
+    expect(quotas.tryConsumeAiQuestion).toHaveBeenCalledWith('g1');
+    expect(sessions.playSpeech).toHaveBeenCalledWith('g1', 'اقرأ هذا');
+  });
+
+  it('refuses — and synthesizes nothing — when the quota is exhausted', async () => {
+    quotas.tryConsumeAiQuestion.mockResolvedValue(false);
+    const i = fakeInteraction();
+    await speakCommand.execute(i as never);
+    expect(sessions.playSpeech).not.toHaveBeenCalled();
+    expect(i.reply).toHaveBeenCalledWith(
+      expect.objectContaining({ content: expect.stringContaining('خلصت') }),
+    );
+  });
+
+  it('does not charge when the bot is not in a voice channel', async () => {
+    sessions.getSession.mockReturnValue(undefined as never);
+    const i = fakeInteraction();
+    await speakCommand.execute(i as never);
+    expect(quotas.tryConsumeAiQuestion).not.toHaveBeenCalled();
   });
 });
