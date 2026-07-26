@@ -44,7 +44,7 @@ export const summarizeCommand: Command = {
     // Consume the shared AI quota only now that there's real content to
     // summarize — an empty channel / missing MessageContent intent must not
     // burn a question for a "nothing to summarize" reply.
-    if (!(await tryConsumeAiQuestion(interaction.guildId))) {
+    if (!(await tryConsumeAiQuestion(interaction.guildId, interaction.user.id))) {
       await interaction.editReply(strings.aiQuotaExhausted);
       return;
     }

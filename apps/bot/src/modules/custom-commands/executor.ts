@@ -319,7 +319,7 @@ export async function executeActions(
         }
         case 'ai_reply': {
           if (ctx.aiQuotaPrepaid) ctx.aiQuotaPrepaid = false;
-          else if (!(await tryConsumeAiQuestion(ctx.guild.id))) { replies.push(strings.aiQuotaExhausted); break; }
+          else if (!(await tryConsumeAiQuestion(ctx.guild.id, ctx.invokerId))) { replies.push(strings.aiQuotaExhausted); break; }
           const answer = await getAIProvider()
             .generateResponse(ctx.args || ctx.utterance, {
               systemPrompt: action.system_prompt,

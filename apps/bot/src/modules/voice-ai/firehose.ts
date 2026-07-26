@@ -92,7 +92,7 @@ export async function handleFirehoseTranscript(
       // Flow and built-in confirmations are spoken output like any other, so
       // they stop once the monthly allowance is gone. The action itself has
       // already run and the mirror still records it — only the voice is cut.
-      if (!(await isAiQuotaExhausted(guild.id))) {
+      if (!(await isAiQuotaExhausted(guild.id, userId))) {
         await playSpeech(guild.id, result).catch((e) => console.error('[Firehose] speak:', e));
       }
       await mirror(guild, result);
@@ -102,7 +102,7 @@ export async function handleFirehoseTranscript(
   }
 
   // result.kind === 'model' — a free-form question. Charge the AI quota once.
-  if (!(await tryConsumeAiQuestion(guild.id))) {
+  if (!(await tryConsumeAiQuestion(guild.id, userId))) {
     if (voiceEngineGroq) stopPlayback(guild.id);
     else answer?.abort();
     await playSpeech(guild.id, t(config.language).aiQuotaExhausted).catch(() => {});

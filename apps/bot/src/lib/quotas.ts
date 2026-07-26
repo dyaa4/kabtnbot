@@ -14,24 +14,32 @@ export { todayKey };
 
 const UNLIMITED = { listen_minutes_per_month: Infinity, ai_questions_per_month: Infinity };
 
-async function quotaContext(guildId: string) {
+async function quotaContext(guildId: string, speakerId?: string | null) {
   const [config, owner] = await Promise.all([
     // Cached read-only config: this runs on every utterance/command, so it
     // must not do a write-upsert per call (getGuildConfig would).
     getCachedGuildConfig(guildId),
     getPremiumOwnerCached(guildId),
   ]);
-  // Super-admin (owner) guilds bypass the monthly cap entirely — mirrors the
-  // web dashboard's super-admin bypass so the owner can use/test without hitting
-  // the per-account limit. Real premium accounts keep the standard quotas.
+  // Super-admin bypass — mirrors the web dashboard's, so the owner can use and
+  // test the bot without hitting the per-account monthly cap. TWO ways in:
+  //   • the guild's premium account is a super-admin (the owner's own server), or
+  //   • the SPEAKER/invoker is a super-admin.
+  // The linker check alone was not enough: in any guild linked by an ordinary
+  // premium account — or by no premium account at all — the owner was refused
+  // with "the AI questions for this server are used up", which is exactly what
+  // a super-admin must never hear. Real premium accounts keep the standard
+  // quotas; only the ids in SUPER_ADMIN_IDS get past this.
+  const unlimited = isSuperAdmin(owner) || isSuperAdmin(speakerId);
   return {
-    limits: isSuperAdmin(owner) ? UNLIMITED : effectiveQuotas(config, owner !== null),
+    limits: unlimited ? UNLIMITED : effectiveQuotas(config, owner !== null),
     budgetKey: owner ? `user:${owner}` : guildId,
   };
 }
 
-export async function tryConsumeAiQuestion(guildId: string): Promise<boolean> {
-  const { limits, budgetKey } = await quotaContext(guildId);
+/** @param speakerId who is asking — a super-admin is never charged or refused. */
+export async function tryConsumeAiQuestion(guildId: string, speakerId?: string | null): Promise<boolean> {
+  const { limits, budgetKey } = await quotaContext(guildId, speakerId);
   // Unlimited (super-admin) accounts have nothing to count — skip the DB
   // consume/refund round-trip on the hot answer path (lower reply latency).
   if (limits.ai_questions_per_month === Infinity) return true;
@@ -60,8 +68,8 @@ export async function addListenSeconds(guildId: string, seconds: number): Promis
  * silent on a kick is a safety regression, and those lines are fixed text
  * that the cache makes free after the first use.
  */
-export async function isAiQuotaExhausted(guildId: string): Promise<boolean> {
-  const { limits, budgetKey } = await quotaContext(guildId);
+export async function isAiQuotaExhausted(guildId: string, speakerId?: string | null): Promise<boolean> {
+  const { limits, budgetKey } = await quotaContext(guildId, speakerId);
   if (limits.ai_questions_per_month === Infinity) return false;
   const usage = await getUsage(budgetKey, monthKey());
   return usage.ai_questions >= limits.ai_questions_per_month;

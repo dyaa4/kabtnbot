@@ -233,7 +233,7 @@ export async function routeVoiceCommand(
   // added a serial Groq round-trip BEFORE every answer. Voice automations now
   // fire ONLY on their exact trigger phrases; the realtime session answers
   // questions directly. (`opts.followUp` therefore no longer changes routing.)
-  if (!(await tryConsumeAiQuestion(guild.id))) return strings.aiQuotaExhausted;
+  if (!(await tryConsumeAiQuestion(guild.id, speakerId))) return strings.aiQuotaExhausted;
 
   // The realtime session answers with audio directly (the utterance is already
   // in its context; while an answer is playing the request queues instead of

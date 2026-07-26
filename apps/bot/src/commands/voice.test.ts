@@ -32,6 +32,7 @@ function fakeInteraction() {
   return {
     guildId: 'g1',
     guild: { id: 'g1' },
+    user: { id: 'u1' },
     member: { voice: { channel: { id: 'vc1' } } },
     options: { getString: vi.fn(() => 'اقرأ هذا') },
     replies: [] as unknown[],
@@ -85,7 +86,8 @@ describe('/speak quota', () => {
   it('charges one AI question before synthesizing', async () => {
     const i = fakeInteraction();
     await speakCommand.execute(i as never);
-    expect(quotas.tryConsumeAiQuestion).toHaveBeenCalledWith('g1');
+    // The invoker travels with the charge — a super-admin is never billed.
+    expect(quotas.tryConsumeAiQuestion).toHaveBeenCalledWith('g1', 'u1');
     expect(sessions.playSpeech).toHaveBeenCalledWith('g1', 'اقرأ هذا');
   });
 

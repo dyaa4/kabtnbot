@@ -18,7 +18,7 @@ async function answer(interaction: Parameters<Command['execute']>[0], speakOut: 
     await interaction.reply({ content: strings.voiceDisabled, flags: MessageFlags.Ephemeral });
     return;
   }
-  if (!(await tryConsumeAiQuestion(interaction.guildId))) {
+  if (!(await tryConsumeAiQuestion(interaction.guildId, interaction.user.id))) {
     await interaction.reply({ content: strings.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
     return;
   }

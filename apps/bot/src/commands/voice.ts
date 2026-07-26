@@ -105,7 +105,7 @@ export const speakCommand: Command = {
     // draws on the same pool as an AI question because it costs the same to
     // say. Unlike the AI path there is nothing to refund: the charge happens
     // before synthesis, and a failed synthesis is the rare case.
-    if (!(await tryConsumeAiQuestion(interaction.guildId!))) {
+    if (!(await tryConsumeAiQuestion(interaction.guildId!, interaction.user.id))) {
       await interaction.reply({ content: strings.aiQuotaExhausted, flags: MessageFlags.Ephemeral });
       return;
     }

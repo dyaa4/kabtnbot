@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { connectDb, disconnectDb, updateGuildConfig, setUserPremium, linkGuild } from '@gamebot/db';
-import { tryConsumeAiQuestion, addListenSeconds, isListenQuotaExceeded, todayKey } from './quotas.js';
+import {
+  tryConsumeAiQuestion, addListenSeconds, isAiQuotaExhausted, isListenQuotaExceeded, todayKey,
+} from './quotas.js';
 import { clearPremiumCache } from './premium-cache.js';
 
 let mongod: MongoMemoryServer;
@@ -73,5 +75,14 @@ describe('quotas', () => {
     expect(await isListenQuotaExceeded('p-admin')).toBe(false);
     // ...and AI questions never run out either.
     for (let i = 0; i < 3; i++) expect(await tryConsumeAiQuestion('p-admin')).toBe(true);
+  });
+
+  it('a super-admin SPEAKER is never blocked, whoever linked the guild', async () => {
+    // Guild with no budget of its own (nobody premium linked it): an ordinary
+    // member is refused, the super-admin asking the SAME guild is not.
+    expect(await tryConsumeAiQuestion('q-admin-speaker')).toBe(false);
+    expect(await tryConsumeAiQuestion('q-admin-speaker', 'superadmin1')).toBe(true);
+    expect(await isAiQuotaExhausted('q-admin-speaker')).toBe(true);
+    expect(await isAiQuotaExhausted('q-admin-speaker', 'superadmin1')).toBe(false);
   });
 });
