@@ -23,6 +23,12 @@ const Env = z.object({
   // cheapest/fastest Whisper on Groq and handles Arabic well.
   GROQ_STT_MODEL: z.string().optional().default('whisper-large-v3-turbo'),
   GEMINI_API_KEY: z.string().optional().default(''),
+  GEMINI_MODEL: z.string().optional().default('gemini-2.0-flash'),
+  // Which LLM answers: 'groq' | 'gemini'. Empty prefers Groq when its key is
+  // set. The other provider (if its key is set) stays as the automatic
+  // fallback, so switching primary never removes the safety net. Exists
+  // because a provider can revoke access without warning — see VOICE_STT.
+  AI_PROVIDER: z.string().optional().default(''),
   // OpenAI powers the whole voice path: one Realtime session per guild for
   // STT + conversation + spoken answers, REST TTS for verbatim announcements
   // (/speak, warn/kick lines, scheduler) that must never be paraphrased.

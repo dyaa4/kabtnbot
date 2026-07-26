@@ -43,7 +43,7 @@ function createGroqProvider(): AIProvider {
 
 function createGeminiProvider(): AIProvider {
   const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  const model = genAI.getGenerativeModel({ model: config.GEMINI_MODEL });
   return {
     name: 'gemini',
     async generateResponse(prompt, opts) {
@@ -86,12 +86,26 @@ function withFallback(primary: AIProvider, secondary: AIProvider | null): AIProv
 
 let provider: AIProvider | null = null;
 
+/**
+ * The LLM behind every answer. AI_PROVIDER picks the primary; whichever other
+ * provider has a key becomes the automatic fallback, so choosing a primary
+ * never costs you the safety net. Unset AI_PROVIDER keeps the historical
+ * behaviour (Groq first).
+ */
 export function getAIProvider(): AIProvider {
   if (provider) return provider;
   const groq = config.GROQ_API_KEY ? createGroqProvider() : null;
   const gemini = config.GEMINI_API_KEY ? createGeminiProvider() : null;
-  if (groq) provider = withFallback(groq, gemini);
-  else if (gemini) provider = gemini;
+  const wantGemini = config.AI_PROVIDER.trim().toLowerCase() === 'gemini';
+
+  const [primary, secondary] = wantGemini ? [gemini, groq] : [groq, gemini];
+  if (primary) provider = withFallback(primary, secondary);
+  else if (secondary) provider = secondary;
   else throw new Error('NO_AI_PROVIDER: set GROQ_API_KEY or GEMINI_API_KEY');
   return provider;
+}
+
+/** Drop the memoized provider (config changed, tests). */
+export function resetAIProvider(): void {
+  provider = null;
 }
