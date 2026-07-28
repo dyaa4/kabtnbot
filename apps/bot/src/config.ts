@@ -86,6 +86,10 @@ const Env = z.object({
   // the bot without the per-account monthly cap. Keep in sync with the web
   // service's SUPER_ADMIN_IDS.
   SUPER_ADMIN_IDS: z.string().optional().default(''),
+  // Tolerated misspelling of the above. Getting the name wrong costs the owner
+  // the entire bypass and looks exactly like "your quota ran out", so both
+  // spellings count instead of failing silently.
+  SUPER_ADMINS_IDS: z.string().optional().default(''),
   // The rearchitected voice pipeline (VOICE_V2): a REST transcription firehose
   // for all speakers (moderation + wake word) + a separate server-VAD answer
   // session for the active speaker only. ON by default (owner decision); set
@@ -131,8 +135,13 @@ export function dialectVoiceId(dialect: Dialect): string {
   }
 }
 
+/** Split a comma-separated id list; both env spellings feed the same set. */
+export function parseIdList(...raw: string[]): string[] {
+  return raw.flatMap((v) => v.split(',').map((s) => s.trim())).filter(Boolean);
+}
+
 const superAdminIds = new Set(
-  config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean),
+  parseIdList(config.SUPER_ADMIN_IDS, config.SUPER_ADMINS_IDS),
 );
 /** Whether a Discord user id belongs to a super-admin (unlimited voice quotas). */
 export function isSuperAdmin(uid: string | null | undefined): boolean {

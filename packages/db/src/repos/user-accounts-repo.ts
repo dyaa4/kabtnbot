@@ -148,6 +148,24 @@ export async function isGuildPremium(guildId: string): Promise<boolean> {
  * triple one subscription's budget. When several premium accounts link the
  * same guild the oldest account wins (stable pick, no double budget).
  */
+export interface GuildLinker {
+  user_id: string;
+  premium_active: boolean;
+}
+
+/**
+ * Every account that links this guild, oldest first — one query for all three
+ * gates the bot asks on the hot path (linked? premium? whose pool?), plus the
+ * super-admin bypass, which must see a linker even when it is NOT premium.
+ */
+export async function listGuildLinkers(guildId: string): Promise<GuildLinker[]> {
+  const docs = await UserAccountModel.find({ linked_guild_ids: guildId })
+    .sort({ _id: 1 })
+    .select('user_id premium_active')
+    .lean();
+  return docs.map((d) => ({ user_id: d.user_id, premium_active: d.premium_active === true }));
+}
+
 export async function getPremiumLinker(guildId: string): Promise<string | null> {
   const doc = await UserAccountModel.findOne({ linked_guild_ids: guildId, premium_active: true })
     .sort({ _id: 1 })

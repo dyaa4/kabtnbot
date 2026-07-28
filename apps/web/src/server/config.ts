@@ -20,6 +20,8 @@ const Env = z.object({
   ALERT_WEBHOOK_URL: z.string().optional().default(''),
   // Comma-separated Discord user ids allowed into the owner/super-admin panel.
   SUPER_ADMIN_IDS: z.string().optional().default(''),
+  // Tolerated misspelling of the above — see the bot service's config.
+  SUPER_ADMINS_IDS: z.string().optional().default(''),
   // Groq powers the AI channel organizer (dashboard, premium). Optional: the
   // feature returns a 503 when unset instead of breaking the rest of the app.
   GROQ_API_KEY: z.string().optional().default(''),
@@ -29,7 +31,9 @@ const Env = z.object({
 export const config = Env.parse(process.env);
 
 /** Discord user ids with super-admin (owner) access to the admin panel. */
-export const superAdminIds = config.SUPER_ADMIN_IDS.split(',').map((s) => s.trim()).filter(Boolean);
+export const superAdminIds = [config.SUPER_ADMIN_IDS, config.SUPER_ADMINS_IDS]
+  .flatMap((v) => v.split(',').map((s) => s.trim()))
+  .filter(Boolean);
 
 export function isSuperAdmin(uid: string): boolean {
   return superAdminIds.includes(uid);

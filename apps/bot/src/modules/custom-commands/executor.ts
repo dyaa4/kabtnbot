@@ -170,7 +170,7 @@ export async function executeActions(
             ctx.session = session;
             // Quota-gated like /join; a false return means the bot sits in the
             // channel without listening — intentional, the join itself succeeded.
-            await startListening(session, ctx.guild);
+            await startListening(session, ctx.guild, ctx.invokerId);
           } catch {
             replies.push(strings.voiceJoinFailed);
           }

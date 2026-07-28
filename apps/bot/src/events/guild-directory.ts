@@ -4,6 +4,7 @@ import {
   recordGuildInviter, countActiveInvitedGuilds, getUserPlan,
   FREE_GUILD_LIMIT, PREMIUM_GUILD_LIMIT,
 } from '@gamebot/db';
+import { isSuperAdmin } from '../config.js';
 
 // Guild config doesn't exist yet at join time, so the farewell is bilingual
 // instead of localized.
@@ -56,6 +57,9 @@ export function registerGuildDirectory(client: Client): void {
       const inviter = await resolveInviter(guild);
       if (!inviter) return;
       await recordGuildInviter(guild.id, inviter);
+      // A super-admin (the owner) is never capped — same bypass as the quotas.
+      // Attribution is still recorded above so the dashboard counter is honest.
+      if (isSuperAdmin(inviter)) return;
       const [plan, otherGuilds] = await Promise.all([
         getUserPlan(inviter),
         // Exclude the joining guild: it was just recorded with this inviter.

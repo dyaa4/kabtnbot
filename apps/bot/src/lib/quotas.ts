@@ -2,7 +2,7 @@ import { consumeAiQuestion, refundAiQuestion, getUsage, incrementListenSeconds }
 import { effectiveQuotas, monthKey, todayKey } from '@gamebot/shared';
 import { isSuperAdmin } from '../config.js';
 import { getCachedGuildConfig } from './config-cache.js';
-import { getPremiumOwnerCached } from './premium-cache.js';
+import { getGuildLinkersCached } from './premium-cache.js';
 
 export { todayKey };
 
@@ -15,22 +15,24 @@ export { todayKey };
 const UNLIMITED = { listen_minutes_per_month: Infinity, ai_questions_per_month: Infinity };
 
 async function quotaContext(guildId: string, speakerId?: string | null) {
-  const [config, owner] = await Promise.all([
+  const [config, linkers] = await Promise.all([
     // Cached read-only config: this runs on every utterance/command, so it
     // must not do a write-upsert per call (getGuildConfig would).
     getCachedGuildConfig(guildId),
-    getPremiumOwnerCached(guildId),
+    getGuildLinkersCached(guildId),
   ]);
+  const owner = linkers.find((l) => l.premium_active)?.user_id ?? null;
   // Super-admin bypass — mirrors the web dashboard's, so the owner can use and
   // test the bot without hitting the per-account monthly cap. TWO ways in:
-  //   • the guild's premium account is a super-admin (the owner's own server), or
-  //   • the SPEAKER/invoker is a super-admin.
-  // The linker check alone was not enough: in any guild linked by an ordinary
-  // premium account — or by no premium account at all — the owner was refused
-  // with "the AI questions for this server are used up", which is exactly what
-  // a super-admin must never hear. Real premium accounts keep the standard
-  // quotas; only the ids in SUPER_ADMIN_IDS get past this.
-  const unlimited = isSuperAdmin(owner) || isSuperAdmin(speakerId);
+  //   • ANY account linking the guild is a super-admin (the owner's own server
+  //     — checked on the LINK, not on the premium flag: there is no payment
+  //     flow yet, so the owner's account is not premium_active and the guild
+  //     fell back to the free tier, whose limits are ZERO. That made every
+  //     listening minute "used up" from the very first second), or
+  //   • the SPEAKER/invoker is a super-admin, wherever they are.
+  // Real premium accounts keep the standard quotas; only the ids in
+  // SUPER_ADMIN_IDS get past this.
+  const unlimited = linkers.some((l) => isSuperAdmin(l.user_id)) || isSuperAdmin(speakerId);
   return {
     limits: unlimited ? UNLIMITED : effectiveQuotas(config, owner !== null),
     budgetKey: owner ? `user:${owner}` : guildId,
@@ -51,9 +53,13 @@ export async function tryConsumeAiQuestion(guildId: string, speakerId?: string |
   return false;
 }
 
-export async function addListenSeconds(guildId: string, seconds: number): Promise<void> {
+/** @param speakerId who is talking — a super-admin's minutes are not charged. */
+export async function addListenSeconds(
+  guildId: string, seconds: number, speakerId?: string | null,
+): Promise<void> {
   if (seconds <= 0) return;
-  const { budgetKey } = await quotaContext(guildId);
+  const { limits, budgetKey } = await quotaContext(guildId, speakerId);
+  if (limits.listen_minutes_per_month === Infinity) return; // nothing to count
   await incrementListenSeconds(budgetKey, Math.ceil(seconds), monthKey());
 }
 
@@ -75,8 +81,10 @@ export async function isAiQuotaExhausted(guildId: string, speakerId?: string | n
   return usage.ai_questions >= limits.ai_questions_per_month;
 }
 
-export async function isListenQuotaExceeded(guildId: string): Promise<boolean> {
-  const { limits, budgetKey } = await quotaContext(guildId);
+/** @param speakerId who is talking (or invoked /join) — a super-admin is never stopped. */
+export async function isListenQuotaExceeded(guildId: string, speakerId?: string | null): Promise<boolean> {
+  const { limits, budgetKey } = await quotaContext(guildId, speakerId);
+  if (limits.listen_minutes_per_month === Infinity) return false;
   const usage = await getUsage(budgetKey, monthKey());
   return usage.listen_seconds >= limits.listen_minutes_per_month * 60;
 }

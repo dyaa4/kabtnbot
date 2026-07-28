@@ -58,9 +58,12 @@ function applyHandoff(guild: Guild, h: { ended: string | null; promoted: string 
   }
 }
 
-export async function startListening(session: VoiceSession, guild: Guild): Promise<boolean> {
+/** @param invokerId who asked the bot to listen — a super-admin is never refused. */
+export async function startListening(
+  session: VoiceSession, guild: Guild, invokerId?: string | null,
+): Promise<boolean> {
   if (session.listening) return true;
-  if (await isListenQuotaExceeded(guild.id)) {
+  if (await isListenQuotaExceeded(guild.id, invokerId)) {
     const { language } = await getCachedGuildConfig(guild.id);
     await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
     return false;
@@ -392,8 +395,8 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
       try {
         const responding = getAnswerSession(guild.id)?.isResponding() ?? false;
         if (!responding) {
-          await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
-          if (await isListenQuotaExceeded(guild.id)) {
+          await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS, userId);
+          if (await isListenQuotaExceeded(guild.id, userId)) {
             stopListening(session);
             const { language } = await getCachedGuildConfig(guild.id);
             await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});
@@ -426,8 +429,8 @@ function subscribeToUser(session: VoiceSession, guild: Guild, userId: string): v
     }
 
     try {
-      await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS);
-      if (await isListenQuotaExceeded(guild.id)) {
+      await addListenSeconds(guild.id, totalFrames * FRAME_SECONDS, userId);
+      if (await isListenQuotaExceeded(guild.id, userId)) {
         stopListening(session);
         const { language } = await getCachedGuildConfig(guild.id);
         await playSpeech(guild.id, t(language).listenQuotaExhausted).catch(() => {});

@@ -3,6 +3,7 @@ import { getGuildConfig } from '@gamebot/db';
 import type { Command } from './index.js';
 import { S, t, fmt } from '../lib/strings.js';
 import { isGuildPremiumCached } from '../lib/premium-cache.js';
+import { isSuperAdmin } from '../config.js';
 import { tryConsumeAiQuestion } from '../lib/quotas.js';
 import { joinGuildVoice, leaveGuildVoice, playSpeech, getSession } from '../modules/voice-ai/sessions.js';
 
@@ -20,7 +21,9 @@ async function requireVoiceContext(interaction: Parameters<Command['execute']>[0
   // only guilds linked by a PREMIUM account may use join/listen/speak — a
   // free account's link unlocks web features but not voice. /leave stays
   // ungated so the bot can always be sent away.
-  if (!(await isGuildPremiumCached(interaction.guildId))) {
+  // A super-admin is premium everywhere (dashboard rule), including guilds they
+  // did not link themselves — otherwise the owner cannot test the bot at all.
+  if (!isSuperAdmin(interaction.user.id) && !(await isGuildPremiumCached(interaction.guildId))) {
     await interaction.reply({ content: t(config.language).voicePremiumRequired, flags: MessageFlags.Ephemeral });
     return null;
   }
@@ -45,7 +48,7 @@ export const joinCommand: Command = {
     await interaction.deferReply();
     const session = await joinGuildVoice(channel);
     const { startListening } = await import('../modules/voice-ai/listen.js');
-    const listening = await startListening(session, interaction.guild!);
+    const listening = await startListening(session, interaction.guild!, interaction.user.id);
     await interaction.editReply(
       listening ? fmt(strings.joinedVoice, { wake: config.voice.wake_word }) : strings.listenQuotaExhausted,
     );
@@ -67,7 +70,7 @@ export const listenCommand: Command = {
     }
     await interaction.deferReply();
     const { startListening } = await import('../modules/voice-ai/listen.js');
-    const listening = await startListening(session, interaction.guild!);
+    const listening = await startListening(session, interaction.guild!, interaction.user.id);
     await interaction.editReply(
       listening ? fmt(strings.voiceResumed, { wake: config.voice.wake_word }) : strings.listenQuotaExhausted,
     );

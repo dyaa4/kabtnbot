@@ -85,4 +85,26 @@ describe('quotas', () => {
     expect(await isAiQuotaExhausted('q-admin-speaker')).toBe(true);
     expect(await isAiQuotaExhausted('q-admin-speaker', 'superadmin1')).toBe(false);
   });
+
+  it('a super-admin SPEAKER is never cut off from LISTENING either', async () => {
+    // The listen budget was guild-only: the super-admin bypass existed for AI
+    // questions but not for minutes, so the owner was told "the listening
+    // minutes ran out" on /join in any guild without a premium pool.
+    expect(await isListenQuotaExceeded('q-listen-speaker')).toBe(true);
+    expect(await isListenQuotaExceeded('q-listen-speaker', 'superadmin1')).toBe(false);
+    // ...and their minutes are not counted against anyone's pool.
+    await addListenSeconds('q-listen-speaker', 120, 'superadmin1');
+    expect(await isListenQuotaExceeded('q-listen-speaker', 'superadmin1')).toBe(false);
+  });
+
+  it('a guild LINKED by a super-admin is unlimited without any premium flag', async () => {
+    // There is no payment flow yet, so the owner's own account is not
+    // premium_active — the link alone must grant the bypass, for everyone in
+    // that guild (listening is a guild-wide budget, not a per-speaker one).
+    await linkGuild('superadmin2', 'g-admin-link');
+    clearPremiumCache();
+    expect(await isListenQuotaExceeded('g-admin-link')).toBe(false);
+    expect(await tryConsumeAiQuestion('g-admin-link')).toBe(true);
+    expect(await isAiQuotaExhausted('g-admin-link')).toBe(false);
+  });
 });

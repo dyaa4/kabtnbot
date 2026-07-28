@@ -81,6 +81,14 @@ describe('guildCreate invite cap', () => {
     expect(over.leave).toHaveBeenCalled();
   });
 
+  it('never caps a super-admin, however many guilds they already invited to', async () => {
+    db.countActiveInvitedGuilds.mockResolvedValue(50);
+    // 'superadmin1' is in SUPER_ADMIN_IDS — see vitest.config.
+    const guild = await joinGuild(makeGuild([{ targetId: 'bot-id', executorId: 'superadmin1' }]));
+    expect(db.recordGuildInviter).toHaveBeenCalledWith('g-new', 'superadmin1');
+    expect(guild.leave).not.toHaveBeenCalled();
+  });
+
   it('fails OPEN when the audit log is unreadable — the guild is never punished', async () => {
     const guild = await joinGuild(makeGuild('throws'));
     expect(db.recordGuildInviter).not.toHaveBeenCalled();

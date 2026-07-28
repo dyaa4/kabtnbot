@@ -29,7 +29,7 @@ export function onReady(client: Client): void {
     // Loud at boot: an empty list here means nobody bypasses the monthly
     // quotas on THIS service, however the web dashboard is configured.
     if (superAdminCount === 0) {
-      console.warn('[Config] SUPER_ADMIN_IDS is empty on the bot service — no super-admin quota bypass');
+      console.warn('[Config] SUPER_ADMIN_IDS is empty on the BOT service (a separate Railway service from the web dashboard) — no super-admin quota bypass');
     } else {
       console.log(`[Config] super-admins: ${superAdminCount}`);
     }

@@ -5,9 +5,8 @@ const db = vi.hoisted(() => ({
     language: 'ar',
     voice: { enabled: true, wake_word: 'يا كابتن', allowed_channel_ids: [] },
   })),
-  isGuildLinked: vi.fn(async () => false),
-  // Voice is STRICTLY premium: the gate checks the premium-account link.
-  isGuildPremium: vi.fn(async () => false),
+  // Voice is STRICTLY premium: the gate reads the guild's linking accounts.
+  listGuildLinkers: vi.fn(async (): Promise<{ user_id: string; premium_active: boolean }[]> => []),
 }));
 vi.mock('@gamebot/db', () => db);
 
@@ -28,11 +27,11 @@ vi.mock('../lib/quotas.js', () => quotas);
 import { joinCommand, speakCommand } from './voice.js';
 import { clearPremiumCache } from '../lib/premium-cache.js';
 
-function fakeInteraction() {
+function fakeInteraction(userId = 'u1') {
   return {
     guildId: 'g1',
     guild: { id: 'g1' },
-    user: { id: 'u1' },
+    user: { id: userId },
     member: { voice: { channel: { id: 'vc1' } } },
     options: { getString: vi.fn(() => 'اقرأ هذا') },
     replies: [] as unknown[],
@@ -44,8 +43,8 @@ function fakeInteraction() {
 
 beforeEach(() => {
   clearPremiumCache();
-  db.isGuildLinked.mockClear().mockResolvedValue(false);
-  db.isGuildPremium.mockClear().mockResolvedValue(false);
+  db.listGuildLinkers.mockClear().mockResolvedValue([]);
+  listen.startListening.mockClear();
   sessions.joinGuildVoice.mockClear();
   sessions.playSpeech.mockClear();
   sessions.getSession.mockReturnValue({ guildId: 'g1' } as never);
@@ -63,25 +62,41 @@ describe('/join premium gate', () => {
   });
 
   it('a FREE account link is NOT enough — voice is strictly premium', async () => {
-    db.isGuildLinked.mockResolvedValue(true);
+    db.listGuildLinkers.mockResolvedValue([{ user_id: 'free1', premium_active: false }]);
     const i = fakeInteraction();
     await joinCommand.execute(i as never);
     expect(sessions.joinGuildVoice).not.toHaveBeenCalled();
   });
 
   it('joins normally on a premium-linked guild', async () => {
-    db.isGuildPremium.mockResolvedValue(true);
+    db.listGuildLinkers.mockResolvedValue([{ user_id: 'p1', premium_active: true }]);
     const i = fakeInteraction();
     await joinCommand.execute(i as never);
     expect(sessions.joinGuildVoice).toHaveBeenCalled();
     expect(i.editReply).toHaveBeenCalled();
+  });
+
+  it('a SUPER-ADMIN joins an unlinked guild — no payment flow exists yet', async () => {
+    const i = fakeInteraction('superadmin1'); // SUPER_ADMIN_IDS, see vitest.config
+    await joinCommand.execute(i as never);
+    expect(sessions.joinGuildVoice).toHaveBeenCalled();
+    expect(listen.startListening).toHaveBeenCalledWith(
+      expect.anything(), expect.anything(), 'superadmin1', // speaker → quota bypass
+    );
+  });
+
+  it('a guild LINKED by a super-admin is premium for its ordinary members too', async () => {
+    db.listGuildLinkers.mockResolvedValue([{ user_id: 'superadmin1', premium_active: false }]);
+    const i = fakeInteraction();
+    await joinCommand.execute(i as never);
+    expect(sessions.joinGuildVoice).toHaveBeenCalled();
   });
 });
 
 // /speak takes arbitrary text from any member and is billed per character, so
 // it must draw on the monthly pool like any other spoken output.
 describe('/speak quota', () => {
-  beforeEach(() => { db.isGuildPremium.mockResolvedValue(true); });
+  beforeEach(() => { db.listGuildLinkers.mockResolvedValue([{ user_id: 'p1', premium_active: true }]); });
 
   it('charges one AI question before synthesizing', async () => {
     const i = fakeInteraction();
