@@ -92,5 +92,6 @@ export const ar = {
   voiceKickedSpoken: 'يا {name}، تم إخراجك بسبب الألفاظ غير اللائقة.',
   // voice distribute
   distributeNotEnough: '❌ ما فيه أعضاء كافي distributeهم (الحد الأدنى 2).',
-  distributeDone: '✅ تم توزيع الأعضاء في {count} رومات.',
+  distributeNoChannels: '❌ ما لقيت رومات فيها الاسم المطلوب.',
+  distributeDone: '✅ تم توزيع {count} عضو في الرومات.',
 } as const;

@@ -82,5 +82,6 @@ export const de = {
   voiceWarnSpoken: 'Hey {name}, achte auf deine Ausdrucksweise — das ist eine Verwarnung. Bei Wiederholung wirst du entfernt.',
   voiceKickedSpoken: '{name}, du wurdest wegen unangemessener Ausdrucksweise aus dem Voice entfernt.',
   distributeNotEnough: '❌ Nicht genug Mitglieder zum Verteilen (mindestens 2).',
-  distributeDone: '✅ Mitglieder in {count} Räume verteilt.',
+  distributeNoChannels: '❌ Keine Kanäle mit dem angegebenen Namen gefunden.',
+  distributeDone: '✅ {count} Mitglieder in Kanäle verteilt.',
 } as const satisfies Record<keyof typeof ar, string>;

@@ -82,5 +82,6 @@ export const tr = {
   voiceWarnSpoken: 'Hey {name}, diline dikkat et — bu bir uyarı. Tekrarlarsan sesten atılırsın.',
   voiceKickedSpoken: '{name}, uygunsuz sözler nedeniyle sesten atıldın.',
   distributeNotEnough: '❌ Dağıtılacak yeterli üye yok (minimum 2).',
-  distributeDone: '✅ Üyeler {count} odaya dağıtıldı.',
+  distributeNoChannels: '❌ Belirtilen isimle eşleşen oda bulunamadı.',
+  distributeDone: '✅ {count} üye odalara dağıtıldı.',
 } as const satisfies Record<keyof typeof ar, string>;

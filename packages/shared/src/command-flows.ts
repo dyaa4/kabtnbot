@@ -76,13 +76,12 @@ export const FlowActionSchema = z.discriminatedUnion('type', [
   // DMs every member with no message/voice activity in the last `days` days
   // (capped and throttled bot-side so one command can't mass-spam).
   z.object({ ...actionBase, type: z.literal('dm_inactive_members'), days: z.number().int().min(1).max(90).default(14), text: z.string().min(1).max(1000) }),
-  // Split all human members in the bot's voice channel into groups of
-  // `group_size`, create a numbered voice channel for each group (base_name +
-  // number), and move each group there. The bot stays in the original channel.
+  // Find existing voice channels whose name includes `base_name`, then
+  // distribute all human members from the bot's channel into those channels
+  // (round-robin, shuffled randomly). The bot stays in the original channel.
   z.object({
     ...actionBase,
     type: z.literal('voice_distribute'),
-    group_size: z.number().int().min(2).max(20).default(4),
     base_name: z.string().min(1).max(32).default(''),
   }),
 ]);

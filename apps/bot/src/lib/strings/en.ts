@@ -84,5 +84,6 @@ export const en = {
   voiceKickedSpoken: '{name}, you were removed from voice for inappropriate language.',
   // voice distribute
   distributeNotEnough: '❌ Not enough members to distribute (minimum 2).',
-  distributeDone: '✅ Members distributed into {count} rooms.',
+  distributeNoChannels: '❌ No channels found matching the given name.',
+  distributeDone: '✅ Distributed {count} members into channels.',
 } as const satisfies Record<keyof typeof ar, string>;
