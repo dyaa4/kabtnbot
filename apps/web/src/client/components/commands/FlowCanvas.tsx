@@ -150,7 +150,7 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
     case 'voice_move_user':
       return { ...base, type, ...targeted, channel_id: '' };
     case 'voice_distribute':
-      return { ...base, type, base_name: '' };
+      return { ...base, type, group_size: 4, base_name: '' };
     case 'speak_tts':
     case 'send_voice_chat':
       return { ...base, type, text: '' };

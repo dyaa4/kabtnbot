@@ -340,11 +340,16 @@ export async function executeActions(
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
           }
+          const size = action.group_size;
           let moved = 0;
-          for (let i = 0; i < shuffled.length; i++) {
-            const target = targetChannels[i % targetChannels.length];
-            await shuffled[i].voice.setChannel(target.id).catch(() => {});
-            moved++;
+          for (let i = 0; i < shuffled.length; i += size) {
+            const channelIdx = Math.floor(i / size);
+            if (channelIdx >= targetChannels.length) break;
+            const chunk = shuffled.slice(i, i + size);
+            for (const member of chunk) {
+              await member.voice.setChannel(targetChannels[channelIdx].id).catch(() => {});
+              moved++;
+            }
           }
           replies.push(fmt(strings.distributeDone, { count: String(moved) }));
           break;
