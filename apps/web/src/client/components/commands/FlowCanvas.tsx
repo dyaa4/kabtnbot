@@ -54,7 +54,7 @@ const nodeTypes = {
 // select) — the group order mirrors how often each family is used.
 export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
   ['messages', ['speak_tts', 'send_message', 'send_voice_chat', 'ai_reply', 'dm_user', 'dm_inactive_members']],
-  ['voice', ['voice_join', 'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user']],
+  ['voice', ['voice_join', 'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user', 'voice_distribute']],
   ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
 
@@ -115,6 +115,10 @@ export const ACTION_STYLES: Record<FlowActionType, ActionStyle> = {
     card: 'border-amber-400/40 shadow-[0_0_24px_-8px_rgba(251,191,36,0.5)]',
     accent: 'text-amber-300', badge: 'bg-amber-400/25 text-amber-300', handle: '!bg-amber-400', hex: '#fbbf24',
   },
+  voice_distribute: {
+    card: 'border-pink-400/40 shadow-[0_0_24px_-8px_rgba(244,114,182,0.5)]',
+    accent: 'text-pink-300', badge: 'bg-pink-400/25 text-pink-300', handle: '!bg-pink-400', hex: '#f472b6',
+  },
   timeout_user: {
     card: 'border-red-400/40 shadow-[0_0_24px_-8px_rgba(248,113,113,0.5)]',
     accent: 'text-red-300', badge: 'bg-red-400/25 text-red-300', handle: '!bg-red-400', hex: '#f87171',
@@ -145,6 +149,8 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
       return { ...base, type, ...targeted };
     case 'voice_move_user':
       return { ...base, type, ...targeted, channel_id: '' };
+    case 'voice_distribute':
+      return { ...base, type, group_size: 4, base_name: '' };
     case 'speak_tts':
     case 'send_voice_chat':
       return { ...base, type, text: '' };

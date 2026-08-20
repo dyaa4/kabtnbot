@@ -205,6 +205,31 @@ function Params({
           {channelSelect(voiceChannels.data ?? [], action.channel_id)}
         </>
       );
+    case 'voice_distribute':
+      return (
+        <>
+          <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.action.distribute.groupSize')}</label>
+          <input
+            type="number"
+            min={2}
+            max={20}
+            className={INPUT_CLASS}
+            value={action.group_size}
+            onChange={(e) => update({ group_size: Math.min(20, Math.max(2, Number(e.target.value) || 2)) } as Partial<FlowAction>)}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('commands.action.distribute.groupSizeHint')}</p>
+          <label className="mb-1 mt-3 block text-xs text-slate-400">{t('commands.action.distribute.baseName')}</label>
+          <input
+            type="text"
+            maxLength={32}
+            className={INPUT_CLASS}
+            value={action.base_name}
+            placeholder={t('commands.action.distribute.baseNamePlaceholder')}
+            onChange={(e) => update({ base_name: e.target.value } as Partial<FlowAction>)}
+          />
+          <p className="mt-1 text-xs text-slate-500">{t('commands.action.distribute.baseNameHint')}</p>
+        </>
+      );
     case 'speak_tts':
       return (
         <MessageField

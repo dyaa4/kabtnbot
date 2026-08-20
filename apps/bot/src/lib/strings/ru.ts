@@ -81,4 +81,6 @@ export const ru = {
   voiceKicked: '{name} исключён из войса.',
   voiceWarnSpoken: 'Эй {name}, следи за словами — это предупреждение. Повторишь — будешь удалён.',
   voiceKickedSpoken: '{name}, ты был удалён из войса за неподобающие выражения.',
+  distributeNotEnough: '❌ Недостаточно участников для распределения (минимум 2).',
+  distributeDone: '✅ Участники распределены по {count} каналам.',
 } as const satisfies Record<keyof typeof ar, string>;

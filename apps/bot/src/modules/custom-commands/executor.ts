@@ -1,5 +1,5 @@
 import type { Guild, GuildMember, TextChannel, VoiceBasedChannel } from 'discord.js';
-import { PermissionFlagsBits } from 'discord.js';
+import { ChannelType, PermissionFlagsBits } from 'discord.js';
 import { activeUserIds } from '@gamebot/db';
 import { JOIN_BUSIEST_CHANNEL, type FlowAction, type GuildConfig } from '@gamebot/shared';
 import { t, fmt } from '../../lib/strings.js';
@@ -315,6 +315,42 @@ export async function executeActions(
             }
           })();
           replies.push(fmt(strings.dmInactiveStarted, { count: targets.length }));
+          break;
+        }
+        case 'voice_distribute': {
+          const channelId =
+            ctx.session?.channelId ?? ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;
+          const sourceChannel = channelId ? ctx.guild.channels.cache.get(channelId) : undefined;
+          if (!sourceChannel?.isVoiceBased()) { replies.push(strings.voiceJoinFailed); break; }
+          const humans = [...sourceChannel.members.values()].filter((m) => !m.user.bot);
+          if (humans.length < 2) { replies.push(strings.distributeNotEnough); break; }
+          if (!botHas(ctx, PermissionFlagsBits.ManageChannels) || !botHas(ctx, PermissionFlagsBits.MoveMembers)) {
+            replies.push(strings.kickFailed); break;
+          }
+          // Shuffle members randomly.
+          const shuffled = [...humans];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          const size = action.group_size;
+          const name = action.base_name || 'Group';
+          let created = 0;
+          for (let i = 0; i < shuffled.length; i += size) {
+            const chunk = shuffled.slice(i, i + size);
+            const groupNum = created + 1;
+            const channel = await ctx.guild.channels.create({
+              name: chunk.length === shuffled.length ? name : `${name} ${groupNum}`,
+              type: ChannelType.GuildVoice,
+              parent: sourceChannel.parentId ?? undefined,
+            }).catch(() => null);
+            if (!channel) continue;
+            created++;
+            for (const member of chunk) {
+              await member.voice.setChannel(channel.id).catch(() => {});
+            }
+          }
+          replies.push(fmt(strings.distributeDone, { count: String(created) }));
           break;
         }
         case 'ai_reply': {

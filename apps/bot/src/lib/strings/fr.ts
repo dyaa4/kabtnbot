@@ -81,4 +81,6 @@ export const fr = {
   voiceKicked: '{name} expulsé du vocal.',
   voiceWarnSpoken: "Hé {name}, surveille ton langage — c'est un avertissement. Si tu recommences, tu seras retiré.",
   voiceKickedSpoken: '{name}, tu as été retiré du vocal pour langage inapproprié.',
+  distributeNotEnough: '❌ Pas assez de membres pour distribuer (minimum 2).',
+  distributeDone: '✅ Membres distribués dans {count} salons.',
 } as const satisfies Record<keyof typeof ar, string>;

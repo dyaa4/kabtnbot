@@ -90,4 +90,7 @@ export const ar = {
   // spoken moderation lines (TTS, routed by bot language like all replies)
   voiceWarnSpoken: 'يا {name}، انتبه لألفاظك، هذا تحذير. التكرار سيؤدي إلى إخراجك.',
   voiceKickedSpoken: 'يا {name}، تم إخراجك بسبب الألفاظ غير اللائقة.',
+  // voice distribute
+  distributeNotEnough: '❌ ما فيه أعضاء كافي distributeهم (الحد الأدنى 2).',
+  distributeDone: '✅ تم توزيع الأعضاء في {count} رومات.',
 } as const;

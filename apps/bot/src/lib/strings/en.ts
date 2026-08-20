@@ -82,4 +82,7 @@ export const en = {
   // spoken moderation lines (TTS, routed by bot language like all replies)
   voiceWarnSpoken: 'Hey {name}, watch your language — this is a warning. Repeating it will get you removed.',
   voiceKickedSpoken: '{name}, you were removed from voice for inappropriate language.',
+  // voice distribute
+  distributeNotEnough: '❌ Not enough members to distribute (minimum 2).',
+  distributeDone: '✅ Members distributed into {count} rooms.',
 } as const satisfies Record<keyof typeof ar, string>;
