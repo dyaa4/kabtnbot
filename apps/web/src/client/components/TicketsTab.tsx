@@ -136,25 +136,25 @@ export function TicketsTab({ guildId }: { guildId: string }) {
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('tickets.category')}</span>
-          {channelSelect(categories.data ?? [], form.watch('category_id'), (v) => form.setValue('category_id', v), t('tickets.category.placeholder'))}
+          {channelSelect(categories.data ?? [], form.watch('category_id'), (v) => form.setValue('category_id', v, { shouldDirty: true }), t('tickets.category.placeholder'))}
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('tickets.category.hint')}</p>
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('tickets.supportRole')}</span>
-          {channelSelect(roles.data ?? [], form.watch('support_role_id'), (v) => form.setValue('support_role_id', v), t('tickets.supportRole.placeholder'))}
+          {channelSelect(roles.data ?? [], form.watch('support_role_id'), (v) => form.setValue('support_role_id', v, { shouldDirty: true }), t('tickets.supportRole.placeholder'))}
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('tickets.supportRole.hint')}</p>
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('tickets.panelChannel')}</span>
-          {channelSelect(textChannels.data ?? [], form.watch('panel_channel_id'), (v) => form.setValue('panel_channel_id', v), t('tickets.panelChannel.placeholder'))}
+          {channelSelect(textChannels.data ?? [], form.watch('panel_channel_id'), (v) => form.setValue('panel_channel_id', v, { shouldDirty: true }), t('tickets.panelChannel.placeholder'))}
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('tickets.panelChannel.hint')}</p>
 
         <label className="mb-1 block">
           <span className="mb-1 block text-sm text-slate-400">{t('tickets.logChannel')}</span>
-          {channelSelect(textChannels.data ?? [], form.watch('log_channel_id'), (v) => form.setValue('log_channel_id', v), t('tickets.logChannel.placeholder'))}
+          {channelSelect(textChannels.data ?? [], form.watch('log_channel_id'), (v) => form.setValue('log_channel_id', v, { shouldDirty: true }), t('tickets.logChannel.placeholder'))}
         </label>
         <p className="mb-4 text-xs text-slate-500">{t('tickets.logChannel.hint')}</p>
       </section>
