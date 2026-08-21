@@ -7,7 +7,7 @@ import {
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
-  countActiveInvitedGuilds, hasOrganizeSnapshot, listTickets,
+  countActiveInvitedGuilds, hasOrganizeSnapshot, listTickets, closeTicketById,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, DIALECTS, effectiveQuotas, monthKey, ORGANIZABLE_TYPES } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -553,6 +553,20 @@ export function apiRouter(rest: DiscordRest): Router {
     try {
       const limit = Math.min(Number(req.query.limit) || 50, 100);
       res.json(await listTickets(req.params.guildId, limit));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Close a ticket from the dashboard.
+  router.patch('/guilds/:guildId/tickets/:ticketId/close', guard, async (req, res, next) => {
+    try {
+      const closed = await closeTicketById(req.params.ticketId);
+      if (!closed) {
+        apiError(res, 404, 'NOT_FOUND', 'Ticket not found or already closed');
+        return;
+      }
+      res.json({ ok: true, ticket: closed });
     } catch (err) {
       next(err);
     }

@@ -54,6 +54,15 @@ export async function closeTicket(channelId: string): Promise<Ticket | null> {
   return (doc as Ticket) ?? null;
 }
 
+export async function closeTicketById(ticketId: string): Promise<Ticket | null> {
+  const doc = await TicketModel.findOneAndUpdate(
+    { _id: ticketId, status: 'open' },
+    { $set: { status: 'closed', closed_at: new Date() } },
+    { new: true },
+  ).lean();
+  return (doc as Ticket) ?? null;
+}
+
 export async function assignTicket(channelId: string, userId: string): Promise<Ticket | null> {
   const doc = await TicketModel.findOneAndUpdate(
     { channel_id: channelId, status: 'open' },

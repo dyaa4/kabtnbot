@@ -509,5 +509,7 @@
   "tickets.log.closed": "Closed",
   "tickets.log.open": "Open",
   "tickets.log.closedStatus": "Closed",
+  "tickets.log.closeBtn": "Close",
+  "tickets.log.closeConfirm": "Close this ticket? The channel will be deleted.",
   "tickets.log.premium": "Ticket log requires a premium account. Link your server to unlock it."
 }

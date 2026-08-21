@@ -509,5 +509,7 @@
   "tickets.log.closed": "Geschlossen",
   "tickets.log.open": "Offen",
   "tickets.log.closedStatus": "Geschlossen",
+  "tickets.log.closeBtn": "Schließen",
+  "tickets.log.closeConfirm": "Dieses Ticket schließen? Der Kanal wird gelöscht.",
   "tickets.log.premium": "Ticket-Protokoll erfordert ein Premium-Konto. Verbinde deinen Server, um es freizuschalten."
 }

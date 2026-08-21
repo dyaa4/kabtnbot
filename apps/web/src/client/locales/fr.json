@@ -509,5 +509,7 @@
   "tickets.log.closed": "Fermé",
   "tickets.log.open": "Ouvert",
   "tickets.log.closedStatus": "Fermé",
+  "tickets.log.closeBtn": "Fermer",
+  "tickets.log.closeConfirm": "Fermer ce ticket ? Le salon sera supprimé.",
   "tickets.log.premium": "Le journal des tickets nécessite un compte premium. Lie ton serveur pour le débloquer."
 }

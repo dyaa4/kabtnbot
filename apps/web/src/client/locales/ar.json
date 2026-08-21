@@ -509,5 +509,7 @@
   "tickets.log.closed": "تاريخ الإغلاق",
   "tickets.log.open": "مفتوحة",
   "tickets.log.closedStatus": "مغلقة",
+  "tickets.log.closeBtn": "إغلاق",
+  "tickets.log.closeConfirm": "إغلاق هذه التذكرة؟ سيتم حذف القناة.",
   "tickets.log.premium": "سجل التذاكر يحتاج حساب بريميوم. اربط سيرفرك لتفعيله."
 }

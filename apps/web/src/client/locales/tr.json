@@ -509,5 +509,7 @@
   "tickets.log.closed": "Kapanış",
   "tickets.log.open": "Açık",
   "tickets.log.closedStatus": "Kapalı",
+  "tickets.log.closeBtn": "Kapat",
+  "tickets.log.closeConfirm": "Bu bilet kapatılsın mı? Kanal silinecek.",
   "tickets.log.premium": "Bilet kayıtları premium hesap gerektirir. Sunucunuzu bağlayarak açın."
 }

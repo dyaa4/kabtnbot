@@ -59,6 +59,18 @@ export function TicketsTab({ guildId }: { guildId: string }) {
     refetchOnWindowFocus: false,
   });
 
+  const closeTicket = useMutation({
+    mutationFn: (ticketId: string) => api(`/api/guilds/${guildId}/tickets/${ticketId}/close`, { method: 'PATCH' }),
+    onSuccess: () => {
+      toast.success(t('tickets.log.closedStatus'));
+      void qc.invalidateQueries({ queryKey: ['tickets', guildId] });
+    },
+    onError: (err) => {
+      const detail = err instanceof ApiError && err.message ? ` (${err.message})` : '';
+      toast.error(`${t('error.generic')}${detail}`);
+    },
+  });
+
   const patch = useMutation({
     mutationFn: (body: object) => api(`/api/guilds/${guildId}/config`, { method: 'PATCH', body: JSON.stringify(body) }),
     onSuccess: () => {
@@ -229,7 +241,8 @@ export function TicketsTab({ guildId }: { guildId: string }) {
                   <th className="pb-2 pr-4">{t('tickets.log.user')}</th>
                   <th className="pb-2 pr-4">{t('tickets.log.status')}</th>
                   <th className="pb-2 pr-4">{t('tickets.log.created')}</th>
-                  <th className="pb-2">{t('tickets.log.closed')}</th>
+                  <th className="pb-2 pr-4">{t('tickets.log.closed')}</th>
+                  <th className="pb-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -243,7 +256,21 @@ export function TicketsTab({ guildId }: { guildId: string }) {
                       </span>
                     </td>
                     <td className="py-2 pr-4 text-xs text-slate-500">{new Date(tkt.created_at).toLocaleDateString()}</td>
-                    <td className="py-2 text-xs text-slate-500">{tkt.closed_at ? new Date(tkt.closed_at).toLocaleDateString() : '—'}</td>
+                    <td className="py-2 pr-4 text-xs text-slate-500">{tkt.closed_at ? new Date(tkt.closed_at).toLocaleDateString() : '—'}</td>
+                    <td className="py-2">
+                      {tkt.status === 'open' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (window.confirm(t('tickets.log.closeConfirm'))) closeTicket.mutate(tkt._id);
+                          }}
+                          disabled={closeTicket.isPending}
+                          className="rounded-lg bg-red-500/20 px-3 py-1 text-xs text-red-300 transition hover:bg-red-500/30 disabled:opacity-40"
+                        >
+                          {t('tickets.log.closeBtn')}
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

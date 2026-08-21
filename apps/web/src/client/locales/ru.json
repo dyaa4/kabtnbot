@@ -509,5 +509,7 @@
   "tickets.log.closed": "Закрыто",
   "tickets.log.open": "Открыто",
   "tickets.log.closedStatus": "Закрыто",
+  "tickets.log.closeBtn": "Закрыть",
+  "tickets.log.closeConfirm": "Закрыть это обращение? Канал будет удалён.",
   "tickets.log.premium": "Журнал обращений требует премиум-аккаунт. Привяжите сервер для доступа."
 }
