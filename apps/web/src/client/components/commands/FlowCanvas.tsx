@@ -53,7 +53,7 @@ const nodeTypes = {
 // Action types grouped for the pickers (add-action select + in-node type
 // select) — the group order mirrors how often each family is used.
 export const ACTION_GROUPS: readonly [string, readonly FlowActionType[]][] = [
-  ['messages', ['speak_tts', 'send_message', 'send_voice_chat', 'ai_reply', 'dm_user', 'dm_inactive_members']],
+  ['messages', ['speak_tts', 'send_message', 'send_voice_chat', 'ai_reply', 'dm_user', 'dm_inactive_members', 'dm_all_members', 'dm_online_members']],
   ['voice', ['voice_join', 'voice_leave', 'voice_stop_listening', 'voice_disconnect_user', 'voice_move_user', 'voice_distribute']],
   ['moderation', ['timeout_user', 'role_add', 'role_remove']],
 ];
@@ -94,6 +94,14 @@ export const ACTION_STYLES: Record<FlowActionType, ActionStyle> = {
   dm_inactive_members: {
     card: 'border-fuchsia-400/40 shadow-[0_0_24px_-8px_rgba(232,121,249,0.5)]',
     accent: 'text-fuchsia-300', badge: 'bg-fuchsia-400/25 text-fuchsia-300', handle: '!bg-fuchsia-400', hex: '#e879f9',
+  },
+  dm_all_members: {
+    card: 'border-purple-400/40 shadow-[0_0_24px_-8px_rgba(192,132,252,0.5)]',
+    accent: 'text-purple-300', badge: 'bg-purple-400/25 text-purple-300', handle: '!bg-purple-400', hex: '#c084fc',
+  },
+  dm_online_members: {
+    card: 'border-teal-400/40 shadow-[0_0_24px_-8px_rgba(45,212,191,0.5)]',
+    accent: 'text-teal-300', badge: 'bg-teal-400/25 text-teal-300', handle: '!bg-teal-400', hex: '#2dd4bf',
   },
   voice_join: {
     card: 'border-green-400/40 shadow-[0_0_24px_-8px_rgba(74,222,128,0.5)]',
@@ -167,6 +175,9 @@ export function defaultAction(type: FlowActionType, index: number): FlowAction {
       return { ...base, type, ...targeted, target_user_ids: [], target_role_ids: [], text: '' };
     case 'dm_inactive_members':
       return { ...base, type, days: 14, text: '' };
+    case 'dm_all_members':
+    case 'dm_online_members':
+      return { ...base, type, text: '' };
   }
 }
 

@@ -26,6 +26,8 @@ export const tr = {
   dmFailed: 'DM gönderilemedi (DM kutusu kapalı olabilir).',
   dmInactiveStarted: '{count} pasif üyeye DM gönderiliyor.',
   dmBulkStarted: 'DM {count} üyeye gönderiliyor.',
+  dmAllStarted: 'Tüm {count} üyeye DM gönderiliyor.',
+  dmOnlineStarted: '{count} çevrimiçi üyeye DM gönderiliyor.',
   spamDmNotice: '🧹 {server} sunucusundaki tekrarlanan mesajların silindi — aynı mesajı birden çok kanala göndermek spam sayılır.',
   spamLogDeleted: '🧹 Spam: {user} kullanıcısının {count} kanala gönderdiği mesaj silindi.',
   settingsSaved: '✅ Ayar kaydedildi.',

@@ -27,6 +27,8 @@ export const ar = {
   dmFailed: 'تعذّر إرسال الرسالة الخاصة (قد تكون الخاصات مقفلة).',
   dmInactiveStarted: 'بدأت إرسال رسائل خاصة لـ {count} عضو غائب.',
   dmBulkStarted: 'إرسال الرسالة الخاصة إلى {count} عضو.',
+  dmAllStarted: 'إرسال رسائل خاصة إلى جميع الأعضاء ({count}).',
+  dmOnlineStarted: 'إرسال رسائل خاصة إلى {count} عضو متصل.',
   spamDmNotice: '🧹 تم حذف رسائلك المتكررة في سيرفر {server} — إرسال الرسالة نفسها في عدة قنوات يُعد سباماً.',
   spamLogDeleted: '🧹 سبام: حُذفت رسالة مكررة من {user} أُرسلت في {count} قنوات.',
   // settings

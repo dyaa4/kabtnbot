@@ -26,6 +26,8 @@ export const de = {
   dmFailed: 'DM konnte nicht gesendet werden (DMs evtl. geschlossen).',
   dmInactiveStarted: 'Sende DMs an {count} inaktive Mitglieder.',
   dmBulkStarted: 'Sende die DM an {count} Mitglieder.',
+  dmAllStarted: 'Sende DMs an alle {count} Mitglieder.',
+  dmOnlineStarted: 'Sende DMs an {count} Online-Mitglieder.',
   spamDmNotice: '🧹 Deine wiederholten Nachrichten in {server} wurden entfernt — dieselbe Nachricht in mehreren Kanälen zu posten gilt als Spam.',
   spamLogDeleted: '🧹 Spam: Nachricht von {user} in {count} Kanälen entfernt.',
   settingsSaved: '✅ Einstellung gespeichert.',

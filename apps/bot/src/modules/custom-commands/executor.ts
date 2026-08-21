@@ -317,6 +317,34 @@ export async function executeActions(
           replies.push(fmt(strings.dmInactiveStarted, { count: targets.length }));
           break;
         }
+        case 'dm_all_members': {
+          const allMembers = await ctx.guild.members.fetch().catch(() => ctx.guild.members.cache);
+          const targets = [...allMembers.values()].filter((m) => !m.user.bot).slice(0, 100);
+          const text = expand(action.text, ctx);
+          void (async () => {
+            for (const m of targets) {
+              await m.send({ content: fillMember(text, m.displayName).slice(0, 2000) }).catch(() => {});
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          })();
+          replies.push(fmt(strings.dmAllStarted, { count: targets.length }));
+          break;
+        }
+        case 'dm_online_members': {
+          const allMembers = await ctx.guild.members.fetch().catch(() => ctx.guild.members.cache);
+          const targets = [...allMembers.values()]
+            .filter((m) => !m.user.bot && m.presence?.status && m.presence.status !== 'offline')
+            .slice(0, 100);
+          const text = expand(action.text, ctx);
+          void (async () => {
+            for (const m of targets) {
+              await m.send({ content: fillMember(text, m.displayName).slice(0, 2000) }).catch(() => {});
+              await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
+          })();
+          replies.push(fmt(strings.dmOnlineStarted, { count: targets.length }));
+          break;
+        }
         case 'voice_distribute': {
           const channelId =
             ctx.session?.channelId ?? ctx.guild.members.cache.get(ctx.invokerId)?.voice.channelId;

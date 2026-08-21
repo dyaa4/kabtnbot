@@ -365,6 +365,19 @@ function Params({
           />
         </>
       );
+    case 'dm_all_members':
+    case 'dm_online_members':
+      return (
+        <>
+          <MessageField
+            guildId={guildId}
+            value={action.text}
+            maxLength={1000}
+            onChange={(text) => update({ text } as Partial<FlowAction>)}
+            hint={action.type === 'dm_all_members' ? t('commands.action.dmAllHint') : t('commands.action.dmOnlineHint')}
+          />
+        </>
+      );
   }
 }
 

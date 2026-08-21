@@ -76,6 +76,10 @@ export const FlowActionSchema = z.discriminatedUnion('type', [
   // DMs every member with no message/voice activity in the last `days` days
   // (capped and throttled bot-side so one command can't mass-spam).
   z.object({ ...actionBase, type: z.literal('dm_inactive_members'), days: z.number().int().min(1).max(90).default(14), text: z.string().min(1).max(1000) }),
+  // DM every non-bot member in the guild (capped + throttled bot-side).
+  z.object({ ...actionBase, type: z.literal('dm_all_members'), text: z.string().min(1).max(1000) }),
+  // DM every non-bot member whose status is online/online (capped + throttled).
+  z.object({ ...actionBase, type: z.literal('dm_online_members'), text: z.string().min(1).max(1000) }),
   // Find existing voice channels whose name includes `base_name`, then
   // distribute all human members from the bot's channel into those channels
   // in groups of `group_size` (shuffled randomly). The bot stays in the

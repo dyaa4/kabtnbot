@@ -26,6 +26,8 @@ export const fr = {
   dmFailed: "Impossible d'envoyer le MP (ses MP sont peut-être fermés).",
   dmInactiveStarted: 'Envoi de MP à {count} membres inactifs.',
   dmBulkStarted: 'Envoi du MP à {count} membres.',
+  dmAllStarted: 'Envoi de MPs à tous les {count} membres.',
+  dmOnlineStarted: 'Envoi de MPs à {count} membres en ligne.',
   spamDmNotice: '🧹 Tes messages répétés sur {server} ont été supprimés — poster le même message dans plusieurs salons est considéré comme du spam.',
   spamLogDeleted: '🧹 Spam : message de {user} supprimé dans {count} salons.',
   settingsSaved: '✅ Paramètre enregistré.',
