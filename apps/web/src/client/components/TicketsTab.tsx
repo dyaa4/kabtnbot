@@ -59,6 +59,16 @@ export function TicketsTab({ guildId }: { guildId: string }) {
     refetchOnWindowFocus: false,
   });
 
+  const memberNames = useQuery({
+    queryKey: ['memberNames', guildId, tickets.data],
+    queryFn: () => {
+      const ids = [...new Set(tickets.data!.map((t) => t.user_id))].join(',');
+      return api<Record<string, string | null>>(`/api/guilds/${guildId}/members/names?ids=${ids}`);
+    },
+    enabled: !!tickets.data && tickets.data.length > 0,
+    refetchOnWindowFocus: false,
+  });
+
   const closeTicket = useMutation({
     mutationFn: (ticketId: string) => api(`/api/guilds/${guildId}/tickets/${ticketId}/close`, { method: 'PATCH' }),
     onSuccess: () => {
@@ -249,7 +259,7 @@ export function TicketsTab({ guildId }: { guildId: string }) {
                 {tickets.data.map((tkt) => (
                   <tr key={tkt._id} className="border-b border-white/5">
                     <td className="py-2 pr-4 font-mono text-xs">{tkt._id.slice(-6)}</td>
-                    <td className="py-2 pr-4">{tkt.user_id}</td>
+                    <td className="py-2 pr-4">{memberNames.data?.[tkt.user_id] ?? tkt.user_id}</td>
                     <td className="py-2 pr-4">
                       <span className={`rounded-full px-2 py-0.5 text-xs ${tkt.status === 'open' ? 'bg-green-400/20 text-green-300' : 'bg-slate-400/20 text-slate-400'}`}>
                         {tkt.status === 'open' ? t('tickets.log.open') : t('tickets.log.closedStatus')}
