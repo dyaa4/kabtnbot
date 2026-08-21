@@ -1,7 +1,8 @@
-import type { ChatInputCommandInteraction } from 'discord.js';
-import { PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
+import type { ChatInputCommandInteraction, TextChannel } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { sendTicketPanel } from '../modules/tickets/index.js';
 import { getCachedGuildConfig } from '../lib/config-cache.js';
+import { getTicketByChannel, closeTicket, listTickets } from '@gamebot/db';
 import { t } from '../lib/strings.js';
 
 export const ticketCommand = {
@@ -16,8 +17,16 @@ export const ticketCommand = {
     )
     .addSubcommand((sub) =>
       sub
+        .setName('close')
+        .setDescription('Close a ticket (use in the ticket channel or specify an ID)')
+        .addStringOption((opt) =>
+          opt.setName('id').setDescription('Ticket ID to close (optional, closes current channel if omitted)').setRequired(false),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
         .setName('setup')
-        .setDescription('Quick setup: enable tickets, set category & panel channel'),
+        .setDescription('Quick setup guide'),
     ),
 
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -51,6 +60,62 @@ export const ticketCommand = {
       return;
     }
 
+    // ── /ticket close [id] ─────────────────────────────────────────────
+    if (interaction.options.getSubcommand() === 'close') {
+      const ticketId = interaction.options.getString('id');
+
+      // If no ID given, close the ticket in the current channel.
+      if (!ticketId) {
+        const ticket = await getTicketByChannel(interaction.channelId);
+        if (!ticket) {
+          await interaction.reply({ content: '❌ This is not a ticket channel.', ephemeral: true });
+          return;
+        }
+        if (ticket.status !== 'open') {
+          await interaction.reply({ content: '❌ This ticket is already closed.', ephemeral: true });
+          return;
+        }
+
+        await interaction.deferReply();
+
+        await closeTicket(interaction.channelId);
+
+        const closeMsg = config.tickets.close_message || strings.ticketClosedDefault;
+        await interaction.editReply({ content: `🔒 ${closeMsg}` });
+
+        // Delete the channel after 5 seconds.
+        setTimeout(() => {
+          interaction.channel?.delete().catch(() => {});
+        }, 5_000);
+        return;
+      }
+
+      // Close by ticket ID — find the channel and delete it.
+      const tickets = await listTickets(interaction.guildId, 100);
+      const ticket = tickets.find((t) => t._id.toString() === ticketId);
+      if (!ticket) {
+        await interaction.reply({ content: `❌ Ticket \`${ticketId}\` not found.`, ephemeral: true });
+        return;
+      }
+
+      await interaction.deferReply({ ephemeral: true });
+
+      if (ticket.status !== 'open') {
+        await interaction.editReply('❌ This ticket is already closed.');
+        return;
+      }
+
+      await closeTicket(ticket.channel_id);
+
+      const ch = interaction.guild?.channels.cache.get(ticket.channel_id);
+      if (ch) {
+        await ch.delete().catch(() => {});
+      }
+
+      await interaction.editReply(`🔒 Ticket \`${ticketId}\` closed.`);
+      return;
+    }
+
     // ── /ticket setup ──────────────────────────────────────────────────
     if (interaction.options.getSubcommand() === 'setup') {
       await interaction.reply({
@@ -65,7 +130,7 @@ export const ticketCommand = {
           '   - Pick the category, panel channel, log channel, support role',
           '5. Come back here and run `/ticket panel`',
           '',
-          'That\'s it!',
+          'Commands: `/ticket close` (in ticket channel) or `/ticket close id:xxx` (by ID)',
         ].join('\n'),
         ephemeral: true,
       });
