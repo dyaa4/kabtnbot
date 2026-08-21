@@ -332,8 +332,19 @@ export async function executeActions(
         }
         case 'dm_online_members': {
           const allMembers = await ctx.guild.members.fetch().catch(() => ctx.guild.members.cache);
+          // presence.status is only available with the GUILD_PRESENCES intent.
+          // Fallback: treat members in a voice channel as "online" when
+          // presence data is unavailable (presence === null for everyone).
+          const hasPresenceData = [...allMembers.values()].some((m) => m.presence !== null);
           const targets = [...allMembers.values()]
-            .filter((m) => !m.user.bot && m.presence?.status && m.presence.status !== 'offline')
+            .filter((m) => {
+              if (m.user.bot) return false;
+              if (hasPresenceData) {
+                return m.presence?.status && m.presence.status !== 'offline';
+              }
+              // Fallback: member is "online" if they're in a voice channel.
+              return !!m.voice.channelId;
+            })
             .slice(0, 100);
           const text = expand(action.text, ctx);
           void (async () => {
