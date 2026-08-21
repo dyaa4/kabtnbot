@@ -7,7 +7,7 @@ import {
   activeVoiceSessions, listVoiceSessions, type VoiceSession,
   getCommandFlows, putCommandFlows, resetScheduleRuns, listChatMessages,
   getUserPlan, linkGuild, unlinkGuild, isGuildLinked, isGuildPremium, getPremiumLinker, isUserBlocked, isDbConnected,
-  countActiveInvitedGuilds, hasOrganizeSnapshot,
+  countActiveInvitedGuilds, hasOrganizeSnapshot, listTickets,
 } from '@gamebot/db';
 import { LANGUAGES, TTS_VOICES, DIALECTS, effectiveQuotas, monthKey, ORGANIZABLE_TYPES } from '@gamebot/shared';
 import { config, isSuperAdmin } from '../config.js';
@@ -77,6 +77,19 @@ const ConfigPatch = z
       .object({
         enabled: z.boolean().optional(),
         channel_id: z.string().nullable().optional(),
+      })
+      .strict()
+      .optional(),
+    tickets: z
+      .object({
+        enabled: z.boolean().optional(),
+        category_id: z.string().nullable().optional(),
+        support_role_id: z.string().nullable().optional(),
+        log_channel_id: z.string().nullable().optional(),
+        panel_channel_id: z.string().nullable().optional(),
+        welcome_message: z.string().max(2000).optional(),
+        close_message: z.string().max(2000).optional(),
+        auto_close_hours: z.number().int().min(0).max(168).optional(),
       })
       .strict()
       .optional(),
@@ -379,6 +392,25 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
+  // Text channels for the ticket panel channel picker.
+  router.get('/guilds/:guildId/text-channels', guard, async (req, res, next) => {
+    try {
+      res.json(await rest.listTextChannels(req.params.guildId));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Categories for the ticket category picker (type 4 = GuildCategory).
+  router.get('/guilds/:guildId/categories', guard, async (req, res, next) => {
+    try {
+      const all = await rest.listAllChannels(req.params.guildId);
+      res.json(all.filter((c) => c.type === 4).map(({ id, name }) => ({ id, name })));
+    } catch (err) {
+      next(err);
+    }
+  });
+
   router.get('/guilds/:guildId/emojis', guard, async (req, res, next) => {
     try {
       res.json(await rest.listEmojis(req.params.guildId));
@@ -511,6 +543,16 @@ export function apiRouter(rest: DiscordRest): Router {
       const members = await statsCached(`members:${req.params.guildId}`, () => rest.listMembers(req.params.guildId));
       const byId = new Map(members.map((m) => [m.id, m.username]));
       res.json(Object.fromEntries(ids.map((id) => [id, byId.get(id) ?? null])));
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // Ticket list for the dashboard.
+  router.get('/guilds/:guildId/tickets', guard, async (req, res, next) => {
+    try {
+      const limit = Math.min(Number(req.query.limit) || 50, 100);
+      res.json(await listTickets(req.params.guildId, limit));
     } catch (err) {
       next(err);
     }

@@ -332,4 +332,36 @@ export const OrganizeSnapshotModel =
   (mongoose.models.OrganizeSnapshot as mongoose.Model<OrganizeSnapshotDoc>) ??
   mongoose.model<OrganizeSnapshotDoc>('OrganizeSnapshot', organizeSnapshotSchema);
 
+// Ticket system — one document per ticket.
+export interface TicketDoc {
+  guild_id: string;
+  user_id: string;
+  channel_id: string;
+  status: 'open' | 'closed';
+  reason: string;
+  assigned_to: string | null;
+  created_at: Date;
+  updated_at: Date;
+  closed_at: Date | null;
+}
+
+const ticketSchema = new Schema<TicketDoc>(
+  {
+    guild_id: { type: String, required: true },
+    user_id: { type: String, required: true },
+    channel_id: { type: String, required: true, unique: true },
+    status: { type: String, enum: ['open', 'closed'], default: 'open' },
+    reason: { type: String, default: '' },
+    assigned_to: { type: String, default: null },
+    closed_at: { type: Date, default: null },
+  },
+  { timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } },
+);
+ticketSchema.index({ guild_id: 1, status: 1 });
+ticketSchema.index({ guild_id: 1, created_at: -1 });
+
+export const TicketModel =
+  (mongoose.models.Ticket as mongoose.Model<TicketDoc>) ??
+  mongoose.model<TicketDoc>('Ticket', ticketSchema);
+
 export type { GuildConfig };

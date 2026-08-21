@@ -94,4 +94,15 @@ export const ar = {
   distributeNotEnough: '❌ ما فيه أعضاء كافي distributeهم (الحد الأدنى 2).',
   distributeNoChannels: '❌ ما لقيت رومات فيها الاسم المطلوب.',
   distributeDone: '✅ تم توزيع {count} عضو في الرومات.',
+  // tickets
+  ticketAlreadyOpen: '⚠️ عندك تذكرة مفتوحة حالياً.',
+  ticketNoCategory: '❌ ما تم تحديد تصنيف (category) للتذاكر في الإعدادات.',
+  ticketCreateFailed: '❌ فشل إنشاء التذكرة.',
+  ticketCreated: '✅ تم فتح تذكرتك في {channel}',
+  ticketWelcomeDefault: 'أهلاً {mention}! 👋\nاكتب سبب فتح التذكرة وسن-assistك.',
+  ticketCloseFailed: '❌ فشل إغلاق التذكرة.',
+  ticketClosedDefault: 'تم إغلاق التذكرة. شكراً لاستخدامك النظام!',
+  ticketLogClosed: '🔒 تذكرة مغلقة',
+  ticketClaimDenied: '❌ ما عندك صلاحية المطالبة بهذه التذكرة.',
+  ticketClaimed: '👋 تولّى {user} هذه التذكرة.',
 } as const;

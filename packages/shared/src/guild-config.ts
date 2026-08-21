@@ -105,6 +105,25 @@ export const GuildConfigSchema = z.object({
       ai_questions_per_month: z.number().int().min(0).default(0),
     })
     .default({}),
+  tickets: z
+    .object({
+      enabled: z.boolean().default(false),
+      // Category under which ticket channels are created.
+      category_id: z.string().nullable().default(null),
+      // Role that can see and manage tickets.
+      support_role_id: z.string().nullable().default(null),
+      // Channel to log ticket transcripts.
+      log_channel_id: z.string().nullable().default(null),
+      // Channel where the ticket panel (embed + button) is posted.
+      panel_channel_id: z.string().nullable().default(null),
+      // Welcome message sent inside a new ticket channel.
+      welcome_message: z.string().max(2000).default(''),
+      // Close message sent when a ticket is closed.
+      close_message: z.string().max(2000).default(''),
+      // Auto-close tickets after this many hours of inactivity (0 = off).
+      auto_close_hours: z.number().int().min(0).max(168).default(0),
+    })
+    .default({}),
 });
 
 export type GuildConfig = z.infer<typeof GuildConfigSchema>;

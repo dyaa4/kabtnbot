@@ -13,6 +13,7 @@ import { registerVoiceLog } from './events/voice-log.js';
 import { registerChatLog } from './events/chat-log.js';
 import { registerGuildDirectory } from './events/guild-directory.js';
 import { registerWeeklySummary } from './lib/weekly-summary.js';
+import { registerTickets } from './modules/tickets/index.js';
 import { registerClientErrorLogging, registerProcessSafetyNets } from './lib/resilience.js';
 import { startHealthServer } from './lib/health.js';
 import { registerConnectionWatchdog } from './lib/watchdog.js';
@@ -41,6 +42,7 @@ async function main(): Promise<void> {
     registerChatLog(client);
     registerGuildDirectory(client);
     registerWeeklySummary(client);
+    registerTickets(client);
     return client;
   };
   let client = buildClient(wantsMessageContent);

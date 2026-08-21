@@ -86,4 +86,15 @@ export const en = {
   distributeNotEnough: '❌ Not enough members to distribute (minimum 2).',
   distributeNoChannels: '❌ No channels found matching the given name.',
   distributeDone: '✅ Distributed {count} members into channels.',
+  // tickets
+  ticketAlreadyOpen: '⚠️ You already have an open ticket.',
+  ticketNoCategory: '❌ No category set for tickets in settings.',
+  ticketCreateFailed: '❌ Failed to create the ticket.',
+  ticketCreated: '✅ Your ticket has been created in {channel}',
+  ticketWelcomeDefault: 'Welcome {mention}! 👋\nDescribe your issue and we\'ll assist you.',
+  ticketCloseFailed: '❌ Failed to close the ticket.',
+  ticketClosedDefault: 'Ticket closed. Thank you for using our support!',
+  ticketLogClosed: '🔒 Ticket closed',
+  ticketClaimDenied: '❌ You don\'t have permission to claim this ticket.',
+  ticketClaimed: '👋 {user} has claimed this ticket.',
 } as const satisfies Record<keyof typeof ar, string>;

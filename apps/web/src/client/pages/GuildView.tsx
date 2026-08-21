@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import {
   ArrowLeft, LayoutDashboard, Mic, Sparkles, Zap, Shield, Hand, BarChart3, FileText, Palette, Settings,
-  PanelLeftClose, PanelLeftOpen,
+  PanelLeftClose, PanelLeftOpen, Ticket,
 } from 'lucide-react';
 import { useI18n } from '../i18n.js';
 import { Layout } from '../components/Layout.js';
@@ -16,6 +16,7 @@ import { ChannelsTab } from '../components/ChannelsTab.js';
 import { LogsTab } from '../components/LogsTab.js';
 import { WelcomeTab } from '../components/WelcomeTab.js';
 import { CustomizeTab } from '../components/CustomizeTab.js';
+import { TicketsTab } from '../components/TicketsTab.js';
 
 export function GuildView() {
   const { t } = useI18n();
@@ -50,6 +51,7 @@ export function GuildView() {
     { to: 'protection', key: 'tabs.protection', Icon: Shield },
     { to: 'welcome', key: 'tabs.welcome', Icon: Hand },
     { to: 'stats', key: 'tabs.stats', Icon: BarChart3 },
+    { to: 'tickets', key: 'tabs.tickets', Icon: Ticket },
     { to: 'logs', key: 'tabs.logs', Icon: FileText },
     { to: 'customize', key: 'tabs.customize', Icon: Palette },
     { to: 'settings', key: 'tabs.settings', Icon: Settings },
@@ -123,6 +125,7 @@ export function GuildView() {
         <Route path="protection" element={<ProtectionTab guildId={guildId} />} />
         <Route path="welcome" element={<WelcomeTab guildId={guildId} />} />
         <Route path="stats" element={<StatsTab guildId={guildId} />} />
+        <Route path="tickets" element={<TicketsTab guildId={guildId} />} />
         <Route path="logs" element={<LogsTab guildId={guildId} />} />
         {/* Redirect the old split-log paths so any saved links still land. */}
         <Route path="voice-log" element={<Navigate to="../logs" replace />} />

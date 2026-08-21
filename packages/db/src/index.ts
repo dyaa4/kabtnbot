@@ -15,3 +15,4 @@ export * from './repos/analytics-repo.js';
 export * from './repos/activity-repo.js';
 export * from './repos/guild-directory-repo.js';
 export * from './repos/organize-snapshot-repo.js';
+export * from './repos/ticket-repo.js';
