@@ -9,20 +9,35 @@ import { t, fmt } from '../../lib/strings.js';
 
 const TICKET_PREFIX = 'ticket-';
 
-function buildPanelEmbed(guildName: string, welcomeMsg: string): EmbedBuilder {
+function buildPanelEmbed(guildName: string, welcomeMsg: string, guildIcon: string | null): EmbedBuilder {
+  const desc = welcomeMsg || [
+    `Need help? We're here for you!`,
+    '',
+    'Click the button below to open a **private support ticket**.',
+    'Our team will assist you as soon as possible.',
+  ].join('\n');
+
   return new EmbedBuilder()
-    .setTitle('🎫 Ticket System')
-    .setDescription(welcomeMsg || `Click the button below to open a ticket in **${guildName}**.`)
-    .setColor(0x5865f2);
+    .setColor(0x5865f2)
+    .setAuthor({ name: guildName, iconURL: guildIcon ?? undefined })
+    .setTitle('🎫  Support Center')
+    .setDescription(desc)
+    .addFields(
+      { name: '📬  How it works', value: '1️⃣  Click the button below\n2️⃣  Describe your issue\n3️⃣  Wait for our team to respond', inline: true },
+      { name: '⏱  Response time', value: 'We typically respond within a few hours.', inline: true },
+    )
+    .setFooter({ text: `${guildName} • Support Team` })
+    .setTimestamp()
+    .setThumbnail(guildIcon);
 }
 
 function buildTicketButtons(): ActionRowBuilder<ButtonBuilder> {
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId('ticket_create')
-      .setLabel('Open Ticket')
+      .setLabel('Open a Ticket')
       .setEmoji('🎫')
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Success),
   );
 }
 
@@ -47,7 +62,8 @@ export async function sendTicketPanel(client: Client, guildId: string): Promise<
   const channel = client.channels.cache.get(config.tickets.panel_channel_id);
   if (!channel?.isTextBased()) return null;
   const guild = client.guilds.cache.get(guildId);
-  const embed = buildPanelEmbed(guild?.name ?? '', config.tickets.welcome_message);
+  const icon = guild?.iconURL({ size: 256 }) ?? null;
+  const embed = buildPanelEmbed(guild?.name ?? '', config.tickets.welcome_message, icon);
   await (channel as TextChannel).send({ embeds: [embed], components: [buildTicketButtons()] }).catch(() => {});
   return config.tickets.panel_channel_id;
 }
