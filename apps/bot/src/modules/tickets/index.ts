@@ -116,6 +116,16 @@ export function registerTickets(client: Client): void {
             deny: [PermissionFlagsBits.ViewChannel],
           },
           {
+            id: interaction.client.user.id,
+            allow: [
+              PermissionFlagsBits.ViewChannel,
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.AttachFiles,
+              PermissionFlagsBits.ManageMessages,
+            ],
+          },
+          {
             id: userId,
             allow: [
               PermissionFlagsBits.ViewChannel,
