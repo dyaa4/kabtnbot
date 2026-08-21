@@ -64,7 +64,7 @@ export async function sendTicketPanel(client: Client, guildId: string): Promise<
   const guild = client.guilds.cache.get(guildId);
   const icon = guild?.iconURL({ size: 256 }) ?? null;
   const embed = buildPanelEmbed(guild?.name ?? '', config.tickets.welcome_message, icon);
-  await (channel as TextChannel).send({ embeds: [embed], components: [buildTicketButtons()] }).catch(() => {});
+  await (channel as TextChannel).send({ embeds: [embed], components: [buildTicketButtons()] });
   return config.tickets.panel_channel_id;
 }
 
