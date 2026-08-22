@@ -2,6 +2,7 @@ import type { ChatInputCommandInteraction, TextChannel } from 'discord.js';
 import { ChannelType, PermissionFlagsBits, SlashCommandBuilder } from 'discord.js';
 import { sendTicketPanel } from '../modules/tickets/index.js';
 import { getCachedGuildConfig } from '../lib/config-cache.js';
+import { isGuildPremiumCached } from '../lib/premium-cache.js';
 import { getTicketByChannel, closeTicket, listTickets } from '@gamebot/db';
 import { t } from '../lib/strings.js';
 
@@ -32,6 +33,11 @@ export const ticketCommand = {
   async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     if (!interaction.guildId) {
       await interaction.reply({ content: '❌ Server only.', ephemeral: true });
+      return;
+    }
+
+    if (!await isGuildPremiumCached(interaction.guildId)) {
+      await interaction.reply({ content: '❌ Tickets require a premium server.', ephemeral: true });
       return;
     }
 

@@ -548,9 +548,13 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
-  // Ticket list for the dashboard.
+  // Ticket list for the dashboard (premium-gated).
   router.get('/guilds/:guildId/tickets', guard, async (req, res, next) => {
     try {
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Tickets require premium');
+        return;
+      }
       const limit = Math.min(Number(req.query.limit) || 50, 100);
       res.json(await listTickets(req.params.guildId, limit));
     } catch (err) {
@@ -558,9 +562,13 @@ export function apiRouter(rest: DiscordRest): Router {
     }
   });
 
-  // Close a ticket from the dashboard.
+  // Close a ticket from the dashboard (premium-gated).
   router.patch('/guilds/:guildId/tickets/:ticketId/close', guard, async (req, res, next) => {
     try {
+      if (!(await hasPremiumAccess(req.params.guildId, res))) {
+        apiError(res, 403, 'PREMIUM_REQUIRED', 'Tickets require premium');
+        return;
+      }
       const closed = await closeTicketById(req.params.ticketId);
       if (!closed) {
         apiError(res, 404, 'NOT_FOUND', 'Ticket not found or already closed');

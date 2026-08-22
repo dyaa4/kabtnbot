@@ -5,6 +5,7 @@ import {
 } from 'discord.js';
 import { createTicket, closeTicket, assignTicket, getTicketByChannel, getOpenTicketByUser, countOpenTickets } from '@gamebot/db';
 import { getCachedGuildConfig } from '../../lib/config-cache.js';
+import { isGuildPremiumCached } from '../../lib/premium-cache.js';
 import { t, fmt } from '../../lib/strings.js';
 
 const TICKET_PREFIX = 'ticket-';
@@ -87,6 +88,12 @@ export function registerTickets(client: Client): void {
     if (!interaction.isButton() || !interaction.guildId) return;
 
     const { customId } = interaction;
+
+    // Tickets are premium-only.
+    if (!await isGuildPremiumCached(interaction.guildId)) {
+      await interaction.reply({ content: '❌ Tickets require a premium server.', flags: MessageFlags.Ephemeral }).catch(() => {});
+      return;
+    }
 
     // ── Create Ticket ──────────────────────────────────────────────────
     if (customId === 'ticket_create') {
