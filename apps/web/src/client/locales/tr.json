@@ -515,5 +515,7 @@
   "tickets.log.closedStatus": "Kapalı",
   "tickets.log.closeBtn": "Kapat",
   "tickets.log.closeConfirm": "Bu bilet kapatılsın mı? Kanal silinecek.",
-  "tickets.log.premium": "Bilet kayıtları premium hesap gerektirir. Sunucunuzu bağlayarak açın."
+  "tickets.log.premium": "Bilet kayıtları premium hesap gerektirir. Sunucunuzu bağlayarak açın.",
+  "tickets.premium.title": "Biletler bir Premium özelliğidir",
+  "tickets.premium.body": "Destek kanalları için bilet sistemini açmak üzere premium bir sunucuyu hesabınıza bağlayın."
 }

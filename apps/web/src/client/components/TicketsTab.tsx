@@ -6,8 +6,10 @@ import { z } from 'zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, ApiError } from '../api.js';
 import { useI18n } from '../i18n.js';
+import { usePremiumStatus } from '../premium.js';
 import { SaveBar } from './SaveBar.js';
 import { FormSkeleton } from './Skeleton.js';
+import { PremiumUpsell } from './PremiumUpsell.js';
 import { useToast } from './Toast.js';
 
 const TicketForm = z.object({
@@ -46,6 +48,7 @@ export function TicketsTab({ guildId }: { guildId: string }) {
   const { t } = useI18n();
   const qc = useQueryClient();
   const toast = useToast();
+  const { loading: premiumLoading, voicePremium } = usePremiumStatus(guildId);
 
   const cfg = useQuery({
     queryKey: ['config', guildId],
@@ -115,6 +118,8 @@ export function TicketsTab({ guildId }: { guildId: string }) {
     queryFn: () => api<{ id: string; name: string }[]>(`/api/guilds/${guildId}/roles`),
   });
 
+  if (premiumLoading) return <FormSkeleton sections={2} />;
+  if (!voicePremium) return <PremiumUpsell title={t('tickets.premium.title')} body={t('tickets.premium.body')} />;
   if (cfg.isLoading) return <FormSkeleton sections={3} />;
 
   const base = cfg.data;

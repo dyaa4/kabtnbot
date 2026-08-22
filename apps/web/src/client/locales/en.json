@@ -515,5 +515,7 @@
   "tickets.log.closedStatus": "Closed",
   "tickets.log.closeBtn": "Close",
   "tickets.log.closeConfirm": "Close this ticket? The channel will be deleted.",
-  "tickets.log.premium": "Ticket log requires a premium account. Link your server to unlock it."
+  "tickets.log.premium": "Ticket log requires a premium account. Link your server to unlock it.",
+  "tickets.premium.title": "Tickets are a Premium feature",
+  "tickets.premium.body": "Link a premium server to your account to unlock the ticket system for support channels."
 }

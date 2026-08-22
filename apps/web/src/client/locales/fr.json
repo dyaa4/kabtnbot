@@ -515,5 +515,7 @@
   "tickets.log.closedStatus": "Fermé",
   "tickets.log.closeBtn": "Fermer",
   "tickets.log.closeConfirm": "Fermer ce ticket ? Le salon sera supprimé.",
-  "tickets.log.premium": "Le journal des tickets nécessite un compte premium. Lie ton serveur pour le débloquer."
+  "tickets.log.premium": "Le journal des tickets nécessite un compte premium. Lie ton serveur pour le débloquer.",
+  "tickets.premium.title": "Les tickets sont une fonctionnalité Premium",
+  "tickets.premium.body": "Lie un serveur premium à ton compte pour activer le système de tickets pour les salons support."
 }

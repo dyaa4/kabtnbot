@@ -515,5 +515,7 @@
   "tickets.log.closedStatus": "Geschlossen",
   "tickets.log.closeBtn": "Schließen",
   "tickets.log.closeConfirm": "Dieses Ticket schließen? Der Kanal wird gelöscht.",
-  "tickets.log.premium": "Ticket-Protokoll erfordert ein Premium-Konto. Verbinde deinen Server, um es freizuschalten."
+  "tickets.log.premium": "Ticket-Protokoll erfordert ein Premium-Konto. Verbinde deinen Server, um es freizuschalten.",
+  "tickets.premium.title": "Tickets sind eine Premium-Funktion",
+  "tickets.premium.body": "Verbinde einen Premium-Server mit deinem Konto, um das Ticket-System für Support-Kanäle freizuschalten."
 }
